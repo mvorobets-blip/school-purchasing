@@ -78,7 +78,10 @@
 
 - Хелпери в `private` (`security definer`, `set search_path = ''`): `current_app_role()` (шаблон),
   `is_active_user()`, `is_admin()` = активний і `admin`, `is_member_of(department_id)` — є рядок `department_members` для
-  `auth.uid()` (хелпер, а не підзапит у політиці, щоб політики `departments` ↔ `department_members` не зациклились, 42P17). Усі політики вимагають `private.is_active_user()`: JWT
+  `auth.uid()` (хелпер, а не підзапит у політиці, щоб політики `departments` ↔ `department_members` не зациклились, 42P17).
+  Права на хелпери (як для `current_app_role()` у шаблоні): `grant usage on schema private to authenticated`; для
+  кожного — `revoke execute … from public, anon` і `grant execute … to authenticated` (`is_active_user()`, `is_admin()`,
+  `is_member_of(uuid)`), інакше політики, що їх викликають, дадуть `permission denied` кожному запиту. Усі політики вимагають `private.is_active_user()`: JWT
   деактивованого працівника, виданий до деактивації, нічого не прочитає (AC-ORG-12).
 - **Зміни, що зачіпають роль чи захист адміністратора, — лише через функції** `private.*` (`security definer`), які
   самі перевіряють `private.is_admin()`; клієнт викликає їх через тонкі обгортки `public.*` (`security invoker`) і
@@ -145,4 +148,7 @@ Server actions (`src/app/**/actions.ts`) перевіряють користув
 - [JWT деактивованого працівника дійсний до закінчення терміну] → RLS вимагає `is_active_user()`, а proxy виходить із
   сесії на першому запиті.
 - [Тригер ролі й функції `security definer` — складніші для рев'ю] → кожна функція в `private`, `search_path = ''`,
-  `revoke execute … from public, anon`; ADR пояснює чому.
+  `revoke execute … from public, anon`, а RLS-хелперам — `grant execute … to authenticated` і `grant usage on
+  schema private to authenticated`; функціям змін (`add_requester` …) теж
+  `grant execute … to authenticated`, бо обгортки `public` — `security invoker`; право дії перевіряє сама функція
+  (`private.is_admin()`), тож не-адміністратор отримує помилку; ADR пояснює чому.
