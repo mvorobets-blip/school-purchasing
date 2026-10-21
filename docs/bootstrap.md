@@ -11,8 +11,8 @@
 Docker не потрібен: локально — лише npm run dev проти вашої бази; міграції на одноразовій базі перевіряє CI (db-check).
 -->
 
-Моє репо: https://github.com/mvorobets-blip/therapy-scheduling · Прод-URL: https://therapy-scheduling-ten.vercel.app
-Репо вимог PM: <!-- https://github.com/<pm>/<team-slug>-spec --> · Організація Supabase: `therapy-scheduling` (Free)
+Моє репо: https://github.com/mvorobets-blip/school-purchasing (перейменовано з `therapy-scheduling`, старі посилання переадресовуються) · Прод-URL: https://therapy-scheduling-ten.vercel.app
+Репо вимог PM: https://github.com/ValiaBihun/2026-quitcode-dream-team · Організація Supabase: `school-purchasing` (Free)
 
 ## 1. Інструменти й репо
 
@@ -21,7 +21,7 @@ Docker не потрібен: локально — лише npm run dev прот
       `openspec --version` = 1.14.1, телеметрію вимкнено (`openspec config set telemetry.enabled false`)
 - [x] Репо створено з шаблону (**Use this template → Create a new repository**): власник — ваш особистий акаунт, назва —
       `<team-slug>`, **Public** (ruleset на GitHub Free діє лише в публічних репо; PM у нотатці-порівнянні посилається на
-      рядки вашого коду) — https://github.com/mvorobets-blip/therapy-scheduling (Public, з
+      рядки вашого коду) — https://github.com/mvorobets-blip/school-purchasing (Public, з
       `koldovsky/2026-quitcode-06-project-template`)
 - [x] `git clone https://github.com/<dev>/<team-slug>.git` → `npm ci` → `cp .env.example .env.local`
       (у PowerShell: `Copy-Item .env.example .env.local`)
@@ -32,7 +32,7 @@ Docker не потрібен: локально — лише npm run dev прот
 ## 2. Supabase: власна база
 
 - [x] Організацію й проєкт створено у вашому акаунті (один із двох безкоштовних проєктів; регіон — найближчий) —
-      організація й проєкт `therapy-scheduling`, регіон `eu-west-1` (West EU, Ireland)
+      організація й проєкт `school-purchasing` (перейменовано з `therapy-scheduling`), регіон `eu-west-1` (West EU, Ireland)
 - [x] Authentication: «Allow new users to sign up» **вимкнено**, «Confirm email» **вимкнено**
       (точні назви й місце перемикачів перевірте в інтерфейсі) — `docs/img/auth-signups-email.png` (обидва перемикачі на одному знімку)
 - [x] (Після розділу 4, коли є прод-URL) Authentication → URL Configuration: Site URL = прод-URL Vercel; Redirect URLs
@@ -67,13 +67,13 @@ Docker не потрібен: локально — лише npm run dev прот
 ## 5. База й перший зелений CI
 
 - [x] Actions → CI → **Run workflow** (гілка `main`, `include_seed` ✓) → job `db-deploy` застосував першу міграцію й сид —
-      https://github.com/mvorobets-blip/therapy-scheduling/actions/runs/39257186959/job/118076369134
+      https://github.com/mvorobets-blip/school-purchasing/actions/runs/39257186959/job/118076369134
       (`20261012000000_profiles_and_roles.sql` і `seed.sql`)
 - [x] `npm run users:demo` (синтетичні користувачі з `supabase/demo-users.json`) → `npm run dev` → `http://localhost:3000` →
       вхід як `admin@example.test` працює локально й на прод-URL — створено `admin@example.test` (admin),
       `member1@example.test`, `member2@example.test` (member); вхід на проді — `docs/img/prod-login.png`
 - [x] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` —
-      https://github.com/mvorobets-blip/therapy-scheduling/actions/runs/39257186959
+      https://github.com/mvorobets-blip/school-purchasing/actions/runs/39257186959
 
 ## 6. Ruleset `solo-main` (лише після зеленого CI на `main`)
 
@@ -83,26 +83,36 @@ Docker не потрібен: локально — лише npm run dev прот
       (джерело GitHub Actions, без «up to date»): `spec`, `app`, `conformance`, `db-check`; Allowed merge methods —
       **Squash** і **Merge**; Bypass list — **порожній** (навіть для власника); Enforcement — Active
       (точні назви полів перевірте в інтерфейсі) — створено через `gh api` з `solo-main.json`:
-      https://github.com/mvorobets-blip/therapy-scheduling/rules/25407855 (`current_user_can_bypass: never`) — `docs/img/ruleset.png`
+      https://github.com/mvorobets-blip/school-purchasing/rules/25407855 (`current_user_can_bypass: never`) — `docs/img/ruleset.png`
 
 ## 7. Перший PR (перевірка ruleset-у)
 
-- [ ] `git switch -c setup/bootstrap` → цей файл із доказами розділів 1–6 → push → `gh pr create --web` (тип «Реалізація»)
-      → окремим коментарем `@coderabbitai review` — <!-- посилання на PR (наступним PR) -->
-- [ ] Поки перевірки не зелені, кнопка merge заблокована; push у `main` напряму відхиляється — <!-- знімок -->
-- [ ] Vercel створив preview для PR — <!-- посилання на preview (наступним PR) -->
-- [ ] **Squash and merge** → прод-деплой Vercel пройшов — <!-- посилання -->
-- [ ] (З першою задачею, що має міграцію) `db-check` зелений, після merge `db-deploy` застосував її у вашу базу — <!-- посилання на run -->
+- [x] `git switch -c setup/bootstrap` → цей файл із доказами розділів 1–6 → push → `gh pr create --web` (тип «Реалізація»)
+      → окремим коментарем `@coderabbitai review` — https://github.com/mvorobets-blip/school-purchasing/pull/1
+- [x] Поки перевірки не зелені, кнопка merge заблокована; push у `main` напряму відхиляється — `docs/img/merge-blocked.png`
+      (знімок з PR «Специфікація» #4, поки чотири обов'язкові перевірки ще виконувались); прямий push у `main` блокує
+      ruleset `solo-main` (`current_user_can_bypass: never`)
+- [x] Vercel створив preview для PR — https://therapy-scheduling-git-setup-bootstrap-mvorobets-blip.vercel.app (з коментаря Vercel у PR #1;
+      `/login` відкривається без входу у Vercel)
+- [x] **Squash and merge** → прод-деплой Vercel пройшов — PR #1 злито (`8e26a92`); CI на `main`:
+      https://github.com/mvorobets-blip/school-purchasing/actions/runs/39271713923, статус Vercel на `8e26a92` — success
+- [ ] (З першою задачею, що має міграцію) `db-check` зелений, після merge `db-deploy` застосував її у вашу базу — задача 1.1
+      (міграція `20261021213618_department_setup.sql`); посилання на run — наступним PR
 
 ## 8. Вимоги PM і специфікація
 
-- [ ] Адресу репо вимог PM узято з чату команди; на зустрічі команди (дні 0–2, до кінця 15.10, організує PM; якщо
-      команда не зібралася — діра в чат команди до обіду 16.10) — перший раунд питань до брифу
-- [ ] PM написав у чаті команди «вимоги оновлено» (у курсі перші вимоги — до кінця 16.10) → у Claude Code чи Cursor
+- [x] Адресу репо вимог PM узято з чату команди; на зустрічі команди (дні 0–2, до кінця 15.10, організує PM; якщо
+      команда не зібралася — діра в чат команди до обіду 16.10) — перший раунд питань до брифу —
+      https://github.com/ValiaBihun/2026-quitcode-dream-team
+- [x] PM написав у чаті команди «вимоги оновлено» (у курсі перші вимоги — до кінця 16.10) → у Claude Code чи Cursor
       `/requirements-sync <pm>/<team-slug>-spec` → PR «Оновлення вимог» злито; шапка `docs/conformance.md` показує
-      адресу, джерело (issues чи docs) і дату знімка — <!-- посилання на PR -->
-- [ ] Читання вимог: скіл `spec-clarify` → питання — issues «Питання до вимог» у репо PM через вебформу → журнал
-      `docs/spec-reading.md` — <!-- посилання на issues -->
-- [ ] Переклад у специфікацію (гілка `spec/add-<зріз>`): `/opsx:propose add-<зріз>` → `npx openspec validate add-<зріз> --strict`
+      адресу, джерело (issues чи docs) і дату знімка — PR «Оновлення вимог» #2, #3, #6, #7 (#5 закрито: знімок застарів до
+      merge); шапка — `знімок 2026-10-21`
+- [x] Читання вимог: скіл `spec-clarify` → питання — issues «Питання до вимог» у репо PM через вебформу → журнал
+      `docs/spec-reading.md` — ValiaBihun/2026-quitcode-dream-team#35, ValiaBihun/2026-quitcode-dream-team#36,
+      ValiaBihun/2026-quitcode-dream-team#37, ValiaBihun/2026-quitcode-dream-team#38, ValiaBihun/2026-quitcode-dream-team#41
+      (усі власні; PM відповів на всі)
+- [x] Переклад у специфікацію (гілка `spec/add-<зріз>`): `/opsx:propose add-<зріз>` → `npx openspec validate add-<зріз> --strict`
       → скіл `spec-review` → `npx openspec archive add-<зріз> -y` → `/conformance` → PR «Специфікація» злито;
-      `npm run ac:coverage` без «вимогу PM ще не перекладено» — <!-- посилання на PR -->
+      `npm run ac:coverage` без «вимогу PM ще не перекладено» — PR «Специфікація» #4 (`add-department-setup`, 31 AC),
+      #8 (`clarify-department-setup`, AC-ORG-34), план #9 (`impl-department-setup`)
