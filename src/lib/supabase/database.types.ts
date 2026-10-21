@@ -102,7 +102,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "add_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
+            "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
+            "set_approver": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
+            "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined }
           }
           Enums: {
             [_ in never]: never

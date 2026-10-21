@@ -11,7 +11,7 @@
 
 ## 1. Основа: ролі, відділи, членство, дозволи
 
-- [ ] 1.1 Міграція `<timestamp>_department_setup.sql`: ролі `requester` / `approver` / `admin` (1) drop старого
+- [x] 1.1 Міграція `<timestamp>_department_setup.sql`: ролі `requester` / `approver` / `admin` (1) drop старого
   `profiles_role_check`; 2) `member` → `requester`; 3) default `requester`; 4) новий constraint; перевірка, що значень
   `member` не лишилось), `profiles.is_active`, таблиці `departments`, `department_members`, `employee_permissions` з RLS і
   GRANT; хелпери `private.is_active_user()`, `private.is_admin()`, `private.is_member_of()` з `grant usage` на схему й
@@ -24,14 +24,14 @@
 
 ## 2. Відділи й доступ до налаштувань
 
-- [ ] 2.1 Сторінка `/admin/departments`: список із позначкою «Немає схвалювача», створення відділу з повідомленням
+- [x] 2.1 Сторінка `/admin/departments`: список із позначкою «Немає схвалювача», створення відділу з повідомленням
   про дубль; перевірка доступу на `/admin/**`; `isDuplicateDepartmentName`, `departmentsWithoutApprover`,
   `canAccessSettings`, `messageFor`; тести.
   Done when: AC-ORG-09, AC-ORG-14, AC-ORG-34.
 
 ## 3. Заявники, схвалювачі, автосхвалення
 
-- [ ] 3.1 Функції `add_requester`, `remove_requester`, `set_approver`, `set_auto_approve` (`private` + обгортки
+- [x] 3.1 Функції `add_requester`, `remove_requester`, `set_approver`, `set_auto_approve` (`private` + обгортки
   `public`); сторінка `/admin/departments/[id]`; `/profile` (відділи заявника); `checkApproverAssignment`,
   `checkAutoApprove`, `applyRemoveRequester`, `selectableDepartments`; тести.
   Done when: AC-ORG-01, AC-ORG-02, AC-ORG-03, AC-ORG-06, AC-ORG-15, AC-ORG-20, AC-ORG-33.
@@ -53,7 +53,13 @@
 
 ## 6. Матриця й завершення зрізу
 
-- [ ] 6.1 Рядки всіх AC зрізу в `docs/conformance.md`: «реалізовано» з шляхами коду й тесту; AC-ORG-13 —
+- [x] 6.1 Рядки всіх AC зрізу в `docs/conformance.md`: «реалізовано» з шляхами коду й тесту; AC-ORG-13 —
   «відкладено (заявок і чернеток у цьому зрізі немає: форма — заглушка без збереження; реалізуємо разом зі
   збереженням заявок)». `npx openspec archive impl-department-setup -y` в останньому PR задачі.
   Done when: AC-ORG-13 — рядок матриці з причиною відкладення; `npm run ac:coverage` — OK.
+
+## Підсумок зрізу (до здачі)
+
+Виконано задачі 1.1, 2.1, 3.1 і 6.1 (PR «Реалізація» #10, #11 і PR задачі 3.1): 15 AC «реалізовано». Задачі 4.1 і 5.1 до
+здачі не виконано — їхні AC у `docs/conformance.md` «відкладено (задача 4.1 / 5.1 …)», AC-ORG-13 — «відкладено (заявок і
+чернеток у цьому зрізі немає …)». План лишається основою для наступного PR після здачі.
