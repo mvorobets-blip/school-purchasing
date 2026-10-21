@@ -30,6 +30,10 @@
 - Перейменування й видалення відділів, історія змін налаштувань, листи (Non-goals PM).
 - Тести бази в CI (pgTAP потребує Docker і `supabase start`): правила бази перевіряє `db-check` (міграції
   застосовуються), а поведінку — юніт-тести доменних функцій, які дублюють правила бази; див. Risks.
+  Замість тестів бази — обов'язкова ручна перевірка на preview (задачі 1 і 4): відмова не-адміністратору в прямому
+  записі до `department_members` і `profiles.role`; відмова в читанні організаційних даних зі старою сесією
+  деактивованого працівника; одночасне зняття ролі двома адміністраторами — одна дія отримує `LAST_ADMIN`, активним
+  лишається щонайменше один адміністратор.
 
 ## Decisions
 
@@ -37,12 +41,16 @@
 
 | Таблиця / колонка | Ключові поля | AC |
 |---|---|---|
-| `profiles.role` | ролі `requester` / `approver` / `admin`; default `requester` (дані → default → constraint, як у шапці стартової міграції) | 04, 05, 11, 19–21, 24, 31, 32 |
+| `profiles.role` | ролі `requester` / `approver` / `admin`; default `requester`; порядок у міграції — див. нижче | 04, 05, 11, 19–21, 24, 31, 32 |
 | `profiles.is_active` | `boolean not null default true` | 10, 12, 14, 16, 18, 28, 30 |
 | `departments` | `id uuid`, `name text` (1–100 символів), унікальний індекс `lower(name)` | 14, 34 |
 | `department_members` | PK (`department_id`, `profile_id`); `is_approver bool`, `auto_approve bool` | 01–06, 14, 15, 19, 20, 24, 30, 33 |
 | `employee_permissions` | PK (`profile_id`, `permission`); `permission` ∈ `card_expense`, `check_request`, `vendor_bill`, `self_purchase` | 17, 25–27 |
 
+- **Порядок зміни ролей у міграції** (як у шапці стартової міграції): 1) `drop constraint profiles_role_check` —
+  старе правило не пропустить нові значення; 2) `update … set role = 'requester' where role = 'member'`;
+  3) `alter column role set default 'requester'` — інакше тригер `on_auth_user_created` вставить `member`;
+  4) новий `profiles_role_check` з `requester`, `approver`, `admin`.
 - **Рядок `department_members` = членство заявника.** Схвалення й автосхвалення — прапорці того самого рядка, тож
   схвалювачем чи з автосхваленням не можна бути без членства (AC-ORG-02, AC-ORG-33), а видалення рядка знімає і
   схвалення, і автосхвалення (AC-ORG-03, AC-ORG-15). Повідомлення «Спершу додайте працівника до відділу як заявника»
