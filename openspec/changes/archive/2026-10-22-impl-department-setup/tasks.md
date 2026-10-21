@@ -34,7 +34,7 @@
 - [x] 3.1 Функції `add_requester`, `remove_requester`, `set_approver`, `set_auto_approve` (`private` + обгортки
   `public`); сторінка `/admin/departments/[id]`; `/profile` (відділи заявника); `checkApproverAssignment`,
   `checkAutoApprove`, `removeRequester`, `requesterDepartmentIds`; тести.
-  Done when: AC-ORG-01, AC-ORG-02, AC-ORG-03, AC-ORG-06, AC-ORG-15, AC-ORG-20, AC-ORG-33.
+  Done when: AC-ORG-01, AC-ORG-02, AC-ORG-03, AC-ORG-06, AC-ORG-11, AC-ORG-15, AC-ORG-20, AC-ORG-33.
 
 ## 4. Деактивація й захист адміністратора
 
@@ -42,7 +42,7 @@
   `/admin/employees` і `/admin/employees/[id]` (деактивувати / активувати, зняти роль `admin`); перевірка `is_active`
   під час входу й у proxy; `checkLastAdmin`, `approverCandidates`; тести; ADR `0002-admin-actions-via-functions.md`,
   `0003-deactivation-without-service-key.md`.
-  Done when: AC-ORG-10, AC-ORG-11, AC-ORG-12, AC-ORG-16, AC-ORG-18, AC-ORG-21, AC-ORG-30, AC-ORG-31, AC-ORG-32.
+  Done when: AC-ORG-10, AC-ORG-12, AC-ORG-16, AC-ORG-18, AC-ORG-21, AC-ORG-30, AC-ORG-31, AC-ORG-32.
 
 ## 5. Дозволи й заглушка форми заявки
 
@@ -60,6 +60,6 @@
 
 ## Підсумок зрізу (до здачі)
 
-Виконано задачі 1.1, 2.1, 3.1 і 6.1 (PR «Реалізація» #10, #11 і PR задачі 3.1): 15 AC «реалізовано». Задачі 4.1 і 5.1 до
+Виконано задачі 1.1, 2.1, 3.1 і 6.1 (PR «Реалізація» #10, #11 і PR задачі 3.1): 15 AC «реалізовано» (AC-ORG-11 перенесено із задачі 4.1 у 3.1: тригер ролей не чіпає `admin` уже з PR #10). Задачі 4.1 і 5.1 до
 здачі не виконано — їхні AC у `docs/conformance.md` «відкладено (задача 4.1 / 5.1 …)», AC-ORG-13 — «відкладено (заявок і
 чернеток у цьому зрізі немає …)». План лишається основою для наступного PR після здачі.
