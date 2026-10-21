@@ -96,8 +96,11 @@ Docker не потрібен: локально — лише npm run dev прот
       `/login` відкривається без входу у Vercel)
 - [x] **Squash and merge** → прод-деплой Vercel пройшов — PR #1 злито (`8e26a92`); CI на `main`:
       https://github.com/mvorobets-blip/school-purchasing/actions/runs/39271713923, статус Vercel на `8e26a92` — success
-- [ ] (З першою задачею, що має міграцію) `db-check` зелений, після merge `db-deploy` застосував її у вашу базу — задача 1.1
-      (міграція `20261021213618_department_setup.sql`); посилання на run — наступним PR
+- [x] (З першою задачею, що має міграцію) `db-check` зелений, після merge `db-deploy` застосував її у вашу базу — задача 1.1
+      (PR #10, міграція `20261021213618_department_setup.sql`): `db-deploy` «Applying migration … Finished supabase db push» —
+      https://github.com/mvorobets-blip/school-purchasing/actions/runs/39685094292; після merge `npm run users:demo` → ролі
+      `admin` / `requester`; ручна перевірка RLS `node --env-file=.env.local tests/manual/rls-smoke.mjs` — 7/7 ✔ (прямий запис
+      requester до `department_members`, `profiles.role`, `profiles.is_active` — 42501; чужі `departments` — 0 рядків)
 
 ## 8. Вимоги PM і специфікація
 
