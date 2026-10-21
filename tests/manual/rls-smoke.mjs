@@ -35,19 +35,19 @@ const { data: someDept } = await (await signIn("admin@example.test")).client.fro
   const { error } = await member
     .from("department_members")
     .insert({ department_id: someDept.id, profile_id: memberId, is_approver: true });
-  check("requester не може напряму вставити рядок у department_members", !!error, error?.code ?? "запис пройшов!");
+  check("requester не може напряму вставити рядок у department_members", error?.code === "42501", error?.code ?? "запис пройшов!");
 }
 {
   const { error } = await member.from("profiles").update({ role: "admin" }).eq("id", memberId);
-  check("requester не може змінити собі profiles.role", !!error, error?.code ?? "оновлення пройшло!");
+  check("requester не може змінити собі profiles.role", error?.code === "42501", error?.code ?? "оновлення пройшло!");
 }
 {
   const { error } = await member.from("profiles").update({ is_active: false }).eq("id", memberId);
-  check("requester не може змінити profiles.is_active", !!error, error?.code ?? "оновлення пройшло!");
+  check("requester не може змінити profiles.is_active", error?.code === "42501", error?.code ?? "оновлення пройшло!");
 }
 {
   const { error } = await member.from("departments").insert({ name: "Перевірка RLS requester" });
-  check("requester не може створити відділ", !!error, error?.code ?? "відділ створено!");
+  check("requester не може створити відділ", error?.code === "42501", error?.code ?? "відділ створено!");
 }
 {
   const { data, error } = await member.from("departments").select("id, name");

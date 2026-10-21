@@ -30,12 +30,12 @@ describe("Дія createDepartment", () => {
     expect(state).toEqual({ status: "error", message: "Відділ з такою назвою вже є" });
   });
 
-  it("успішне створення відділу", async () => {
+  it("AC-ORG-34: відділ з новою назвою створено (контроль до випадку дубля)", async () => {
     const state = await createDepartment(idle, form("Бібліотека"));
     expect(state.status).toBe("ok");
   });
 
-  it("не-адміністратор отримує «Недостатньо прав», навіть викликавши дію напряму", async () => {
+  it("AC-ORG-09: не-адміністратор отримує «Недостатньо прав», навіть викликавши дію напряму", async () => {
     currentUser.value = { id: "u2", role: "requester", isActive: true };
     const state = await createDepartment(idle, form("Бібліотека"));
     expect(state).toEqual({ status: "error", message: "Недостатньо прав" });
