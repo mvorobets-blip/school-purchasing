@@ -3,14 +3,16 @@
 Вертикальні задачі: кожна — міграція / RLS + доменна функція + server action / сторінка + тест. Одна задача — одна
 гілка `task/<коротко>` і один PR «Реалізація». Кожна закінчується рядком «Done when» з AC ID; перевірка — `npm test`,
 `npm run ac:coverage`, ручна перевірка на preview демо-користувачами. Для задач 1 і 4 ручна перевірка
-обов'язково охоплює: відмову не-адміністратору в прямому записі до `department_members` і `profiles.role`; відмову
-в читанні організаційних даних зі старою сесією деактивованого працівника; одночасне зняття ролі двома адміністраторами
+обов'язково охоплює: відмову не-адміністратору в прямому записі до `department_members`, `profiles.role` і `profiles.is_active`; відмову
+в читанні організаційних даних зі старою сесією деактивованого працівника і те, що його наступний запит до сторінки
+завершує сесію й веде на `/login` з помилкою; одночасне зняття ролі двома адміністраторами
 (одна дія отримує `LAST_ADMIN`, активним лишається щонайменше один адміністратор). Результати — в описі PR задачі.
 
 ## 1. Основа: ролі, відділи, членство, дозволи
 
-- [ ] 1.1 Міграція `<timestamp>_department_setup.sql`: ролі `requester` / `approver` / `admin` (дані → default →
-  constraint), `profiles.is_active`, таблиці `departments`, `department_members`, `employee_permissions` з RLS і
+- [ ] 1.1 Міграція `<timestamp>_department_setup.sql`: ролі `requester` / `approver` / `admin` (1) drop старого
+  `profiles_role_check`; 2) `member` → `requester`; 3) default `requester`; 4) новий constraint; перевірка, що значень
+  `member` не лишилось), `profiles.is_active`, таблиці `departments`, `department_members`, `employee_permissions` з RLS і
   GRANT; хелпери `private.is_active_user()`, `private.is_admin()`; тригер `private.sync_role`; сид трьох відділів;
   `supabase/demo-users.json` з новими ролями; `database.types.ts` із Summary `db-check`. Доменна функція
   `roleAfterChange` і тести; ADR `0001-org-data-model.md`. Виправлення `docs/bootstrap.md` (назва репо, репо вимог PM,
