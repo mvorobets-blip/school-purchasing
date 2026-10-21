@@ -46,6 +46,10 @@ const { data: someDept } = await (await signIn("admin@example.test")).client.fro
   check("requester не може змінити profiles.is_active", !!error, error?.code ?? "оновлення пройшло!");
 }
 {
+  const { error } = await member.from("departments").insert({ name: "Перевірка RLS requester" });
+  check("requester не може створити відділ", !!error, error?.code ?? "відділ створено!");
+}
+{
   const { data, error } = await member.from("departments").select("id, name");
   check(
     "requester без членства не бачить чужих departments через Data API",
