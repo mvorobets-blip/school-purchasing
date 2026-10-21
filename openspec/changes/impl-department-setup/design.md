@@ -33,7 +33,8 @@
   Замість тестів бази — обов'язкова ручна перевірка на preview (задачі 1 і 4): відмова не-адміністратору в прямому
   записі до `department_members`, `profiles.role` і `profiles.is_active`; відмова в читанні організаційних даних зі старою сесією
   деактивованого працівника, а його наступний запит до сторінки завершує сесію й веде на `/login` з помилкою; одночасне зняття ролі двома адміністраторами — одна дія отримує `LAST_ADMIN`, активним
-  лишається щонайменше один адміністратор.
+  лишається щонайменше один адміністратор. Також: не-адміністратор через Data API не отримує рядків
+  `departments` відділів, де він не має членства.
 
 ## Decisions
 
@@ -71,12 +72,13 @@
 | Таблиця | select | insert | update | delete |
 |---|---|---|---|---|
 | `profiles` | власний / admin (як у шаблоні) | — (тригер) | лише `full_name` власного (шаблон); роль і `is_active` — тільки функції `private` | — |
-| `departments` | усі активні користувачі | admin | — | — |
+| `departments` | відділи, де користувач має членство (`private.is_member_of(id)`) / admin | admin | — | — |
 | `department_members` | власні рядки / admin | лише через функції | лише через функції | лише через функції |
 | `employee_permissions` | власні / admin | admin | — | admin |
 
 - Хелпери в `private` (`security definer`, `set search_path = ''`): `current_app_role()` (шаблон),
-  `is_active_user()`, `is_admin()` = активний і `admin`. Усі політики вимагають `private.is_active_user()`: JWT
+  `is_active_user()`, `is_admin()` = активний і `admin`, `is_member_of(department_id)` — є рядок `department_members` для
+  `auth.uid()` (хелпер, а не підзапит у політиці, щоб політики `departments` ↔ `department_members` не зациклились, 42P17). Усі політики вимагають `private.is_active_user()`: JWT
   деактивованого працівника, виданий до деактивації, нічого не прочитає (AC-ORG-12).
 - **Зміни, що зачіпають роль чи захист адміністратора, — лише через функції** `private.*` (`security definer`), які
   самі перевіряють `private.is_admin()`; клієнт викликає їх через тонкі обгортки `public.*` (`security invoker`) і

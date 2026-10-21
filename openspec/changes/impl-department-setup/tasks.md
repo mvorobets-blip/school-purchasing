@@ -6,14 +6,15 @@
 обов'язково охоплює: відмову не-адміністратору в прямому записі до `department_members`, `profiles.role` і `profiles.is_active`; відмову
 в читанні організаційних даних зі старою сесією деактивованого працівника і те, що його наступний запит до сторінки
 завершує сесію й веде на `/login` з помилкою; одночасне зняття ролі двома адміністраторами
-(одна дія отримує `LAST_ADMIN`, активним лишається щонайменше один адміністратор). Результати — в описі PR задачі.
+(одна дія отримує `LAST_ADMIN`, активним лишається щонайменше один адміністратор). Також: не-адміністратор
+через Data API не отримує рядків `departments` відділів, де він не має членства. Результати — в описі PR задачі.
 
 ## 1. Основа: ролі, відділи, членство, дозволи
 
 - [ ] 1.1 Міграція `<timestamp>_department_setup.sql`: ролі `requester` / `approver` / `admin` (1) drop старого
   `profiles_role_check`; 2) `member` → `requester`; 3) default `requester`; 4) новий constraint; перевірка, що значень
   `member` не лишилось), `profiles.is_active`, таблиці `departments`, `department_members`, `employee_permissions` з RLS і
-  GRANT; хелпери `private.is_active_user()`, `private.is_admin()`; тригер `private.sync_role`; сид трьох відділів;
+  GRANT; хелпери `private.is_active_user()`, `private.is_admin()`, `private.is_member_of()`; тригер `private.sync_role`; сид трьох відділів;
   `supabase/demo-users.json` з новими ролями; `database.types.ts` із Summary `db-check`. Доменна функція
   `roleAfterChange` і тести; ADR `0001-org-data-model.md`. Виправлення `docs/bootstrap.md` (назва репо, репо вимог PM,
   розділ 7) і знімок `docs/img/merge-blocked.png`.
