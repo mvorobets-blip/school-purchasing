@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
@@ -30,6 +31,11 @@ export default async function Home() {
         <dt className="text-zinc-500">Роль</dt>
         <dd data-testid="user-role">{profile?.role ?? "профіль не знайдено"}</dd>
       </dl>
+      {profile?.role === "admin" ? (
+        <Link href="/admin/departments" className="text-sm underline">
+          Налаштування відділів
+        </Link>
+      ) : null}
       <form action={signOut}>
         <button
           type="submit"
