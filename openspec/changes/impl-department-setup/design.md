@@ -87,6 +87,26 @@
   самі перевіряють `private.is_admin()`; клієнт викликає їх через тонкі обгортки `public.*` (`security invoker`) і
   `supabase.rpc(…)`: `add_requester`, `remove_requester`, `set_approver`, `set_auto_approve`, `set_admin_role`,
   `set_active`. Прямих GRANT на insert / update / delete `department_members` і `profiles.role` клієнт не має.
+- **Функції змін (RPC)** — кожна в `private` (`security definer`, `set search_path = ''`, на початку перевіряє
+  `private.is_admin()`) і тонка обгортка з **тією самою сигнатурою** в `public` (`security invoker`), яку викликає
+  `supabase.rpc(…)`:
+
+  | Функція (`private.*` і `public.*`) | AC |
+  |---|---|
+  | `add_requester(p_department_id uuid, p_profile_id uuid) returns void` | 01 |
+  | `remove_requester(p_department_id uuid, p_profile_id uuid) returns void` | 03, 15, 24 |
+  | `set_approver(p_department_id uuid, p_profile_id uuid, p_value boolean) returns void` | 02, 04, 05, 19, 20 |
+  | `set_auto_approve(p_department_id uuid, p_profile_id uuid, p_value boolean) returns void` | 06, 33 |
+  | `set_admin_role(p_profile_id uuid, p_value boolean) returns void` | 10, 21, 31, 32 |
+  | `set_active(p_profile_id uuid, p_value boolean) returns void` | 12, 18, 30 |
+
+  Права — окремо від прав RLS-хелперів, для кожної функції з повною сигнатурою і в `private`, і в `public`:
+  `revoke execute on function <schema>.<назва>(<типи>) from public, anon;` потім
+  `grant execute on function <schema>.<назва>(<типи>) to authenticated;` — наприклад,
+  `grant execute on function private.set_approver(uuid, uuid, boolean) to authenticated;` і те саме для
+  `public.set_approver(uuid, uuid, boolean)`. Хелпери (`is_active_user()`, `is_admin()`, `is_member_of(uuid)`)
+  потрібні політикам RLS, функції змін — викликам RPC.
+
 - **«Хоча б один активний адміністратор»** (AC-ORG-10, AC-ORG-18, AC-ORG-21): `set_admin_role(false)` і
   `set_active(false)` блокують рядки активних адміністраторів (`select … for update`) і рахують інших; якщо інших
   немає — виняток з кодом `LAST_ADMIN`, який дія перекладає в «Має лишитись хоча б один активний адміністратор».
