@@ -33,7 +33,7 @@
 
 - [x] 3.1 Функції `add_requester`, `remove_requester`, `set_approver`, `set_auto_approve` (`private` + обгортки
   `public`); сторінка `/admin/departments/[id]`; `/profile` (відділи заявника); `checkApproverAssignment`,
-  `checkAutoApprove`, `applyRemoveRequester`, `selectableDepartments`; тести.
+  `checkAutoApprove`, `removeRequester`, `requesterDepartmentIds`; тести.
   Done when: AC-ORG-01, AC-ORG-02, AC-ORG-03, AC-ORG-06, AC-ORG-15, AC-ORG-20, AC-ORG-33.
 
 ## 4. Деактивація й захист адміністратора

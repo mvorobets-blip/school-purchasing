@@ -71,7 +71,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
       </Link>
       <h1 className="text-2xl font-semibold">{department.name}</h1>
 
-      {typeof ok === "string" && OK_TEXT[ok] ? (
+      {typeof ok === "string" && Object.hasOwn(OK_TEXT, ok) ? (
         <p role="status" data-testid="member-message" className="text-sm text-green-700">
           {OK_TEXT[ok]}
         </p>
@@ -94,7 +94,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
                 <th>Роль</th>
                 <th>Схвалювач</th>
                 <th>Автосхвалення</th>
-                <th />
+                <th>Дії</th>
               </tr>
             </thead>
             <tbody>
@@ -139,8 +139,8 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-medium">Дії</h2>
         <form action={addRequester.bind(null, id)} className="flex flex-wrap items-center gap-2">
-          <label className="text-sm">Додати як заявника</label>
-          <select name="profileId" required className={select}>
+          <label htmlFor="add-requester-profile" className="text-sm">Додати як заявника</label>
+          <select id="add-requester-profile" name="profileId" required className={select}>
             {nonMembers.map((p) => (
               <option key={p.id} value={p.id}>
                 {label(p)}
@@ -154,8 +154,8 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
 
         {/* Список усіх працівників: призначення не заявника відхилить база (AC-ORG-02, AC-ORG-33). */}
         <form action={setApprover.bind(null, id, true)} className="flex flex-wrap items-center gap-2">
-          <label className="text-sm">Призначити схвалювачем</label>
-          <select name="profileId" required className={select}>
+          <label htmlFor="assign-approver-profile" className="text-sm">Призначити схвалювачем</label>
+          <select id="assign-approver-profile" name="profileId" required className={select}>
             {profiles.map((p) => (
               <option key={p.id} value={p.id}>
                 {label(p)}
@@ -168,8 +168,8 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
         </form>
 
         <form action={setAutoApprove.bind(null, id, true)} className="flex flex-wrap items-center gap-2">
-          <label className="text-sm">Увімкнути автосхвалення</label>
-          <select name="profileId" required className={select}>
+          <label htmlFor="auto-approve-profile" className="text-sm">Увімкнути автосхвалення</label>
+          <select id="auto-approve-profile" name="profileId" required className={select}>
             {profiles.map((p) => (
               <option key={p.id} value={p.id}>
                 {label(p)}

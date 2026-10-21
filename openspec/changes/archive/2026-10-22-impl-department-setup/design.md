@@ -118,7 +118,7 @@
 |---|---|---|
 | `roleAfterChange(member)` | «Правило ролей»: `admin` лишається; інакше `approver`, якщо схвалює хоча б один відділ | 04, 05, 11, 19, 20, 21, 24, 31, 32 |
 | `checkApproverAssignment`, `checkAutoApprove` | без членства заявника — `NOT_REQUESTER` | 02, 33 |
-| `applyRemoveRequester` | прибирає членство разом зі схваленням і автосхваленням | 03, 15, 24 |
+| `removeRequester` | прибирає членство разом зі схваленням і автосхваленням | 03, 15, 24 |
 | `checkLastAdmin` | `LAST_ADMIN`, якщо після дії не лишиться активного адміністратора | 10, 18, 21 |
 | `isDuplicateDepartmentName` | порівняння без урахування регістру | 34 |
 | `departmentsWithoutApprover` | відділи без активного схвалювача | 14 |

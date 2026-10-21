@@ -26,6 +26,8 @@ async function run(departmentId: string, call: () => PromiseLike<{ error: RpcErr
 
   const { error } = await call();
   const code = errorCode(error);
+  // Лише код Postgres, без message: невідому помилку видно в логах Vercel.
+  if (code === "UNKNOWN") console.error("department RPC failed", { code: error?.code });
   revalidatePath(`/admin/departments/${departmentId}`);
   revalidatePath("/admin/departments");
   redirect(`/admin/departments/${departmentId}?${code ? `error=${code}` : `ok=${okCode}`}`);
