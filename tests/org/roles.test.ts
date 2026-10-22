@@ -37,7 +37,7 @@ describe("Правило ролей", () => {
     expect(roleAfterChange("approver", after)).toBe("requester");
   });
 
-  it("роль admin не змінюється від відділів і схвалення", () => {
+  it("AC-ORG-11: адміністратор, якого прибрали з усіх відділів, лишається admin (роль admin не залежить від відділів)", () => {
     expect(roleAfterChange("admin", [])).toBe("admin");
     expect(roleAfterChange("admin", [member(PRIMARY, true)])).toBe("admin");
   });

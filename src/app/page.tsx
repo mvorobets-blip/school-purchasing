@@ -31,6 +31,9 @@ export default async function Home() {
         <dt className="text-zinc-500">Роль</dt>
         <dd data-testid="user-role">{profile?.role ?? "профіль не знайдено"}</dd>
       </dl>
+      <Link href="/profile" className="text-sm underline">
+        Мій профіль
+      </Link>
       {profile?.role === "admin" ? (
         <Link href="/admin/departments" className="text-sm underline">
           Налаштування відділів

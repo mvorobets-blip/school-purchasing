@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canAccessSettings } from "@/lib/org/access";
 import { getCurrentUser } from "@/lib/org/current-user";
@@ -54,7 +55,9 @@ export default async function DepartmentsPage() {
         <ul className="flex flex-col divide-y divide-zinc-200 rounded border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {departments.map((d) => (
             <li key={d.id} data-testid="department-row" className="flex items-center justify-between px-4 py-3 text-sm">
-              <span>{d.name}</span>
+              <Link href={`/admin/departments/${d.id}`} className="underline">
+                {d.name}
+              </Link>
               {withoutApprover.has(d.id) ? (
                 <span data-testid="no-approver" className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
                   {messageFor("NO_APPROVER")}
