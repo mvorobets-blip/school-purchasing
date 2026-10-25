@@ -16,6 +16,8 @@ import { createClient } from "@/lib/supabase/server";
 import { addRequester, removeRequester, setApprover, setAutoApprove } from "./actions";
 import { DepartmentActions, MemberMenu, MemberSwitch, type Person } from "./member-controls";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const OK_TEXT: Record<string, string> = {
   REQUESTER_ADDED: "Працівника додано до відділу як заявника.",
   REQUESTER_REMOVED: "Працівника прибрано із заявників відділу.",
@@ -42,6 +44,8 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
   }
 
   const { id } = await params;
+  // id — uuid: інакше запит до бази впаде, і сторінка показала б помилку завантаження замість 404.
+  if (!UUID.test(id)) notFound();
   const { ok, error } = await searchParams;
   const supabase = await createClient();
 
@@ -87,7 +91,9 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
             ) : null}
           </div>
         </div>
+        {/* key: після дії сервер перенаправляє на ?ok= / ?error= — компонент перемонтовується, діалоги закриваються. */}
         <DepartmentActions
+          key={`${typeof ok === "string" ? ok : ""}-${typeof error === "string" ? error : ""}`}
           addRequester={addRequester.bind(null, id)}
           setApprover={setApprover.bind(null, id, true)}
           setAutoApprove={setAutoApprove.bind(null, id, true)}

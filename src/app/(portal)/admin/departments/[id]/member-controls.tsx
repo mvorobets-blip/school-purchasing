@@ -2,6 +2,7 @@
 
 import { MoreHorizontal, Plus, Settings2, ShieldCheck, UserMinus, Zap } from "lucide-react";
 import { useState, useTransition } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +33,16 @@ const formWith = (profileId: string) => {
   fd.set("profileId", profileId);
   return fd;
 };
+
+// Кнопка відправки, вимкнена під час виконання дії — без повторного надсилання.
+function SubmitButton({ disabled, children }: { disabled: boolean; children: React.ReactNode }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={disabled || pending}>
+      {pending ? "Зберігаємо…" : children}
+    </Button>
+  );
+}
 
 // Форма з вибором працівника в діалозі; дія — серверна (RPC з перевіркою адміністратора), результат — у ?ok= / ?error=.
 function PersonForm({
@@ -66,9 +77,7 @@ function PersonForm({
       </div>
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" />}>Скасувати</DialogClose>
-        <Button type="submit" disabled={people.length === 0}>
-          {submitLabel}
-        </Button>
+        <SubmitButton disabled={people.length === 0}>{submitLabel}</SubmitButton>
       </DialogFooter>
     </form>
   );
