@@ -9,7 +9,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ from: () => ({ insert: async () => insertResult }) }),
 }));
 
-const { createDepartment } = await import("@/app/admin/departments/actions");
+const { createDepartment } = await import("@/app/(portal)/admin/departments/actions");
 
 const idle = { status: "idle" as const, message: "" };
 const form = (name: string) => {
