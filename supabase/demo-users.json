@@ -13,5 +13,20 @@
     "email": "member2@example.test",
     "full_name": "Марія Демо-Друга",
     "role": "requester"
+  },
+  {
+    "email": "pm-requester@example.test",
+    "full_name": "PM Demo Requester",
+    "role": "requester"
+  },
+  {
+    "email": "pm-approver@example.test",
+    "full_name": "PM Demo Approver",
+    "role": "requester"
+  },
+  {
+    "email": "pm-admin@example.test",
+    "full_name": "PM Demo Admin",
+    "role": "admin"
   }
 ]
