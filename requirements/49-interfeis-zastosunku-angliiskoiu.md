@@ -1,4 +1,4 @@
-> Джерело: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/49 · оновлено 2026-10-23T14:25:46Z
+> Джерело: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/49 · оновлено 2026-10-25T15:30:27Z
 
 # Вимога: інтерфейс застосунку англійською мовою
 
@@ -71,6 +71,14 @@
 | Вкажіть причину | Provide a reason |
 | Заявок на рішення немає | No requests awaiting your decision |
 | Закупівлю подано | Purchase submitted |
+| Працівник | Employee |
+| Вас не додано до жодного відділу. Зверніться до адміністратора. | You have not been added to any department. Contact your administrator. |
+| Спершу додайте працівника до відділу як заявника | Add the employee to the department as a requester first |
+| Має лишитись хоча б один активний адміністратор | At least one active administrator must remain |
+| Відділ з такою назвою вже є | A department with this name already exists |
+| Обліковий запис деактивовано. Зверніться до адміністратора | Account deactivated. Contact your administrator |
+| Немає схвалювача | No approver |
+| Ви ще не подали жодної заявки | You have not submitted any requests yet |
 
 ### Відкриті питання
 
@@ -80,4 +88,6 @@
 ### Журнал змін
 
 - 2026-10-23 — створено
+- 2026-10-24 — таблицю доповнено англійськими текстами повідомлень із чинних AC (FRM-05, ORG-02, 10, 12, 14, 18, 33, 34) і словом «Employee»; розробники беруть їх дослівно — https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/53
+- 2026-10-25 — у таблицю додано текст порожнього стану «Мої заявки» (AC-FRM-14) — питання https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/55
 
