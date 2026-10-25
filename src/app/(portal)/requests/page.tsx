@@ -1,0 +1,101 @@
+import { ChevronRight, ListChecks, Plus } from "lucide-react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { StatusBadge } from "@/components/portal/status-badge";
+import { Alert } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getCurrentUser } from "@/lib/org/current-user";
+import { messageFor } from "@/lib/org/messages";
+import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
+import { createClient } from "@/lib/supabase/server";
+
+// «Мої заявки»: лише власні заявки зі статусами (AC-FRM-10), «Закупівлю подано» після подання (AC-FRM-11),
+// порожній стан «Ви ще не подали жодної заявки» (AC-FRM-14). Умова author_id + RLS: чужих рядків база не віддає.
+export default async function MyRequestsPage({ searchParams }: PageProps<"/requests">) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  const { ok } = await searchParams;
+
+  const supabase = await createClient();
+  const [requestsRes, deptsRes] = await Promise.all([
+    supabase
+      .from("purchase_requests")
+      .select("id, department_id, purchase_type, status, created_at")
+      .eq("author_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase.from("departments").select("id, name"),
+  ]);
+  if (requestsRes.error || deptsRes.error) {
+    return <Alert variant="destructive">Не вдалося завантажити заявки. Оновіть сторінку.</Alert>;
+  }
+  const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
+  const requests = requestsRes.data;
+
+  return (
+    <>
+      <div className="flex flex-wrap items-end gap-4">
+        <h1 className="flex-1 text-2xl font-semibold">Мої заявки</h1>
+        <Link href="/requests/new" className={buttonVariants()}>
+          <Plus aria-hidden="true" />
+          Нова закупівля
+        </Link>
+      </div>
+
+      {ok === "SUBMITTED" ? (
+        <Alert role="status" data-testid="purchase-message">
+          {messageFor("SUBMITTED")}
+        </Alert>
+      ) : null}
+
+      {requests.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
+              <ListChecks className="size-5" aria-hidden="true" />
+            </span>
+            <p className="font-medium" data-testid="no-requests">
+              {messageFor("NO_REQUESTS")}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="py-0">
+          <Table data-testid="my-requests">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-4">Подано</TableHead>
+                <TableHead>Відділ</TableHead>
+                <TableHead>Тип закупівлі</TableHead>
+                <TableHead>Статус</TableHead>
+                <TableHead className="w-10 pr-4">
+                  <span className="sr-only">Відкрити</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {requests.map((r) => (
+                <TableRow key={r.id} data-testid="request-row" className="group">
+                  <TableCell className="pl-4 tabular-nums">
+                    <Link href={`/requests/${r.id}`} className="font-medium hover:text-accent-foreground">
+                      {new Date(r.created_at).toLocaleDateString("uk-UA", { timeZone: "America/New_York" })}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{names.get(r.department_id) ?? "—"}</TableCell>
+                  <TableCell>{PURCHASE_TYPE_LABEL[r.purchase_type as PurchaseType] ?? r.purchase_type}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={r.status} />
+                  </TableCell>
+                  <TableCell className="pr-4 text-right">
+                    <ChevronRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+    </>
+  );
+}

@@ -82,6 +82,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"purchase_request_lines": {
+                  Row: {
+                    "id": string,"name": string,"position": number,"price": number,"purpose": string,"quantity": number,"request_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: string,"name": string,"position": number,"price": number,"purpose": string,"quantity": number,"request_id": string
+                  }
+                  Update: {
+                    "id"?: string,"name"?: string,"position"?: number,"price"?: number,"purpose"?: string,"quantity"?: number,"request_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "purchase_request_lines_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "purchase_requests"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"purchase_requests": {
+                  Row: {
+                    "author_id": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"department_id": string,"id": string,"purchase_type": string,"reject_reason": string | null,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_id": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"department_id": string,"id"?: string,"purchase_type": string,"reject_reason"?: string | null,"status"?: string
+                  }
+                  Update: {
+                    "author_id"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"department_id"?: string,"id"?: string,"purchase_type"?: string,"reject_reason"?: string | null,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "purchase_requests_department_id_fkey"
+      columns: ["department_id"]
+isOneToOne: false
+      referencedRelation: "departments"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"profiles": {
                   Row: {
                     "created_at": string,"email": string | null,"full_name": string | null,"id": string,"is_active": boolean,"role": string
@@ -105,7 +145,8 @@ isOneToOne: false
             "add_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "set_approver": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
-            "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined }
+            "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
+            "submit_purchase": { Args: { "p_department_id": string,"p_lines": Json,"p_purchase_type": string }; Returns: string }
           }
           Enums: {
             [_ in never]: never
