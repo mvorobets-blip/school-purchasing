@@ -1,6 +1,13 @@
 // «Правило ролей» (requirements/product.md): ту саму логіку в базі виконує тригер private.sync_role.
 export type Role = "requester" | "approver" | "admin";
 
+// Назви ролей в інтерфейсі — з глосарію «Продукту»; ідентифікатор ролі лишається без змін.
+export const ROLE_LABEL: Record<Role, string> = {
+  requester: "Заявник",
+  approver: "Схвалювач",
+  admin: "Адміністратор",
+};
+
 export type Membership = {
   departmentId: string;
   isApprover: boolean;

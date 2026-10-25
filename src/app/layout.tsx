@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Onest } from "next/font/google";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Onest — основний шрифт інтерфейсу (DESIGN.md §3): кирилиця й латиниця.
+const onest = Onest({
+  variable: "--font-onest",
+  subsets: ["latin", "cyrillic"],
 });
 
 const geistMono = Geist_Mono({
@@ -13,17 +15,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Командний проєкт",
-  description: "Next.js + Supabase + OpenSpec",
+  title: "Шкільні закупівлі",
+  description: "Заявки на закупівлю, схвалення й налаштування відділів школи",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="uk"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="uk" className={`${onest.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }
