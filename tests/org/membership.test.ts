@@ -25,10 +25,10 @@ describe("Заявники, схвалювачі, автосхвалення", (
     expect(requesterDepartmentIds(after)).toEqual([PRIMARY]);
   });
 
-  it("AC-ORG-02: призначення схвалювачем «Вищої школи» не заявника відхилено з «Спершу додайте працівника до відділу як заявника»", () => {
+  it("AC-ORG-02: призначення схвалювачем «Вищої школи» не заявника відхилено з «Add the employee to the department as a requester first»", () => {
     const result = checkApproverAssignment([member(PRIMARY)], HIGH);
     expect(result).toEqual({ ok: false, code: "NOT_REQUESTER" });
-    expect(messageFor("NOT_REQUESTER")).toBe("Спершу додайте працівника до відділу як заявника");
+    expect(messageFor("NOT_REQUESTER")).toBe("Add the employee to the department as a requester first");
   });
 
   it("AC-ORG-03: зняття заявника «Початкової школи» знімає й схвалення цього відділу", () => {
@@ -55,7 +55,7 @@ describe("Заявники, схвалювачі, автосхвалення", (
     expect(after.find((m) => m.departmentId === PRIMARY)?.isApprover).toBe(true);
   });
 
-  it("AC-ORG-33: увімкнення автосхвалення у «Вищій школі» не заявнику відхилено з «Спершу додайте працівника до відділу як заявника»", () => {
+  it("AC-ORG-33: увімкнення автосхвалення у «Вищій школі» не заявнику відхилено з «Add the employee to the department as a requester first»", () => {
     expect(checkAutoApprove([member(PRIMARY)], HIGH)).toEqual({ ok: false, code: "NOT_REQUESTER" });
     expect(checkAutoApprove([member(HIGH)], HIGH)).toEqual({ ok: true });
   });

@@ -19,7 +19,7 @@ export default async function NewPurchasePage() {
     supabase.from("employee_permissions").select("permission").eq("profile_id", user.id),
   ]);
   if (deptsRes.error || membersRes.error || permsRes.error) {
-    return <Alert variant="destructive">Не вдалося завантажити форму. Оновіть сторінку.</Alert>;
+    return <Alert variant="destructive">Could not load the form. Refresh the page.</Alert>;
   }
 
   const departments = departmentOptions(
@@ -34,7 +34,7 @@ export default async function NewPurchasePage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Нова закупівля</h1>
+      <h1 className="text-2xl font-semibold">New purchase</h1>
       {departments.length === 0 ? (
         <Alert data-testid="no-departments">{messageFor("NO_DEPARTMENTS")}</Alert>
       ) : (

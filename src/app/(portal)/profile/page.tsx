@@ -21,7 +21,7 @@ function AccessList({ items }: { items: TypeAccess[] }) {
             <Minus className="size-4 text-muted-foreground" aria-hidden="true" />
           )}
           <span className={t.allowed ? "" : "text-muted-foreground"}>{t.label}</span>
-          <span className="sr-only">{t.allowed ? "— дозволено" : "— немає дозволу"}</span>
+          <span className="sr-only">{t.allowed ? "— allowed" : "— not allowed"}</span>
         </li>
       ))}
     </ul>
@@ -41,7 +41,7 @@ export default async function ProfilePage() {
     supabase.from("employee_permissions").select("permission").eq("profile_id", user.id),
   ]);
   if (membersRes.error || deptsRes.error || permsRes.error) {
-    return <Alert variant="destructive">Не вдалося завантажити профіль. Оновіть сторінку.</Alert>;
+    return <Alert variant="destructive">Could not load the profile. Refresh the page.</Alert>;
   }
 
   const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
@@ -53,7 +53,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Мій профіль</h1>
+      <h1 className="text-2xl font-semibold">My profile</h1>
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-4">
@@ -69,7 +69,7 @@ export default async function ProfilePage() {
           </div>
           <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Роль</dt>
+              <dt className="text-muted-foreground">Role</dt>
               <dd className="flex items-center gap-2">
                 <Badge variant="secondary">{ROLE_LABEL[user.role]}</Badge>
                 <span data-testid="profile-role" className="font-mono text-sm text-muted-foreground">
@@ -84,28 +84,28 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-1">
-            Мої відділи
-            <InfoTip label="Про мої відділи">Відділи, де ви подаєте заявки. Змінює адміністратор.</InfoTip>
+            My departments
+            <InfoTip label="About my departments">Departments where you submit requests. Managed by an administrator.</InfoTip>
           </CardTitle>
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Мене ще не додано до жодного відділу.</p>
+            <p className="text-sm text-muted-foreground">I have not been added to any department yet.</p>
           ) : (
             <Table data-testid="profile-departments">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Відділ</TableHead>
-                  <TableHead>Моя роль у відділі</TableHead>
-                  <TableHead>Автосхвалення</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>My role in the department</TableHead>
+                  <TableHead>Auto-approval</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.department_id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell>{r.is_approver ? "Заявник і схвалювач" : "Заявник"}</TableCell>
-                    <TableCell>{r.auto_approve ? "Увімкнено" : <span className="text-muted-foreground">—</span>}</TableCell>
+                    <TableCell>{r.is_approver ? "Requester and approver" : "Requester"}</TableCell>
+                    <TableCell>{r.auto_approve ? "On" : <span className="text-muted-foreground">—</span>}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -117,17 +117,17 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-1">
-            Мої дозволи
-            <InfoTip label="Про мої дозволи">Які типи заявок і закупівлі вам доступні. Дозволи видає адміністратор.</InfoTip>
+            My permissions
+            <InfoTip label="About my permissions">Request and purchase types available to you. Permissions are granted by an administrator.</InfoTip>
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6 sm:grid-cols-2">
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium">Типи заявок</h2>
+            <h2 className="text-sm font-medium">Request types</h2>
             <AccessList items={requestTypeAccess(user.role, permissions)} />
           </section>
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-medium">Типи закупівлі</h2>
+            <h2 className="text-sm font-medium">Purchase types</h2>
             <AccessList items={purchaseTypeAccess(user.role, permissions)} />
           </section>
         </CardContent>

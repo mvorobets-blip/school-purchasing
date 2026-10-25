@@ -13,7 +13,7 @@ import { messageFor } from "@/lib/org/messages";
 import { createClient } from "@/lib/supabase/server";
 import { CreateDepartmentDialog } from "./create-department-form";
 
-// Список відділів для адміністратора. «Немає схвалювача» — у відділі немає жодного активного схвалювача (AC-ORG-14).
+// Список відділів для адміністратора. «No approver» — у відділі немає жодного активного схвалювача (AC-ORG-14).
 export default async function DepartmentsPage() {
   // Перевіряємо права й тут, а не лише в admin/layout.tsx: layout не перевиконується при клієнтській навігації (AC-ORG-09).
   const user = await getCurrentUser();
@@ -29,12 +29,12 @@ export default async function DepartmentsPage() {
     supabase.from("profiles").select("id, email, full_name, is_active"),
   ]);
 
-  // Помилку запиту показуємо, а не перетворюємо на хибне «Відділів ще немає» чи «Немає схвалювача».
+  // Помилку запиту показуємо, а не перетворюємо на хибне «Відділів ще немає» чи «No approver».
   if (departmentsRes.error || membersRes.error || profilesRes.error) {
     return (
       <div className="flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold">Відділи</h1>
-        <Alert variant="destructive">Не вдалося завантажити відділи. Оновіть сторінку.</Alert>
+        <h1 className="text-2xl font-semibold">Departments</h1>
+        <Alert variant="destructive">Could not load departments. Refresh the page.</Alert>
       </div>
     );
   }
@@ -62,8 +62,8 @@ export default async function DepartmentsPage() {
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h1 className="flex items-center gap-1 text-2xl font-semibold">
-            Відділи
-            <InfoTip label="Про відділи">Заявники, схвалювачі й автосхвалення кожного відділу.</InfoTip>
+            Departments
+            <InfoTip label="About departments">Requesters, approvers and auto-approval for each department.</InfoTip>
           </h1>
         </div>
         <CreateDepartmentDialog />
@@ -74,12 +74,12 @@ export default async function DepartmentsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Відділ</TableHead>
-                <TableHead>Заявників</TableHead>
-                <TableHead>Схвалювачі</TableHead>
-                <TableHead>Стан</TableHead>
+                <TableHead className="pl-4">Department</TableHead>
+                <TableHead>Requesters</TableHead>
+                <TableHead>Approvers</TableHead>
+                <TableHead>State</TableHead>
                 <TableHead className="w-10 pr-4">
-                  <span className="sr-only">Відкрити</span>
+                  <span className="sr-only">Open</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -109,7 +109,7 @@ export default async function DepartmentsPage() {
                           {messageFor("NO_APPROVER")}
                         </Badge>
                       ) : (
-                        <Badge className="bg-status-approved text-status-approved-foreground">Налаштовано</Badge>
+                        <Badge className="bg-status-approved text-status-approved-foreground">Configured</Badge>
                       )}
                     </TableCell>
                     <TableCell className="pr-4 text-right">
@@ -130,8 +130,8 @@ export default async function DepartmentsPage() {
             <span className="flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
               <Building2 className="size-5" aria-hidden="true" />
             </span>
-            <p className="font-medium">Відділів ще немає.</p>
-            <p className="text-sm text-muted-foreground">Створіть перший відділ кнопкою «Створити відділ».</p>
+            <p className="font-medium">No departments yet.</p>
+            <p className="text-sm text-muted-foreground">Create the first department with «Create department».</p>
           </CardContent>
         </Card>
       )}

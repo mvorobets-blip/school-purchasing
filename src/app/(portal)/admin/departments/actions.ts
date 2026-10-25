@@ -20,7 +20,7 @@ export async function createDepartment(
 
   const name = String(formData.get("name") ?? "").trim();
   if (!isValidDepartmentName(name)) {
-    return { status: "error", message: `Назва відділу — від 1 до ${DEPARTMENT_NAME_MAX} символів.` };
+    return { status: "error", message: `Department name — 1 to ${DEPARTMENT_NAME_MAX} characters.` };
   }
 
   const supabase = await createClient();
@@ -28,9 +28,9 @@ export async function createDepartment(
   if (error) {
     if (error.code === "23505") return { status: "error", message: messageFor("DUPLICATE_DEPARTMENT") };
     if (error.code === "42501") return { status: "error", message: messageFor("FORBIDDEN") };
-    return { status: "error", message: "Не вдалося створити відділ. Спробуйте ще раз." };
+    return { status: "error", message: "Could not create the department. Try again." };
   }
 
   revalidatePath("/admin/departments");
-  return { status: "ok", message: `Відділ «${name}» створено.` };
+  return { status: "ok", message: `Department «${name}» created.` };
 }

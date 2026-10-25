@@ -14,9 +14,9 @@ describe("варіанти у формі закупівлі", () => {
     expect(options.map((o) => o.label)).not.toContain("Вища школа");
   });
 
-  it("AC-FRM-03: без ролі admin і без дозволу — лише «Відділ закупівель»", () => {
-    expect(purchaseTypeOptions("requester", []).map((o) => o.label)).toEqual(["Відділ закупівель"]);
-    expect(purchaseTypeOptions("approver", ["card_expense"]).map((o) => o.label)).toEqual(["Відділ закупівель"]);
+  it("AC-FRM-03: без ролі admin і без дозволу — лише «Purchasing department»", () => {
+    expect(purchaseTypeOptions("requester", []).map((o) => o.label)).toEqual(["Purchasing department"]);
+    expect(purchaseTypeOptions("approver", ["card_expense"]).map((o) => o.label)).toEqual(["Purchasing department"]);
   });
 
   it("AC-FRM-05: працівник без жодного відділу не отримує варіантів відділу", () => {

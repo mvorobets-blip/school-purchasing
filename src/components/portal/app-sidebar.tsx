@@ -49,22 +49,22 @@ type Section = { label: string; pages: Page[] };
 function sectionsFor(user: SidebarUser): Section[] {
   const sections: Section[] = [
     {
-      label: "Огляд",
+      label: "Overview",
       pages: [
-        { href: "/", label: "Головна", icon: LayoutDashboard },
-        { href: "/profile", label: "Мій профіль", icon: UserRound },
+        { href: "/", label: "Home", icon: LayoutDashboard },
+        { href: "/profile", label: "My profile", icon: UserRound },
       ],
     },
   ];
   sections.push({
-    label: "Заявки",
+    label: "Requests",
     pages: [
-      { href: "/requests/new", label: "Нова закупівля", icon: Plus },
-      { href: "/requests", label: "Мої заявки", icon: ClipboardList },
+      { href: "/requests/new", label: "New purchase", icon: Plus },
+      { href: "/requests", label: "My requests", icon: ClipboardList },
     ],
   });
   if (user.isAdmin) {
-    sections.push({ label: "Адміністрування", pages: [{ href: "/admin/departments", label: "Відділи", icon: Building2 }] });
+    sections.push({ label: "Administration", pages: [{ href: "/admin/departments", label: "Departments", icon: Building2 }] });
   }
   return sections;
 }
@@ -89,9 +89,9 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               <ShoppingBasket className="size-4" aria-hidden="true" />
             </span>
-            <span className="truncate group-data-[collapsible=icon]:hidden">Шкільні закупівлі</span>
+            <span className="truncate group-data-[collapsible=icon]:hidden">School Purchasing</span>
           </Link>
-          <SidebarTrigger aria-label="Згорнути або розгорнути меню" />
+          <SidebarTrigger aria-label="Toggle menu" />
         </div>
       </SidebarHeader>
 
@@ -139,7 +139,7 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={<SidebarMenuButton size="lg" tooltip={user.name} />}
-                aria-label="Меню користувача"
+                aria-label="User menu"
               >
                 <Avatar className="size-8 rounded-lg">
                   <AvatarFallback className="rounded-lg bg-sidebar-accent font-semibold text-sidebar-accent-foreground">{user.initials}</AvatarFallback>
@@ -160,12 +160,12 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
                 <DropdownMenuSeparator />
                 <DropdownMenuItem render={<Link href="/profile" />}>
                   <UserRound aria-hidden="true" />
-                  Мій профіль
+                  My profile
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => void signOut()}>
                   <LogOut aria-hidden="true" />
-                  Вийти
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

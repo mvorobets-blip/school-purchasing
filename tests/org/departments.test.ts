@@ -8,14 +8,14 @@ import {
 import { messageFor } from "@/lib/org/messages";
 
 describe("Відділи", () => {
-  it("AC-ORG-34: відділ «початкова школа» за наявного «Початкова школа» — дубль, повідомлення «Відділ з такою назвою вже є»", () => {
+  it("AC-ORG-34: відділ «початкова школа» за наявного «Початкова школа» — дубль, повідомлення «A department with this name already exists»", () => {
     expect(isDuplicateDepartmentName("початкова школа", ["Початкова школа", "Офіс"])).toBe(true);
     expect(isDuplicateDepartmentName("  ПОЧАТКОВА ШКОЛА ", ["Початкова школа"])).toBe(true);
     expect(isDuplicateDepartmentName("Вища школа", ["Початкова школа"])).toBe(false);
-    expect(messageFor("DUPLICATE_DEPARTMENT")).toBe("Відділ з такою назвою вже є");
+    expect(messageFor("DUPLICATE_DEPARTMENT")).toBe("A department with this name already exists");
   });
 
-  it("AC-ORG-14: відділ без жодного активного схвалювача позначено «Немає схвалювача»", () => {
+  it("AC-ORG-14: відділ без жодного активного схвалювача позначено «No approver»", () => {
     const departments = ["primary", "office", "high"];
     const members = [
       { departmentId: "primary", profileId: "anna", isApprover: true },
@@ -25,7 +25,7 @@ describe("Відділи", () => {
     // ivan деактивований — схвалювач «office» не активний.
     const active = new Set(["anna", "olha"]);
     expect(departmentsWithoutApprover(departments, members, active)).toEqual(new Set(["office", "high"]));
-    expect(messageFor("NO_APPROVER")).toBe("Немає схвалювача");
+    expect(messageFor("NO_APPROVER")).toBe("No approver");
   });
 
   it("назва відділу — від 1 до 100 символів", () => {

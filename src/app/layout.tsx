@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Шкільні закупівлі",
-  description: "Заявки на закупівлю, схвалення й налаштування відділів школи",
+  title: "School Purchasing",
+  description: "Purchase requests, approvals and department settings for the school",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="uk" className={`${onest.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${onest.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <TooltipProvider>{children}</TooltipProvider>
       </body>
