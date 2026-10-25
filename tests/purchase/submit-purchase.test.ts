@@ -53,6 +53,18 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(0);
   });
 
+  it("AC-FRM-15: рядок лише з назвою — «Fill in all line fields», рядок іде в базу, відділ і тип лишаються", async () => {
+    rpcResult.error = { code: "P0001", message: "INVALID_LINE" };
+    const state = await submitPurchase(idle, form({ "name.1": "Папір А4" }));
+    expect(state).toEqual({
+      status: "error",
+      message: "Fill in all line fields",
+      departmentId: DEPT,
+      purchaseType: "purchasing_department",
+    });
+    expect(rpcCalls).toHaveLength(1);
+  });
+
   it("AC-FRM-11: після подання — «Мої заявки» з повідомленням «Закупівлю подано»", async () => {
     await expect(submitPurchase(idle, form(ONE_LINE))).rejects.toThrow("REDIRECT /requests?ok=SUBMITTED");
     expect(rpcCalls).toHaveLength(1);

@@ -108,7 +108,7 @@ create policy purchase_request_lines_select_visible
 -- p_lines — масив об'єктів {name, purpose, quantity, price}. Помилки:
 --   42501 FORBIDDEN     — неактивний, не заявник відділу (не адміністратор), «Самостійна закупівля» без дозволу (AC-FRM-02, 04);
 --   P0001 NO_LINES      — жодного рядка (AC-FRM-06);
---   P0001 INVALID_LINE  — порожнє поле рядка (усі чотири обов'язкові — припущення розробника за питанням PM #60);
+--   P0001 INVALID_LINE  — порожнє поле рядка: усі чотири обов'язкові (AC-FRM-15, рішення PM #60);
 --   22023 INVALID_TYPE  — невідомий тип закупівлі.
 -- Відділ без схвалювача чи єдиний схвалювач-автор поданню не заважають (AC-FRM-12, AC-FRM-13).
 create or replace function private.submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb)
