@@ -143,6 +143,7 @@ isOneToOne: false
           }
           Functions: {
             "add_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
+            "decide_purchase": { Args: { "p_decision": string,"p_reason"?: string | null,"p_request_id": string }; Returns: undefined },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "set_approver": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
             "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
