@@ -45,7 +45,6 @@ import {
 export type SidebarUser = {
   name: string;
   email: string | null;
-  roleLabel: string;
   initials: string;
   isAdmin: boolean;
   isApprover: boolean;
@@ -171,15 +170,15 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
                 </Avatar>
                 <span className="grid min-w-0 flex-1 text-left leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-sm text-muted-foreground">{user.roleLabel}</span>
+                  {user.email ? <span className="truncate text-sm text-muted-foreground">{user.email}</span> : null}
                 </span>
                 <ChevronsUpDown className="ml-auto size-4" aria-hidden="true" />
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="end" className="min-w-56">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>
-                    <span className="block truncate font-medium text-foreground">{user.email ?? user.name}</span>
-                    <span className="block text-sm text-muted-foreground">{user.roleLabel}</span>
+                    <span className="block truncate font-medium text-foreground">{user.name}</span>
+                    {user.email ? <span className="block truncate text-sm text-muted-foreground">{user.email}</span> : null}
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />

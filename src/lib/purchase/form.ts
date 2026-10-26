@@ -50,3 +50,50 @@ export function parseLines(formData: FormData): PurchaseLine[] {
     }))
     .filter((l) => l.name || l.purpose || l.quantity || l.price);
 }
+
+// ── Поведінка форми (зручність, не права: права перевіряє база) ──
+
+// Відділ обрано заздалегідь лише тоді, коли варіант один: інакше легко подати не в той відділ.
+export function initialDepartment(departments: readonly Option[]): string {
+  return departments.length === 1 ? departments[0].value : "";
+}
+
+const LINE_FIELDS = ["name", "purpose", "quantity", "price"] as const;
+export type LineField = (typeof LINE_FIELDS)[number];
+
+// Порожні поля частково заповненого рядка — їх підсвічуємо після «Fill in all line fields» (AC-FRM-15).
+// Повністю порожній рядок не підсвічуємо: parseLines його відкидає.
+export function emptyLineFields(line: PurchaseLine): LineField[] {
+  const filled = LINE_FIELDS.filter((f) => line[f].trim() !== "");
+  if (filled.length === 0) return [];
+  return LINE_FIELDS.filter((f) => line[f].trim() === "");
+}
+
+// Після «Not enough permissions» кнопка «Submit» вимкнена, доки людина не змінить відділ чи тип,
+// для яких прийшла відмова (повторне подання того самого лише повторить відмову).
+export function submitBlocked(
+  refused: { departmentId: string; purchaseType: string } | null,
+  current: { departmentId: string; purchaseType: string },
+): boolean {
+  return refused !== null && refused.departmentId === current.departmentId && refused.purchaseType === current.purchaseType;
+}
+
+// Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00 —
+// private.submit_purchase відхиляє її як INVALID_LINE або запис переповнюється; позначаємо поле заздалегідь.
+const PRICE_LIMIT = 9_999_999_999.995;
+
+// Кількість > 0, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — те саме перевіряє база
+// (private.submit_purchase). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
+export function invalidNumberFields(line: PurchaseLine): LineField[] {
+  const bad: LineField[] = [];
+  const quantity = line.quantity.trim();
+  const price = line.price.trim();
+  if (quantity !== "" && !(Number.isFinite(Number(quantity)) && Number(quantity) > 0)) bad.push("quantity");
+  if (price !== "" && !(Number.isFinite(Number(price)) && Number(price) >= 0 && Number(price) < PRICE_LIMIT)) bad.push("price");
+  return bad;
+}
+
+// input type="number" дозволяє «-», «+» і експоненту «e»; у кількості й ціні їх не буває, тож їх не набираємо.
+export function isBlockedNumberKey(key: string): boolean {
+  return key === "-" || key === "+" || key === "e" || key === "E";
+}

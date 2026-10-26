@@ -37,6 +37,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const { login } = await import("@/app/login/actions");
+const idle = { error: null, email: "" } as const;
 
 const form = () => {
   const fd = new FormData();
@@ -54,30 +55,31 @@ describe("вхід", () => {
   });
 
   it("активний працівник входить на головну", async () => {
-    await expect(login(form())).rejects.toThrow("REDIRECT /");
+    await expect(login(idle, form())).rejects.toThrow("REDIRECT /");
     expect(state.signedOut).toBe(false);
   });
 
   it("AC-ORG-12: деактивованого працівника виведено й повернуто на вхід з повідомленням про деактивацію", async () => {
     state.profile = null; // RLS не віддає профіль неактивному
-    await expect(login(form())).rejects.toThrow("REDIRECT /login?error=inactive");
+    expect(await login(idle, form())).toEqual({ error: "inactive", email: "member1@example.test" });
     expect(state.signedOut).toBe(true);
   });
 
   it("AC-ORG-12: профіль із is_active = false — так само вихід і повідомлення про деактивацію", async () => {
     state.profile = { is_active: false };
-    await expect(login(form())).rejects.toThrow("REDIRECT /login?error=inactive");
+    expect(await login(idle, form())).toEqual({ error: "inactive", email: "member1@example.test" });
     expect(state.signedOut).toBe(true);
   });
 
   it("помилка читання профілю — нейтральне «спробуйте ще раз», а не «деактивовано»", async () => {
     state.profileError = { message: "network error" };
-    await expect(login(form())).rejects.toThrow("REDIRECT /login?error=unavailable");
+    expect(await login(idle, form())).toEqual({ error: "unavailable", email: "member1@example.test" });
     expect(state.signedOut).toBe(true);
   });
 
   it("неправильні дані — помилка входу без підказки, чи існує email", async () => {
     state.signInError = { message: "Invalid login credentials" };
-    await expect(login(form())).rejects.toThrow("REDIRECT /login?error=invalid");
+    // Email лишається в полі після невдалого входу; у URL його немає (лише стан форми).
+    expect(await login(idle, form())).toEqual({ error: "invalid", email: "member1@example.test" });
   });
 });

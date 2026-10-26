@@ -91,19 +91,19 @@ export default async function Home() {
     <div className="flex flex-wrap items-end gap-4">
       <div className="flex min-w-56 flex-1 flex-col gap-1">
         <h1 className="text-2xl font-semibold">Welcome{user.fullName ? `, ${user.fullName}` : ""}</h1>
-        <p className="text-sm text-muted-foreground">
-          {ROLE_LABEL[user.role]}{" "}
-          <span data-testid="user-role" className="font-mono">
+        {/* Підпис ролі й незмінний ідентифікатор поруч (AC-LANG-08), як у профілі. */}
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          {ROLE_LABEL[user.role]}
+          <code data-testid="user-role" className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-foreground">
             {user.role}
-          </span>{" "}
-          · <span data-testid="user-email">{user.email ?? "—"}</span>
+          </code>
         </p>
       </div>
       {action}
     </div>
   );
   const newPurchase = (variant: "default" | "outline") => (
-    <Link href="/requests/new" className={buttonVariants({ variant, className: "w-full sm:w-auto" })}>
+    <Link href="/requests/new" className={cn(buttonVariants({ variant, className: "w-full sm:w-auto" }))}>
       <Plus aria-hidden="true" />
       New purchase
     </Link>
@@ -124,7 +124,7 @@ export default async function Home() {
                 {approveIn} · oldest submitted {formatSubmitted(awaiting.requests[0].created_at)}
               </span>
             </span>
-            <Link href="/approvals" className={buttonVariants({ className: "w-full sm:w-auto" })}>
+            <Link href="/approvals" className={cn(buttonVariants({ className: "w-full sm:w-auto" }))}>
               Review requests
             </Link>
           </>
@@ -182,7 +182,7 @@ export default async function Home() {
             hint={`${requesters} ${requesters === 1 ? "requester" : "requesters"}`}
           />
           <StatLink
-            href="/admin/departments"
+            href="/admin/departments?filter=no-approver"
             icon={TriangleAlert}
             iconClass="bg-status-pending text-status-pending-foreground"
             label="No approver"

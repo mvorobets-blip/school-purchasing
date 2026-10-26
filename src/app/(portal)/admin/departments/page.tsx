@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { InfoTip } from "@/components/portal/info-tip";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { ForbiddenCard } from "@/components/portal/forbidden-card";
+import { CLICKABLE_ROW, RowLink } from "@/components/portal/row-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { canAccessSettings } from "@/lib/org/access";
@@ -11,15 +13,16 @@ import { getCurrentUser } from "@/lib/org/current-user";
 import { departmentsWithoutApprover } from "@/lib/org/departments";
 import { messageFor } from "@/lib/org/messages";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { CreateDepartmentDialog } from "./create-department-form";
 
 // Список відділів для адміністратора. «No approver» — у відділі немає жодного активного схвалювача (AC-ORG-14).
-export default async function DepartmentsPage() {
+export default async function DepartmentsPage({ searchParams }: PageProps<"/admin/departments">) {
   // Перевіряємо права й тут, а не лише в admin/layout.tsx: layout не перевиконується при клієнтській навігації (AC-ORG-09).
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!canAccessSettings(user)) {
-    return <Alert data-testid="forbidden">{messageFor("FORBIDDEN")}</Alert>;
+    return <ForbiddenCard hint="Only administrators can open settings." backHref="/" backLabel="Back to home" />;
   }
 
   const supabase = await createClient();
@@ -48,6 +51,10 @@ export default async function DepartmentsPage() {
     members.map((m) => ({ departmentId: m.department_id, profileId: m.profile_id, isApprover: m.is_approver })),
     active,
   );
+  // ?filter=no-approver — лише відділи без активного схвалювача (з картки «No approver» на головній).
+  const { filter } = await searchParams;
+  const onlyWithoutApprover = filter === "no-approver";
+  const shown = onlyWithoutApprover ? departments.filter((d) => withoutApprover.has(d.id)) : departments;
   const requesterCount = (id: string) => members.filter((m) => m.department_id === id).length;
   const approverNames = (id: string) =>
     members
@@ -69,7 +76,16 @@ export default async function DepartmentsPage() {
         <CreateDepartmentDialog />
       </div>
 
-      {departments.length > 0 ? (
+      {onlyWithoutApprover ? (
+        <p className="text-sm text-muted-foreground" data-testid="departments-filter">
+          Showing departments without an approver ·{" "}
+          <Link href="/admin/departments" className="font-medium text-accent-foreground hover:underline">
+            Show all
+          </Link>
+        </p>
+      ) : null}
+
+      {shown.length > 0 ? (
         <Card className="py-0">
           <Table>
             <TableHeader>
@@ -84,20 +100,20 @@ export default async function DepartmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {departments.map((d) => {
+              {shown.map((d) => {
                 const approvers = approverNames(d.id);
                 return (
-                  <TableRow key={d.id} data-testid="department-row" className="group">
+                  <TableRow key={d.id} data-testid="department-row" className={cn("group", CLICKABLE_ROW)}>
                     <TableCell className="pl-4">
-                      <Link
+                      <RowLink
                         href={`/admin/departments/${d.id}`}
-                        className="flex items-center gap-3 font-medium text-foreground hover:text-accent-foreground"
+                        className="flex items-center gap-3 font-medium text-foreground group-hover:text-accent-foreground"
                       >
                         <span className="flex size-8 items-center justify-center rounded-lg bg-accent text-accent-foreground">
                           <Building2 className="size-4" aria-hidden="true" />
                         </span>
                         {d.name}
-                      </Link>
+                      </RowLink>
                     </TableCell>
                     <TableCell className="tabular-nums">{requesterCount(d.id)}</TableCell>
                     <TableCell>
@@ -123,6 +139,13 @@ export default async function DepartmentsPage() {
               })}
             </TableBody>
           </Table>
+        </Card>
+      ) : departments.length > 0 ? (
+        // Фільтр «No approver» без збігів: відділи є, і в кожному є схвалювач — не «No departments yet».
+        <Card>
+          <CardContent className="py-8 text-center" data-testid="departments-filter-empty">
+            <p className="font-medium">Every department has an approver.</p>
+          </CardContent>
         </Card>
       ) : (
         <Card>

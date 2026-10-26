@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ForbiddenCard } from "@/components/portal/forbidden-card";
+import { BackLink } from "@/components/portal/back-link";
 import { StatusBadge } from "@/components/portal/status-badge";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
-import { messageFor } from "@/lib/org/messages";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,12 +19,11 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   const { id } = await params;
 
   const forbidden = (
-    <div className="flex flex-col gap-4">
-      <Alert data-testid="forbidden">{messageFor("FORBIDDEN")}</Alert>
-      <Link href="/requests" className="text-sm underline">
-        Back to my requests
-      </Link>
-    </div>
+    <ForbiddenCard
+      hint="You can open your own requests and requests of departments you approve."
+      backHref="/requests"
+      backLabel="Back to my requests"
+    />
   );
   if (!UUID.test(id)) return forbidden;
 
@@ -56,9 +55,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   return (
     <>
       <div className="flex flex-col gap-1">
-        <Link href="/requests" className="text-sm text-muted-foreground hover:text-foreground">
-          ← My requests
-        </Link>
+        <BackLink href="/requests">My requests</BackLink>
         <h1 className="text-2xl font-semibold">Purchase</h1>
       </div>
 
