@@ -76,16 +76,16 @@
 | AC-FRM-10 | «Мої заявки» — лише власні заявки зі статусами | `src/app/(portal)/requests/page.tsx`, `supabase/migrations/20261025184732_purchase_requests.sql` (RLS) | `tests/db/purchase.test.ts` | реалізовано |
 | AC-FRM-11 | після подання — «Мої заявки» й «Purchase submitted» | `src/app/(portal)/requests/actions.ts` (submitPurchase) | `tests/purchase/submit-purchase.test.ts` | реалізовано |
 | AC-FRM-12 | подання у відділ без схвалювача — «Очікує схвалення» | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase) | `tests/db/purchase.test.ts` | реалізовано |
-| AC-FRM-13 | подання єдиним схвалювачем свого відділу — «Очікує схвалення» | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase) | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-13 | подання єдиним схвалювачем свого відділу — «Очікує схвалення» | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase) | `tests/db/purchase.test.ts`, `tests/db/approval.test.ts` | реалізовано |
 | AC-FRM-14 | порожній стан «You have not submitted any requests yet» | `src/app/(portal)/requests/page.tsx` | `tests/purchase/my-requests-page.test.tsx` | реалізовано |
-| AC-FRM-15 | рядок без усіх полів — «Fill in all line fields», не подано | — | — | відкладено (чекає реалізації) |
-| AC-APR-01 | у списку для рішення лише заявки свого відділу | — | — | відкладено (чекає реалізації) |
-| AC-APR-02 | схвалення заявки свого відділу — «Схвалено» | — | — | відкладено (чекає реалізації) |
-| AC-APR-03 | заявку чужого відділу не показано — «Not enough permissions» | — | — | відкладено (чекає реалізації) |
-| AC-APR-04 | заявник не бачить списку для рішення — «Not enough permissions» | — | — | відкладено (чекає реалізації) |
-| AC-APR-05 | схвалювач не схвалює власну заявку | — | — | відкладено (чекає реалізації) |
-| AC-APR-06 | відхилення без причини — «Provide a reason», статус не змінено | — | — | відкладено (чекає реалізації) |
-| AC-APR-07 | відхилення з причиною — «Відхилено», причину показано на сторінці заявки | — | — | відкладено (чекає реалізації) |
+| AC-FRM-15 | рядок без усіх полів — «Fill in all line fields», не подано | `supabase/migrations/20261025184732_purchase_requests.sql` (INVALID_LINE), `src/app/(portal)/requests/actions.ts` | `tests/db/purchase.test.ts`, `tests/purchase/submit-purchase.test.ts` | реалізовано |
+| AC-APR-01 | у списку для рішення лише заявки свого відділу | `src/app/(portal)/approvals/page.tsx`, `supabase/migrations/20261025184732_purchase_requests.sql` (RLS, private.is_approver_of) | `tests/db/approval.test.ts` | реалізовано |
+| AC-APR-02 | схвалення заявки свого відділу — «Схвалено» | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase), `src/app/(portal)/approvals/actions.ts` | `tests/db/approval.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
+| AC-APR-03 | заявку чужого відділу не показано — «Not enough permissions» | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase), `src/app/(portal)/requests/[id]/page.tsx` | `tests/db/approval.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
+| AC-APR-04 | заявник не бачить списку для рішення — «Not enough permissions» | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase), `src/app/(portal)/approvals/page.tsx` | `tests/db/approval.test.ts` | реалізовано |
+| AC-APR-05 | схвалювач не схвалює власну заявку | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase) (OWN_REQUEST) | `tests/db/approval.test.ts` | реалізовано |
+| AC-APR-06 | відхилення без причини — «Provide a reason», статус не змінено | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase) (NO_REASON), `src/app/(portal)/approvals/actions.ts` | `tests/db/approval.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
+| AC-APR-07 | відхилення з причиною — «Відхилено», причину показано на сторінці заявки | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase), `src/app/(portal)/requests/[id]/page.tsx` | `tests/db/approval.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
 | AC-LANG-01 | усі написи інтерфейсу англійською, без українських слів | `src/app/layout.tsx` (lang="en"), `src/lib/org/messages.ts` | `tests/lang/ui-language.test.ts` | реалізовано |
 | AC-LANG-02 | сторінка входу й помилка входу англійською | `src/app/login/page.tsx` | `tests/lang/ui-language.test.ts` | реалізовано |
 | AC-LANG-03 | відмова — «Not enough permissions» без розкриття вмісту | `src/lib/org/messages.ts` (FORBIDDEN) | `tests/lang/ui-language.test.ts` | реалізовано |

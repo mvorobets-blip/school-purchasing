@@ -35,14 +35,14 @@
 
 ## 3. Рішення схвалювача — `task/approval`
 
-- [ ] 3.1 Міграція `<ts>_purchase_decisions.sql`: `private.decide_purchase` + обгортка.
-- [ ] 3.2 Дія `decidePurchase`; сторінка `/approvals` «Awaiting decision»; «Approve» / «Reject» з причиною в діалозі;
+- [x] 3.1 Міграція `<ts>_purchase_decisions.sql`: `private.decide_purchase` + обгортка.
+- [x] 3.2 Дія `decidePurchase`; сторінка `/approvals` «Awaiting decision»; «Approve» / «Reject» з причиною в діалозі;
   причина відхилення на сторінці заявки; пункт панелі лише схвалювачам.
-- [ ] 3.3 Тести бази APR-01 … 07 (+ повторне рішення й прямий `update` статусу відхилено); дія — APR-02, 03, 06, 07.
-- [ ] 3.4 AC-FRM-15: повідомлення «Fill in all line fields» для рядка з незаповненим полем (перевірка в
+- [x] 3.3 Тести бази APR-01 … 07 (+ повторне рішення й прямий `update` статусу відхилено); дія — APR-02, 03, 06, 07.
+- [x] 3.4 AC-FRM-15: повідомлення «Fill in all line fields» для рядка з незаповненим полем (перевірка в
   `private.submit_purchase` — з задачі 1); тести бази й дії. У цій задачі, бо відповідь PM
   (ValiaBihun/2026-quitcode-dream-team#60) прийшла після задач 1–2, а повідомлення — англійською.
-- [ ] 3.5 `supabase/demo-users.json`: `pm-requester@example.test`, `pm-approver@example.test`, `pm-admin@example.test`.
+- [x] 3.5 `supabase/demo-users.json`: `pm-requester@example.test`, `pm-approver@example.test`, `pm-admin@example.test`.
 - [ ] 3.6 Мутаційна перевірка (таблиця в описі PR).
   Done when: AC-APR-01 … AC-APR-07 і AC-FRM-15 «реалізовано»; `db-deploy` застосував міграцію.
 

@@ -79,7 +79,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
               </dd>
             </div>
             {request.status === "rejected" && request.reject_reason ? (
-              // Причину відхилення видно поруч зі статусом — припущення розробника за питанням PM #59 (AC-APR-07).
+              // Причину відхилення видно поруч зі статусом автору й схвалювачам відділу — рішення PM #59 (AC-APR-07).
               <div className="flex flex-col gap-1">
                 <dt className="text-muted-foreground">Rejection reason</dt>
                 <dd data-testid="reject-reason">{request.reject_reason}</dd>

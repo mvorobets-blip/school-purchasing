@@ -98,11 +98,39 @@ describe("рішення схвалювача (база)", () => {
     expect(await statusOf(primary1)).toEqual({ status: "rejected", reject_reason: "Немає бюджету" });
   });
 
+  it("AC-APR-07: причину відхилення бачить автор заявки (рішення PM #59)", async () => {
+    const rows = await t.asUser<{ status: string; reject_reason: string | null }>(
+      MEMBER_1,
+      "select status, reject_reason from public.purchase_requests where id = $1",
+      [primary1],
+    );
+    expect(rows).toEqual([{ status: "rejected", reject_reason: "Немає бюджету" }]);
+  });
+
   it("вирішену заявку вдруге не вирішують, і статус не змінюється напряму без функції", async () => {
     await expect(decide(MARIA, primary2, "reject", "Пізно")).rejects.toThrow(/NOT_PENDING/);
     await expect(
       t.asUser(MARIA, "update public.purchase_requests set status = 'pending' where id = $1", [primary2]),
     ).rejects.toThrow(/permission denied/);
     expect((await statusOf(primary2)).status).toBe("approved");
+  });
+
+  it("AC-FRM-13: єдиний схвалювач відділу не вирішує власну заявку — вона чекає «Очікує схвалення»", async () => {
+    await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true)", [
+      dept["Вища школа"],
+      MARIA,
+    ]);
+    const own = await submit(MARIA, "Вища школа");
+    expect((await decisionList(MARIA)).map((r) => r.id)).not.toContain(own);
+    await expect(decide(MARIA, own, "approve")).rejects.toThrow(/OWN_REQUEST/);
+    expect((await statusOf(own)).status).toBe("pending");
+  });
+
+  it("деактивований схвалювач не вирішує й не бачить заявок, статус не змінюється", async () => {
+    const fresh = await submit(MEMBER_1, "Початкова школа");
+    await t.asService("update public.profiles set is_active = false where id = $1", [MARIA]);
+    expect(await t.asUser(MARIA, "select id from public.purchase_requests")).toHaveLength(0);
+    await expect(decide(MARIA, fresh, "approve")).rejects.toThrow(/FORBIDDEN/);
+    expect((await statusOf(fresh)).status).toBe("pending");
   });
 });
