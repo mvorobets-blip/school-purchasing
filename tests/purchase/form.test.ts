@@ -107,6 +107,7 @@ describe("числа в рядку закупівлі", () => {
     expect(invalidNumberFields(line("-2", "-1"))).toEqual(["quantity", "price"]);
     expect(invalidNumberFields(line("abc", "Infinity"))).toEqual(["quantity", "price"]);
     expect(invalidNumberFields(line("1", "10000000000"))).toEqual(["price"]);
+    expect(invalidNumberFields(line("1", "9999999999.999"))).toEqual(["price"]);
     expect(invalidNumberFields(line("1", "9999999999.99"))).toEqual([]);
     expect(invalidNumberFields(line("", ""))).toEqual([]);
   });

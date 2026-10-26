@@ -78,8 +78,9 @@ export function submitBlocked(
   return refused !== null && refused.departmentId === current.departmentId && refused.purchaseType === current.purchaseType;
 }
 
-// Ціна менша за 10 000 000 000 — та сама межа, що в private.submit_purchase (більшу база відхиляє як INVALID_LINE).
-const PRICE_LIMIT = 10_000_000_000;
+// Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00 —
+// private.submit_purchase відхиляє її як INVALID_LINE або запис переповнюється; позначаємо поле заздалегідь.
+const PRICE_LIMIT = 9_999_999_999.995;
 
 // Кількість > 0, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — те саме перевіряє база
 // (private.submit_purchase). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
