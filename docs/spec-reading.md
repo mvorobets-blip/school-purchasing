@@ -113,7 +113,8 @@ CodeRabbit у PR «Оновлення вимог». PM відповів на в�
 | Q5 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/61 — «Not enough permissions» для власної заявки схвалювача: суперечність AC-LANG-03 і припущення ValiaBihun/2026-quitcode-dream-team#48 | незалежний `spec-review` | B | AC-LANG-03 без цього випадку; припущення в ValiaBihun/2026-quitcode-dream-team#48 |
 
 Питання колег, які вплинули на нашу специфікацію: ValiaBihun/2026-quitcode-dream-team#50 (чернетка), ValiaBihun/2026-quitcode-dream-team#53 (англійські тексти повідомлень), ValiaBihun/2026-quitcode-dream-team#57 (мовні AC
-без історії), ValiaBihun/2026-quitcode-dream-team#58 (порожній стан), ValiaBihun/2026-quitcode-dream-team#59 (видимість причини), ValiaBihun/2026-quitcode-dream-team#60 (обов'язкові поля рядка → AC-FRM-15).
+без історії), ValiaBihun/2026-quitcode-dream-team#58 (порожній стан), ValiaBihun/2026-quitcode-dream-team#59 (видимість причини), ValiaBihun/2026-quitcode-dream-team#60 (обов'язкові поля рядка → AC-FRM-15), ValiaBihun/2026-quitcode-dream-team#62 (ім'я автора для
+схвалювача → AC-APR-08, 09, 10; знімок 2026-10-27, зміна `clarify-purchase-approval`).
 
 ## Власні припущення (зріз 2)
 
