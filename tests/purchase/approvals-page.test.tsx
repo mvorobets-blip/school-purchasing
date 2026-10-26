@@ -9,6 +9,7 @@ const data: { approverOf: { department_id: string }[]; requests: Record<string, 
   requests: [],
 };
 const queried: string[] = [];
+const filters: string[] = [];
 
 function query(table: string) {
   queried.push(table);
@@ -20,9 +21,9 @@ function query(table: string) {
         : [{ id: "d1", name: "Початкова школа" }];
   const builder = {
     select: () => builder,
-    eq: () => builder,
-    neq: () => builder,
-    in: () => builder,
+    eq: (col: string, val: unknown) => (filters.push(`${table}.eq(${col},${String(val)})`), builder),
+    neq: (col: string, val: unknown) => (filters.push(`${table}.neq(${col},${String(val)})`), builder),
+    in: (col: string, vals: unknown[]) => (filters.push(`${table}.in(${col},${vals.join("|")})`), builder),
     order: () => builder,
     then: (resolve: (v: unknown) => void) => resolve({ data: rows, error: null }),
   };
@@ -53,6 +54,7 @@ describe("сторінка «Awaiting decision»", () => {
     data.approverOf = [];
     data.requests = [];
     queried.length = 0;
+    filters.length = 0;
   });
 
   it("AC-APR-04: людина без відділів для схвалення бачить «Not enough permissions», заявки не запитуються", async () => {
@@ -72,5 +74,13 @@ describe("сторінка «Awaiting decision»", () => {
     expect(html).toContain("Андрій Демо-Перший");
     expect(html).toContain("Approve");
     expect(html).not.toContain(messageFor("FORBIDDEN"));
+    // Список для рішення: лише відділи, які схвалює людина, лише «Очікує схвалення», без власних заявок (AC-APR-01, 05).
+    expect(filters).toEqual(
+      expect.arrayContaining([
+        "purchase_requests.in(department_id,d1)",
+        "purchase_requests.eq(status,pending)",
+        "purchase_requests.neq(author_id,u1)",
+      ]),
+    );
   });
 });
