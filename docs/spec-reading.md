@@ -80,7 +80,7 @@ CodeRabbit у PR «Оновлення вимог». PM відповів на в�
 
 # Зріз 2 (WS7) — форма закупівлі, рішення схвалювача, англійський інтерфейс
 
-Вимоги: ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-10-25 (після відповідей PM на #57–#61)
+Вимоги: ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-10-25 (після відповідей PM на ValiaBihun/2026-quitcode-dream-team#57–61)
 
 Вимоги зрізу: ValiaBihun/2026-quitcode-dream-team#47 (AC-FRM-01…15), ValiaBihun/2026-quitcode-dream-team#48
 (AC-APR-01…07), ValiaBihun/2026-quitcode-dream-team#49 (AC-LANG-01…06, 08); уточнення першого зрізу — AC-ORG-12
@@ -110,19 +110,19 @@ CodeRabbit у PR «Оновлення вимог». PM відповів на в�
 | Q2 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/55 — чи є список власних заявок (AC-FRM-02/04/07 спираються на нього) | я | A | додано AC-FRM-10, 11, 14 |
 | Q3 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/56 — у якому зрізі англійський інтерфейс і чи перекладати сторінки першого зрізу | я | A | увесь застосунок англійською у WS7 |
 | Q4 | коментар у https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/52 — єдиний схвалювач подає власну заявку | я | A | додано AC-FRM-13 |
-| Q5 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/61 — «Not enough permissions» для власної заявки схвалювача: суперечність AC-LANG-03 і припущення #48 | незалежний `spec-review` | B | AC-LANG-03 без цього випадку; припущення в #48 |
+| Q5 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/61 — «Not enough permissions» для власної заявки схвалювача: суперечність AC-LANG-03 і припущення ValiaBihun/2026-quitcode-dream-team#48 | незалежний `spec-review` | B | AC-LANG-03 без цього випадку; припущення в ValiaBihun/2026-quitcode-dream-team#48 |
 
-Питання колег, які вплинули на нашу специфікацію: #50 (чернетка), #53 (англійські тексти повідомлень), #57 (мовні AC
-без історії), #58 (порожній стан), #59 (видимість причини), #60 (обов'язкові поля рядка → AC-FRM-15).
+Питання колег, які вплинули на нашу специфікацію: ValiaBihun/2026-quitcode-dream-team#50 (чернетка), ValiaBihun/2026-quitcode-dream-team#53 (англійські тексти повідомлень), ValiaBihun/2026-quitcode-dream-team#57 (мовні AC
+без історії), ValiaBihun/2026-quitcode-dream-team#58 (порожній стан), ValiaBihun/2026-quitcode-dream-team#59 (видимість причини), ValiaBihun/2026-quitcode-dream-team#60 (обов'язкові поля рядка → AC-FRM-15).
 
 ## Власні припущення (зріз 2)
 
-Після відповідей PM власних припущень у специфікації не лишилось: усі тимчасові (за #57, #59, #60, #61) PM підтвердив.
+Після відповідей PM власних припущень у специфікації не лишилось: усі тимчасові (за ValiaBihun/2026-quitcode-dream-team#57, ValiaBihun/2026-quitcode-dream-team#59, ValiaBihun/2026-quitcode-dream-team#60, ValiaBihun/2026-quitcode-dream-team#61) PM підтвердив.
 У реалізації (розробник): номера заявки й історії у зрізі 2 немає — на сторінках показуємо дату подання, відділ, тип і
 статус.
 
 ## Ретроспектива (зріз 2)
 
-- Скіл і незалежний `spec-review` знайшли суперечність, яку команда пропустила (Q5 → #61).
-- Ми рахували відповіді колег: не дублювали #50, #52, #53, #57–#60, а додали в #52 новий випадок коментарем.
+- Скіл і незалежний `spec-review` знайшли суперечність, яку команда пропустила (Q5 → ValiaBihun/2026-quitcode-dream-team#61).
+- Ми рахували відповіді колег: не дублювали ValiaBihun/2026-quitcode-dream-team#50, ValiaBihun/2026-quitcode-dream-team#52, ValiaBihun/2026-quitcode-dream-team#53, ValiaBihun/2026-quitcode-dream-team#57–60, а додали в ValiaBihun/2026-quitcode-dream-team#52 новий випадок коментарем.
 - Писати специфікацію до відповідей PM, але не зливати її, виявилось вигідно: після відповідей змінились лише 5 AC.
