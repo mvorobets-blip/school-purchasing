@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // Архітектурне правило «авторизація лише через getClaims()» (ADR docs/decisions/0003-server-auth-via-get-claims.md).
 // getSession() читає сесію з cookie без перевірки підпису JWT — на сервері їй вірити не можна. Тому в коді застосунку
-// жодного getSession: ні виклику, ні посилання (const f = supabase.auth.getSession). Пропускаємо лише рядки-коментарі
-// (починаються з `//`, `/*` чи `*`) — там можна пояснити, чому getSession не використовуємо. Усе інше перевіряємо,
+// жодного getSession: ні виклику, ні посилання (const f = supabase.auth.getSession). Пропускаємо лише коментарі, що
+// починаються на початку рядка (`//`, `/* … */`) — там можна пояснити, чому getSession не використовуємо. Усе інше перевіряємо,
 // зокрема код із коментарем у кінці рядка: краще зайва тривога, ніж пропущений виклик (`//` трапляється й у JSX-тексті,
 // URL чи regex, тож «вирізати коментарі» в середині рядка ненадійно).
 // Шукає в src/. Якщо теки src/ немає — у app/, components/ і lib/ кореня.
 // Використання: node scripts/check-no-get-session.mjs [--root <dir>]
 // Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (ні src/, ні app/, components/, lib/)
-// або теку не вдалося прочитати.
+// або теку чи файл не вдалося прочитати.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -52,28 +52,47 @@ function walk(dir, out = []) {
   return out;
 }
 
-// Частина рядка, яку перевіряємо: рядок-коментар — порожньо; `/* … */ код` — лише код після `*/`; решта — увесь рядок.
-function codePart(line) {
-  const t = line.trim();
-  if (t.startsWith("//") || t.startsWith("*")) return "";
-  if (t.startsWith("/*")) {
-    const end = t.indexOf("*/");
-    return end < 0 ? "" : t.slice(end + 2);
+// Код кожного рядка без коментарів, що починаються на початку рядка: `// …` і `/* … */`, зокрема багаторядкових
+// (стан «всередині /* … */» тримаємо між рядками; `*` на початку пропускаємо лише всередині справжнього коментаря).
+// Код після `*/` перевіряємо; коментар посеред коду не вирізаємо — краще зайва тривога, ніж пропущений виклик.
+function codeLines(text) {
+  let inBlock = false;
+  return text.split(/\r?\n/).map((line) => {
+    let rest = line;
+    for (;;) {
+      if (inBlock) {
+        const end = rest.indexOf("*/");
+        if (end < 0) return "";
+        rest = rest.slice(end + 2);
+        inBlock = false;
+      }
+      const t = rest.trimStart();
+      if (t.startsWith("//")) return "";
+      if (!t.startsWith("/*")) return rest;
+      inBlock = true;
+      rest = t.slice(2);
+    }
+  });
+}
+
+function readSource(file, rel) {
+  try {
+    return readFileSync(file, "utf8");
+  } catch (error) {
+    console.error(`check-no-get-session: не вдалося прочитати файл ${rel}: ${error.message}`);
+    process.exit(2);
   }
-  return line;
 }
 
 const problems = [];
 
 for (const file of BASES.flatMap((b) => walk(join(root, b)))) {
   const rel = relative(root, file).split(sep).join("/");
-  readFileSync(file, "utf8")
-    .split(/\r?\n/)
-    .forEach((line, i) => {
-      if (/\bgetSession\b/.test(codePart(line))) {
-        problems.push(`${rel}:${i + 1}  getSession — на сервері не перевіряє підпис JWT; використовуйте supabase.auth.getClaims()`);
-      }
-    });
+  codeLines(readSource(file, rel)).forEach((code, i) => {
+    if (/\bgetSession\b/.test(code)) {
+      problems.push(`${rel}:${i + 1}  getSession — на сервері не перевіряє підпис JWT; використовуйте supabase.auth.getClaims()`);
+    }
+  });
 }
 
 if (!hasSrc) console.log(`check-no-get-session: теки src/ немає — перевіряю ${BASES.map((b) => `${b}/`).join(", ")}.`);

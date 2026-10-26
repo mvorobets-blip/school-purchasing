@@ -66,7 +66,20 @@ describe("check-no-get-session", () => {
     expect(runScript("check-no-get-session.mjs", dir).code).toBe(1);
   });
 
-  it("тека, яку не вдалося прочитати, — помилка, а не OK", () => {
+  it("рядок коду, що починається з * (множення), перевіряється", () => {
+    const dir = project(["const n = 1", "  * Number(supabase.auth.getSession());"].join("\n"));
+    expect(runScript("check-no-get-session.mjs", dir).code).toBe(1);
+  });
+
+  it("багаторядковий коментар без * на початку рядків не дає тривоги, код після */ перевіряється", () => {
+    const ok = project(["/*", "getSession заборонено — див. ADR 0003", "*/", "const ok = 1;"].join("\n"));
+    expect(runScript("check-no-get-session.mjs", ok).code).toBe(0);
+    const bad = project(["/*", "пояснення", "*/ await supabase.auth.getSession();"].join("\n"));
+    expect(runScript("check-no-get-session.mjs", bad).code).toBe(1);
+  });
+
+  // root читає теку з правами 000, тож під root цей випадок не відтворити — пропускаємо.
+  it.skipIf(process.getuid?.() === 0)("тека, яку не вдалося прочитати, — помилка, а не OK", () => {
     const dir = project("const ok = 1;");
     const locked = path.join(dir, "src", "locked");
     mkdirSync(locked);
