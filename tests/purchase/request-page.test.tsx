@@ -35,7 +35,12 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/org/current-user", () => ({
   getCurrentUser: async () => ({ id: "u1", role: "requester", isActive: true }),
 }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ from: query }) }));
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => ({
+    from: query,
+    rpc: async () => ({ data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null }),
+  }),
+}));
 
 const { default: RequestPage } = await import("@/app/(portal)/requests/[id]/page");
 
@@ -62,9 +67,10 @@ describe("сторінка заявки", () => {
     expect(html).not.toContain("Папір А4");
   });
 
-  it("рядки заявки показано таблицею", async () => {
+  it("рядки заявки показано таблицею, а поруч — хто подав", async () => {
     const html = await render();
     expect(html).toContain("Папір А4");
+    expect(html).toContain("Андрій Демо-Перший");
   });
 
   it("помилка завантаження рядків — повідомлення про помилку, а не порожня таблиця", async () => {

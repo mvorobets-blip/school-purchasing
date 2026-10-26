@@ -115,6 +115,25 @@ describe("рішення схвалювача (база)", () => {
     expect((await statusOf(primary2)).status).toBe("approved");
   });
 
+  it("ім'я автора бачить схвалювач відділу заявки; чужий відділ і заявник — ні", async () => {
+    const names = (user: string, ids: string[]) =>
+      t.asUser<{ request_id: string; author_name: string | null }>(
+        user,
+        "select request_id, author_name from public.request_author_names($1::uuid[])",
+        [ids],
+      );
+    const [member1] = await t.asService<{ full_name: string }>("select full_name from public.profiles where id = $1", [
+      MEMBER_1,
+    ]);
+    // Марія — схвалювач «Початкової школи»: бачить автора заявки свого відділу, але не заявки «Офісу».
+    expect(await names(MARIA, [primary1, office1])).toEqual([{ request_id: primary1, author_name: member1.full_name }]);
+    // Заявник бачить лише себе як автора власної заявки, чужих імен — ні.
+    expect((await names(MEMBER_1, [primary1, primary2])).map((r) => r.request_id)).toEqual([primary1]);
+    await expect(t.asAnon("select * from public.request_author_names($1::uuid[])", [[primary1]])).rejects.toThrow(
+      /permission denied/,
+    );
+  });
+
   it("AC-FRM-13: єдиний схвалювач відділу не вирішує власну заявку — вона чекає «Очікує схвалення»", async () => {
     await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true)", [
       dept["Вища школа"],

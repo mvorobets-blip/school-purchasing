@@ -53,6 +53,11 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
   }
   const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
   const requests = requestsRes.data;
+  // Хто подав: лише ім'я й лише для заявок, які схвалювач бачить (private.request_author_names) — профілі колег закриті.
+  const authorsRes = requests.length
+    ? await supabase.rpc("request_author_names", { p_request_ids: requests.map((r) => r.id) })
+    : null;
+  const authorOf = new Map((authorsRes?.data ?? []).map((a) => [a.request_id, a.author_name]));
 
   return (
     <>
@@ -81,6 +86,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
             <TableHeader>
               <TableRow>
                 <TableHead className="pl-4">Submitted</TableHead>
+                <TableHead>Author</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Purchase type</TableHead>
                 <TableHead>Status</TableHead>
@@ -98,6 +104,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
                         {submitted}
                       </Link>
                     </TableCell>
+                    <TableCell data-testid="decision-author">{authorOf.get(r.id) ?? "—"}</TableCell>
                     <TableCell>{department}</TableCell>
                     <TableCell>{PURCHASE_TYPE_LABEL[r.purchase_type as PurchaseType] ?? r.purchase_type}</TableCell>
                     <TableCell>
