@@ -100,6 +100,8 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
   `skip_specs: true` у `.openspec.yaml` → `design.md` (рішення з AC ID) і `tasks.md` (вертикальні задачі з
   «Done when: AC-…»); галочки в `tasks.md` став у PR задачі; archive (`npx openspec archive impl-<зріз> -y`) — в
   останньому PR зрізу.
+- AC ID у назві — лише в тестів, що доводять AC PM. Технічні тести скриптів перевірок (`tests/scripts/`) і регресійні
+  тести поведінки, якої немає в жодному AC, — без AC ID: довільний ID завищив би покриття в `ac:coverage`.
 - AC ID (`AC-<AREA>-<NN>`) — ID PM: на початку назви сценарію і в назві тесту: `it("AC-LEAVE-02: …")`; лише AC, які вже
   є в `openspec/specs/` (інакше ORPHAN): за новою вимогою PM працюй після злитого PR «Специфікація». Тести — лише у файлах `*.test.ts` / `*.test.tsx` під `src/` або `tests/`: інші файли (зокрема `*.spec.ts`) Vitest не запускає, і `ac:coverage` їх не рахує. Перевірки в тестах — через `expect(…)`: `vitest.config.mts` вимагає хоча б один `expect` у кожному тесті, а `assert` (з `vitest` чи `node:assert`) не рахується — такий тест падає з «expected any number of assertion, but got none».
 - Рядок у `docs/conformance.md` для AC задачі оновлюється в тому самому PR, що й код (`/conformance`, `npm run ac:coverage`);
