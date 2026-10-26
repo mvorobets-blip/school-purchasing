@@ -7,13 +7,13 @@
 
 ## 1. Форма закупівлі й «Мої заявки» — `task/purchase-form`
 
-- [ ] 1.1 PGlite (перший PR задачі): `@electric-sql/pglite@0.5.8`, `tests/db/supabase-pglite.ts` (з демо курсу,
+- [x] 1.1 PGlite (перший PR задачі): `@electric-sql/pglite@0.5.8`, `tests/db/supabase-pglite.ts` (з демо курсу,
   адаптовано: без підрозділів і посад, `asAnon`).
-- [ ] 1.2 Міграція `<ts>_purchase_requests.sql`: таблиці, RLS, `private.is_approver_of`, `private.submit_purchase` +
+- [x] 1.2 Міграція `<ts>_purchase_requests.sql`: таблиці, RLS, `private.is_approver_of`, `private.submit_purchase` +
   обгортка (`design.md`, «Дані й RLS»).
-- [ ] 1.3 Дія `submitPurchase`; сторінки `/requests/new`, `/requests`, `/requests/[id]`; розділ «Requests» у бічній
+- [x] 1.3 Дія `submitPurchase`; сторінки `/requests/new`, `/requests`, `/requests/[id]`; розділ «Requests» у бічній
   панелі; `src/lib/purchase/form.ts` (варіанти відділів і типів, розбір рядків).
-- [ ] 1.4 Тести: бази — FRM-02, 04, 06, 07, 08, 09, 10, 12, 13 (відмова + дані не змінились; прямий `insert` в
+- [x] 1.4 Тести: бази — FRM-02, 04, 06, 07, 08, 09, 10, 12, 13 (відмова + дані не змінились; прямий `insert` в
   `purchase_requests` відхилено — ADR 0002); чисті функції — FRM-01, 03, 05, 14 (порожній стан «Мої заявки»);
   дія — FRM-06, 11, 02.
 - [ ] 1.5 Мутаційна перевірка: локально для кожного відмовного AC (таблиця в описі PR); у CI — щонайменше 2 червоні

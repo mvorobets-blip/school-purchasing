@@ -2,10 +2,12 @@
 
 import {
   Building2,
+  ClipboardList,
   ChevronDown,
   ChevronsUpDown,
   LayoutDashboard,
   LogOut,
+  Plus,
   ShoppingBasket,
   UserRound,
   type LucideIcon,
@@ -54,13 +56,25 @@ function sectionsFor(user: SidebarUser): Section[] {
       ],
     },
   ];
+  sections.push({
+    label: "Заявки",
+    pages: [
+      { href: "/requests/new", label: "Нова закупівля", icon: Plus },
+      { href: "/requests", label: "Мої заявки", icon: ClipboardList },
+    ],
+  });
   if (user.isAdmin) {
     sections.push({ label: "Адміністрування", pages: [{ href: "/admin/departments", label: "Відділи", icon: Building2 }] });
   }
   return sections;
 }
 
-const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+// «Мої заявки» активні й на сторінці заявки, але не на «Новій закупівлі».
+const isActive = (pathname: string, href: string) => {
+  if (href === "/") return pathname === "/";
+  if (href === "/requests") return pathname === "/requests" || (pathname.startsWith("/requests/") && pathname !== "/requests/new");
+  return pathname.startsWith(href);
+};
 
 // Бічна панель порталу: розгорнута — з підписами, згорнута — тонка смуга з іконками й підказками (collapsible="icon");
 // на телефоні — висувна панель. Стан згортання пам'ятає cookie sidebar_state (компонент shadcn/ui).
