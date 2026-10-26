@@ -35,15 +35,25 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-export type SidebarUser = { name: string; email: string | null; roleLabel: string; initials: string; isAdmin: boolean; isApprover: boolean };
+export type SidebarUser = {
+  name: string;
+  email: string | null;
+  roleLabel: string;
+  initials: string;
+  isAdmin: boolean;
+  isApprover: boolean;
+  /** Скільки заявок чекає рішення цього схвалювача (лічильник біля «Awaiting decision»). */
+  awaitingCount: number;
+};
 
-type Page = { href: string; label: string; icon: LucideIcon };
+type Page = { href: string; label: string; icon: LucideIcon; count?: number };
 type Section = { label: string; pages: Page[] };
 
 // Розділи меню за роллю: розділ — заголовок, що згортається; сторінки — пункти з іконкою.
@@ -63,7 +73,7 @@ function sectionsFor(user: SidebarUser): Section[] {
       { href: "/requests/new", label: "New purchase", icon: Plus },
       { href: "/requests", label: "My requests", icon: ClipboardList },
       // Список для рішення — лише схвалювачам (AC-APR-04: заявник його не бачить).
-      ...(user.isApprover ? [{ href: "/approvals", label: "Awaiting decision", icon: Inbox }] : []),
+      ...(user.isApprover ? [{ href: "/approvals", label: "Awaiting decision", icon: Inbox, count: user.awaitingCount }] : []),
     ],
   });
   if (user.isAdmin) {
@@ -124,8 +134,20 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
                           className="data-active:rounded-l-none data-active:border-l-2 data-active:border-sidebar-primary data-active:font-medium"
                         >
                           <page.icon aria-hidden="true" />
-                          <span>{page.label}</span>
+                          <span>
+                            {page.label}
+                            {page.count ? <span className="sr-only">, {page.count} waiting</span> : null}
+                          </span>
                         </SidebarMenuButton>
+                        {page.count ? (
+                          <SidebarMenuBadge
+                            aria-hidden="true"
+                            data-testid="awaiting-count"
+                            className="rounded-full bg-status-pending text-status-pending-foreground peer-hover/menu-button:text-status-pending-foreground peer-data-active/menu-button:text-status-pending-foreground"
+                          >
+                            {page.count}
+                          </SidebarMenuBadge>
+                        ) : null}
                       </SidebarMenuItem>
                     ))}
                   </SidebarMenu>
