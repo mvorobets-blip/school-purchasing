@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ForbiddenCard } from "@/components/portal/forbidden-card";
+import { BackLink } from "@/components/portal/back-link";
 import { StatusBadge } from "@/components/portal/status-badge";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,9 +55,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   return (
     <>
       <div className="flex flex-col gap-1">
-        <Link href="/requests" className="text-sm text-muted-foreground hover:text-foreground">
-          ← My requests
-        </Link>
+        <BackLink href="/requests">My requests</BackLink>
         <h1 className="text-2xl font-semibold">Purchase</h1>
       </div>
 

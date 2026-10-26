@@ -1,10 +1,10 @@
 import { Users } from "lucide-react";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ForbiddenCard } from "@/components/portal/forbidden-card";
+import { BackLink } from "@/components/portal/back-link";
 import { InfoTip } from "@/components/portal/info-tip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -77,9 +77,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <Link href="/admin/departments" className="text-sm text-muted-foreground hover:text-foreground">
-            ← All departments
-          </Link>
+          <BackLink href="/admin/departments">All departments</BackLink>
           <h1 className="text-2xl font-semibold">{department.name}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>Requesters: {members.length}</span>

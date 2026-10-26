@@ -16,7 +16,8 @@ export function LoginForm({ errors, initialError }: { errors: Record<string, str
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      {/* Поля з'являються по черзі після заголовка (DESIGN.md §6, «Поява»). */}
+      <div className="animate-rise motion-reduce:animate-none flex flex-col gap-2 [animation-delay:320ms]">
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
@@ -28,12 +29,12 @@ export function LoginForm({ errors, initialError }: { errors: Record<string, str
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div className="animate-rise motion-reduce:animate-none flex flex-col gap-2 [animation-delay:400ms]">
         <Label htmlFor="password">Password</Label>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
       {message ? <Alert variant="destructive">{message}</Alert> : null}
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+      <Button type="submit" size="lg" className="animate-rise motion-reduce:animate-none w-full [animation-delay:400ms]" disabled={pending}>
         {pending ? "Signing in…" : "Sign in"}
       </Button>
     </form>

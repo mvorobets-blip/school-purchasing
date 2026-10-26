@@ -67,20 +67,19 @@ export default async function ProfilePage() {
             <p className="truncate text-lg font-medium">{displayName}</p>
             {user.fullName && user.email ? <p className="truncate text-sm text-muted-foreground">{user.email}</p> : null}
           </div>
-          <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-            <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Role</dt>
-              {/* Підпис ролі англійською й незмінний ідентифікатор поруч (AC-LANG-08). */}
-              <dd className="flex flex-col items-start gap-1">
-                <Badge variant="secondary">{ROLE_LABEL[user.role]}</Badge>
-                <span className="text-sm text-muted-foreground">
-                  ID:{" "}
-                  <span data-testid="profile-role" className="font-mono">
-                    {user.role}
-                  </span>
-                </span>
-              </dd>
-            </div>
+          {/* Підпис ролі англійською й незмінний ідентифікатор поруч (AC-LANG-08): список «назва — значення»
+              праворуч за розділювачем; на телефоні — під ім'ям. */}
+          <dl className="grid w-full grid-cols-[auto_auto] items-center justify-start gap-x-4 gap-y-1.5 border-t border-border pt-4 text-sm sm:w-auto sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+            <dt className="text-muted-foreground">Role</dt>
+            <dd>
+              <Badge variant="secondary">{ROLE_LABEL[user.role]}</Badge>
+            </dd>
+            <dt className="text-muted-foreground">Role ID</dt>
+            <dd>
+              <code data-testid="profile-role" className="rounded-md bg-muted px-1.5 py-0.5 font-mono">
+                {user.role}
+              </code>
+            </dd>
           </dl>
         </CardContent>
       </Card>

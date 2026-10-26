@@ -91,12 +91,8 @@ export default async function Home() {
     <div className="flex flex-wrap items-end gap-4">
       <div className="flex min-w-56 flex-1 flex-col gap-1">
         <h1 className="text-2xl font-semibold">Welcome{user.fullName ? `, ${user.fullName}` : ""}</h1>
-        <p className="text-sm text-muted-foreground">
-          {ROLE_LABEL[user.role]} · ID:{" "}
-          <span data-testid="user-role" className="font-mono">
-            {user.role}
-          </span>{" "}
-          · <span data-testid="user-email">{user.email ?? "—"}</span>
+        <p className="text-sm text-muted-foreground" data-testid="user-role">
+          {ROLE_LABEL[user.role]}
         </p>
       </div>
       {action}
@@ -182,7 +178,7 @@ export default async function Home() {
             hint={`${requesters} ${requesters === 1 ? "requester" : "requesters"}`}
           />
           <StatLink
-            href="/admin/departments"
+            href="/admin/departments?filter=no-approver"
             icon={TriangleAlert}
             iconClass="bg-status-pending text-status-pending-foreground"
             label="No approver"

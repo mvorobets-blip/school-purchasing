@@ -213,7 +213,8 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
         </Button>
       </section>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+      {/* «Submit» праворуч, як інші дії; row-reverse — щоб Tab ішов спершу на кнопку, а підказка стояла ліворуч від неї. */}
+      <div className="flex flex-col gap-2 sm:flex-row-reverse sm:items-center sm:gap-3">
         <Button
           type="submit"
           disabled={pending || blocked}

@@ -1,4 +1,5 @@
 import { Building2, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { InfoTip } from "@/components/portal/info-tip";
 import { Alert } from "@/components/ui/alert";
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { CreateDepartmentDialog } from "./create-department-form";
 
 // Список відділів для адміністратора. «No approver» — у відділі немає жодного активного схвалювача (AC-ORG-14).
-export default async function DepartmentsPage() {
+export default async function DepartmentsPage({ searchParams }: PageProps<"/admin/departments">) {
   // Перевіряємо права й тут, а не лише в admin/layout.tsx: layout не перевиконується при клієнтській навігації (AC-ORG-09).
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -50,6 +51,10 @@ export default async function DepartmentsPage() {
     members.map((m) => ({ departmentId: m.department_id, profileId: m.profile_id, isApprover: m.is_approver })),
     active,
   );
+  // ?filter=no-approver — лише відділи без активного схвалювача (з картки «No approver» на головній).
+  const { filter } = await searchParams;
+  const onlyWithoutApprover = filter === "no-approver";
+  const shown = onlyWithoutApprover ? departments.filter((d) => withoutApprover.has(d.id)) : departments;
   const requesterCount = (id: string) => members.filter((m) => m.department_id === id).length;
   const approverNames = (id: string) =>
     members
@@ -71,7 +76,16 @@ export default async function DepartmentsPage() {
         <CreateDepartmentDialog />
       </div>
 
-      {departments.length > 0 ? (
+      {onlyWithoutApprover ? (
+        <p className="text-sm text-muted-foreground" data-testid="departments-filter">
+          Showing departments without an approver ·{" "}
+          <Link href="/admin/departments" className="font-medium text-accent-foreground hover:underline">
+            Show all
+          </Link>
+        </p>
+      ) : null}
+
+      {shown.length > 0 ? (
         <Card className="py-0">
           <Table>
             <TableHeader>
@@ -86,7 +100,7 @@ export default async function DepartmentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {departments.map((d) => {
+              {shown.map((d) => {
                 const approvers = approverNames(d.id);
                 return (
                   <TableRow key={d.id} data-testid="department-row" className={cn("group", CLICKABLE_ROW)}>
