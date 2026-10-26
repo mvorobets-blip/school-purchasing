@@ -78,14 +78,17 @@ export function submitBlocked(
   return refused !== null && refused.departmentId === current.departmentId && refused.purchaseType === current.purchaseType;
 }
 
-// Кількість > 0, ціна ≥ 0, лише скінченні числа — те саме перевіряє база (private.submit_purchase). Порожні поля —
-// справа emptyLineFields; тут лише заповнені, але неможливі значення.
+// Ціна менша за 10 000 000 000 — та сама межа, що в private.submit_purchase (більшу база відхиляє як INVALID_LINE).
+const PRICE_LIMIT = 10_000_000_000;
+
+// Кількість > 0, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — те саме перевіряє база
+// (private.submit_purchase). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
 export function invalidNumberFields(line: PurchaseLine): LineField[] {
   const bad: LineField[] = [];
   const quantity = line.quantity.trim();
   const price = line.price.trim();
   if (quantity !== "" && !(Number.isFinite(Number(quantity)) && Number(quantity) > 0)) bad.push("quantity");
-  if (price !== "" && !(Number.isFinite(Number(price)) && Number(price) >= 0)) bad.push("price");
+  if (price !== "" && !(Number.isFinite(Number(price)) && Number(price) >= 0 && Number(price) < PRICE_LIMIT)) bad.push("price");
   return bad;
 }
 

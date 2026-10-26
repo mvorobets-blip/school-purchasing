@@ -140,6 +140,13 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
             </TableBody>
           </Table>
         </Card>
+      ) : departments.length > 0 ? (
+        // Фільтр «No approver» без збігів: відділи є, і в кожному є схвалювач — не «No departments yet».
+        <Card>
+          <CardContent className="py-8 text-center" data-testid="departments-filter-empty">
+            <p className="font-medium">Every department has an approver.</p>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
