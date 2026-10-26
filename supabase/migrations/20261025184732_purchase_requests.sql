@@ -39,11 +39,15 @@ create table public.purchase_request_lines (
   price      numeric(12, 2) not null,
   constraint purchase_request_lines_name_check check (btrim(name) <> ''),
   constraint purchase_request_lines_purpose_check check (btrim(purpose) <> ''),
+  -- Лише скінченні числа: NaN і Infinity зламали б будь-яку суму. Верхні межі значень — наступний зріз (PM, #60).
+  constraint purchase_request_lines_quantity_check
+    check (quantity > 0 and quantity <> 'NaN'::numeric and quantity <> 'Infinity'::numeric),
+  constraint purchase_request_lines_price_check check (price >= 0 and price <> 'NaN'::numeric),
   unique (request_id, position)
 );
 
 comment on table public.purchase_request_lines is
-  'Рядки закупівлі: назва, мета, кількість, ціна (два знаки після коми). Межі значень — наступний зріз.';
+  'Рядки закупівлі: назва, мета, кількість (> 0), ціна (≥ 0, два знаки після коми); лише скінченні числа. Верхні межі — наступний зріз.';
 
 alter table public.purchase_requests enable row level security;
 alter table public.purchase_request_lines enable row level security;
@@ -114,6 +118,8 @@ declare
   v_id uuid;
   v_line jsonb;
   v_position integer := 0;
+  v_quantity numeric;
+  v_price numeric;
 begin
   if not private.is_active_user() then
     raise exception 'FORBIDDEN' using errcode = '42501';
@@ -138,6 +144,17 @@ begin
       or coalesce(btrim(v_line ->> 'purpose'), '') = ''
       or coalesce(btrim(v_line ->> 'quantity'), '') = ''
       or coalesce(btrim(v_line ->> 'price'), '') = '' then
+      raise exception 'INVALID_LINE';
+    end if;
+    -- Кількість і ціна — справжні скінченні числа: кількість > 0, ціна ≥ 0 і вміщується в numeric(12, 2).
+    begin
+      v_quantity := (v_line ->> 'quantity')::numeric;
+      v_price := (v_line ->> 'price')::numeric;
+    exception when invalid_text_representation or numeric_value_out_of_range then
+      raise exception 'INVALID_LINE';
+    end;
+    if v_quantity = 'NaN'::numeric or v_quantity = 'Infinity'::numeric or v_quantity <= 0
+      or v_price = 'NaN'::numeric or v_price = 'Infinity'::numeric or v_price < 0 or v_price >= 10000000000 then
       raise exception 'INVALID_LINE';
     end if;
   end loop;

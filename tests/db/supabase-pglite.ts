@@ -30,6 +30,11 @@ const SUPABASE_SHIM = `
   grant execute on function auth.uid() to anon, authenticated, service_role;
   grant select, insert, delete on auth.users to supabase_auth_admin;
   grant usage on schema public to anon, authenticated, service_role;
+  -- Як у Supabase: нові таблиці, послідовності й функції в public автоматично доступні anon і authenticated.
+  -- Тож міграція, що забула revoke, і тут відкриє доступ — і тест відмови впаде, а не пропустить витік.
+  alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+  alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+  alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `;
 
 export interface TestDb {

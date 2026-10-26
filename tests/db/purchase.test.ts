@@ -135,4 +135,71 @@ describe("подання закупівлі (база)", () => {
     );
     expect(row).toEqual({ status: "pending", decided_by: null });
   });
+
+  it("рядок з неможливими числами (NaN, Infinity, від'ємні, нуль, не число) не подано", async () => {
+    const before = await pendingCountOf(MEMBER_1);
+    const bad = [
+      { quantity: "NaN", price: "20.00" },
+      { quantity: "3", price: "NaN" },
+      { quantity: "Infinity", price: "20.00" },
+      { quantity: "-5", price: "20.00" },
+      { quantity: "0", price: "20.00" },
+      { quantity: "3", price: "-1" },
+      { quantity: "abc", price: "20.00" },
+      { quantity: "3", price: "100000000000" },
+    ];
+    for (const numbers of bad) {
+      await expect(
+        submit(MEMBER_1, "Початкова школа", "purchasing_department", [{ name: "Папір А4", purpose: "Друк", ...numbers }]),
+      ).rejects.toThrow(/INVALID_LINE/);
+    }
+    expect(await pendingCountOf(MEMBER_1)).toBe(before);
+  });
+
+  it("ціна 0 і дробова кількість допустимі (верхні межі — наступний зріз)", async () => {
+    const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", [
+      { name: "Безкоштовні буклети", purpose: "Роздати", quantity: "1.5", price: "0" },
+    ]);
+    expect(id).toBeTruthy();
+  });
+});
+
+describe("деактивований працівник (база)", () => {
+  // Деактивований може отримати токен напряму в Supabase Auth, оминаючи сторінку входу; тоді захищає лише база.
+  const GONE = "b0000000-0000-0000-0000-000000000001";
+  let requestId: string;
+
+  beforeAll(async () => {
+    await t.db.query("insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)", [
+      GONE,
+      "gone@example.test",
+      { full_name: "Ігор Демо-Колишній" },
+    ]);
+    await t.asService("insert into public.department_members (department_id, profile_id) values ($1, $2)", [
+      dept["Початкова школа"],
+      GONE,
+    ]);
+    [{ id: requestId }] = await submit(GONE, "Початкова школа", "purchasing_department", LINE);
+    await t.asService("update public.profiles set is_active = false where id = $1", [GONE]);
+  });
+
+  it("не бачить ні своїх заявок, ні рядків", async () => {
+    expect(await t.asUser(GONE, "select id from public.purchase_requests")).toHaveLength(0);
+    expect(
+      await t.asUser(GONE, "select id from public.purchase_request_lines where request_id = $1", [requestId]),
+    ).toHaveLength(0);
+  });
+
+  it("не подає закупівлю, нової заявки немає", async () => {
+    const before = await t.asService<{ n: number }>(
+      "select count(*)::int as n from public.purchase_requests where author_id = $1",
+      [GONE],
+    );
+    await expect(submit(GONE, "Початкова школа", "purchasing_department", LINE)).rejects.toThrow(/FORBIDDEN/);
+    const after = await t.asService<{ n: number }>(
+      "select count(*)::int as n from public.purchase_requests where author_id = $1",
+      [GONE],
+    );
+    expect(after[0].n).toBe(before[0].n);
+  });
 });
