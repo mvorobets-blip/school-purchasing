@@ -6,8 +6,10 @@ import { messageFor } from "@/lib/org/messages";
 // (tests/db/purchase.test.ts); тут — що показує сторінка за кожної відповіді бази.
 const ID = "11111111-1111-4111-8111-111111111111";
 const db: { request: Record<string, unknown> | null; linesError: boolean } = { request: null, linesError: false };
+const queried: string[] = [];
 
 function query(table: string) {
+  queried.push(table);
   const result = () => {
     if (table === "purchase_requests") return { data: db.request, error: null };
     if (table === "purchase_request_lines") {
@@ -58,6 +60,7 @@ describe("сторінка заявки", () => {
       created_at: "2026-10-26T10:00:00Z",
     };
     db.linesError = false;
+    queried.length = 0;
   });
 
   it("AC-FRM-08: заявки немає у відповіді бази (чужа) — «Недостатньо прав» без даних", async () => {
@@ -67,10 +70,18 @@ describe("сторінка заявки", () => {
     expect(html).not.toContain("Папір А4");
   });
 
-  it("рядки заявки показано таблицею, а поруч — хто подав", async () => {
+  it("AC-APR-08: на сторінці заявки поруч із рядками вказано автора під підписом «Author»", async () => {
     const html = await render();
     expect(html).toContain("Папір А4");
-    expect(html).toContain("Андрій Демо-Перший");
+    expect(html).toContain(">Author</dt>");
+    expect(html).toMatch(/data-testid="request-author"[^>]*>Андрій Демо-Перший</);
+  });
+
+  it("AC-APR-10: сторінка заявки не читає профілю, відділів і дозволів автора", async () => {
+    await render();
+    expect(queried).not.toContain("profiles");
+    expect(queried).not.toContain("department_members");
+    expect(queried).not.toContain("employee_permissions");
   });
 
   it("помилка завантаження рядків — повідомлення про помилку, а не порожня таблиця", async () => {

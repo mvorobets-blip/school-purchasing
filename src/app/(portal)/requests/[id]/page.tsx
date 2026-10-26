@@ -35,7 +35,8 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
     .maybeSingle();
   if (error) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   if (!request) return forbidden;
-  // Ім'я автора — лише ім'я й лише якщо заявку дозволено бачити (private.request_author_names).
+  // Автор — ім'я, без імені в профілі — email, і лише якщо заявку дозволено бачити (private.request_author_names;
+  // AC-APR-08, 09); ролі, відділів і дозволів автора сторінка не читає (AC-APR-10). Підпис «Author» — таблиця PM (#49).
   const { data: authorRows } = await supabase.rpc("request_author_names", { p_request_ids: [id] });
   const authorName = authorRows?.[0]?.author_name ?? "—";
 
@@ -63,7 +64,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
         <CardContent>
           <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Submitted by</dt>
+              <dt className="text-muted-foreground">Author</dt>
               <dd className="font-medium" data-testid="request-author">
                 {authorName}
               </dd>
