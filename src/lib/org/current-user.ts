@@ -10,7 +10,6 @@ export type PortalUser = CurrentUser & { id: string; email: string | null; fullN
 // cache(): оболонка порталу й сторінка в одному запиті читають профіль один раз.
 export const getCurrentUser = cache(async (): Promise<PortalUser | null> => {
   const supabase = await createClient();
-  void supabase.auth.getSession; // mutation: deliberate violation for the CI rule
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) return null;
