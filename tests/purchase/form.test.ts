@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { departmentOptions, parseLines, purchaseTypeOptions } from "@/lib/purchase/form";
+import {
+  departmentOptions,
+  emptyLineFields,
+  initialDepartment,
+  parseLines,
+  purchaseTypeOptions,
+  submitBlocked,
+} from "@/lib/purchase/form";
 
 const DEPARTMENTS = [
   { id: "d-primary", name: "Початкова школа" },
@@ -58,5 +65,29 @@ describe("рядки з форми", () => {
 
   it("частково заповнений рядок лишається — його відхилить база", () => {
     expect(parseLines(fd({ "name.1": "Папір А4", "purpose.1": "", "quantity.1": "", "price.1": "" }))).toHaveLength(1);
+  });
+});
+
+describe("поведінка форми закупівлі", () => {
+  const opt = (value: string) => ({ value, label: value });
+
+  it("відділ обрано заздалегідь лише коли варіант один", () => {
+    expect(initialDepartment([opt("d1")])).toBe("d1");
+    expect(initialDepartment([opt("d1"), opt("d2")])).toBe("");
+    expect(initialDepartment([])).toBe("");
+  });
+
+  it("порожні поля частково заповненого рядка; повністю порожній рядок — без підсвітки", () => {
+    expect(emptyLineFields({ name: "Папір А4", purpose: "", quantity: " ", price: "" })).toEqual(["purpose", "quantity", "price"]);
+    expect(emptyLineFields({ name: "Папір А4", purpose: "Друк", quantity: "3", price: "20" })).toEqual([]);
+    expect(emptyLineFields({ name: "", purpose: "", quantity: "", price: "" })).toEqual([]);
+  });
+
+  it("після відмови в правах Submit вимкнено для тих самих відділу й типу", () => {
+    const refused = { departmentId: "d1", purchaseType: "self_purchase" };
+    expect(submitBlocked(refused, { departmentId: "d1", purchaseType: "self_purchase" })).toBe(true);
+    expect(submitBlocked(refused, { departmentId: "d2", purchaseType: "self_purchase" })).toBe(false);
+    expect(submitBlocked(refused, { departmentId: "d1", purchaseType: "purchasing_department" })).toBe(false);
+    expect(submitBlocked(null, { departmentId: "d1", purchaseType: "self_purchase" })).toBe(false);
   });
 });

@@ -50,3 +50,30 @@ export function parseLines(formData: FormData): PurchaseLine[] {
     }))
     .filter((l) => l.name || l.purpose || l.quantity || l.price);
 }
+
+// ── Поведінка форми (зручність, не права: права перевіряє база) ──
+
+// Відділ обрано заздалегідь лише тоді, коли варіант один: інакше легко подати не в той відділ.
+export function initialDepartment(departments: readonly Option[]): string {
+  return departments.length === 1 ? departments[0].value : "";
+}
+
+const LINE_FIELDS = ["name", "purpose", "quantity", "price"] as const;
+export type LineField = (typeof LINE_FIELDS)[number];
+
+// Порожні поля частково заповненого рядка — їх підсвічуємо після «Fill in all line fields» (AC-FRM-15).
+// Повністю порожній рядок не підсвічуємо: parseLines його відкидає.
+export function emptyLineFields(line: PurchaseLine): LineField[] {
+  const filled = LINE_FIELDS.filter((f) => line[f].trim() !== "");
+  if (filled.length === 0) return [];
+  return LINE_FIELDS.filter((f) => line[f].trim() === "");
+}
+
+// Після «Not enough permissions» кнопка «Submit» вимкнена, доки людина не змінить відділ чи тип,
+// для яких прийшла відмова (повторне подання того самого лише повторить відмову).
+export function submitBlocked(
+  refused: { departmentId: string; purchaseType: string } | null,
+  current: { departmentId: string; purchaseType: string },
+): boolean {
+  return refused !== null && refused.departmentId === current.departmentId && refused.purchaseType === current.purchaseType;
+}
