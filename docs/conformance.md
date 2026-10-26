@@ -86,6 +86,9 @@
 | AC-APR-05 | схвалювач не схвалює власну заявку | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase) (OWN_REQUEST) | `tests/db/approval.test.ts` | реалізовано |
 | AC-APR-06 | відхилення без причини — «Provide a reason», статус не змінено | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase) (NO_REASON), `src/app/(portal)/approvals/actions.ts` | `tests/db/approval.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
 | AC-APR-07 | відхилення з причиною — «Відхилено», причину показано на сторінці заявки | `supabase/migrations/20261025192130_purchase_decisions.sql` (private.decide_purchase), `src/app/(portal)/requests/[id]/page.tsx` | `tests/db/approval.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
+| AC-APR-08 | схвалювач бачить ім'я автора в списку для рішення й на сторінці заявки | — | — | відкладено (чекає реалізації) |
+| AC-APR-09 | без імені в профілі — email автора замість імені | — | — | відкладено (чекає реалізації) |
+| AC-APR-10 | ролі, відділів і дозволів автора схвалювач не бачить | — | — | відкладено (чекає реалізації) |
 | AC-LANG-01 | усі написи інтерфейсу англійською, без українських слів | `src/app/layout.tsx` (lang="en"), `src/lib/org/messages.ts` | `tests/lang/ui-language.test.ts` | реалізовано |
 | AC-LANG-02 | сторінка входу й помилка входу англійською | `src/app/login/page.tsx` | `tests/lang/ui-language.test.ts` | реалізовано |
 | AC-LANG-03 | відмова — «Not enough permissions» без розкриття вмісту | `src/lib/org/messages.ts` (FORBIDDEN) | `tests/lang/ui-language.test.ts` | реалізовано |
