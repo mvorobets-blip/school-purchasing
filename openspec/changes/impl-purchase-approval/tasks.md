@@ -53,14 +53,16 @@
   рішення, ≥ 2 варіанти з «чому ні», наслідки, «Як перевіряємо»).
 - [ ] 4.2 `scripts/check-no-get-session.mjs` + job «Авторизація лише через getClaims()» в
   `.github/workflows/architecture.yml`; доказ — червоний прогін на коміті `mutation: …` з `getSession()` → revert.
-  Done when: ADR злито, job зелений на `main`, посилання на червоний прогін в описі PR.
+  Done when: ADR 0002 (AC-FRM-02, 04, 06, 15; AC-APR-03 … 07) і ADR 0003 (AC-FRM-02, AC-FRM-09, AC-APR-04, AC-ORG-12)
+  злито; job зелений на `main`; посилання на червоний прогін в описі PR.
 
 ## 5. Прод, акаунти PM, знімки за ролями
 
 - [ ] 5.1 Після merge задачі 3 — `npm run users:demo`, відділ і схвалювач для акаунтів PM на проді; паролі — PM особисто.
 - [ ] 5.2 Знімки `docs/img/ws7-role-<role>-<page>.png` (головна сторінка ролі + одна відмова) — в останньому PR задачі.
 - [ ] 5.3 `docs/conformance.md` — чесний рядок для кожного AC зрізу 2; `archive` цієї зміни — в останньому PR задачі.
-  Done when: усі AC зрізу 2 мають статус; `npm run ac:coverage` — OK.
+  Done when: AC-FRM-01 … 15, AC-APR-01 … 07, AC-LANG-01 … 06 і AC-LANG-08 мають статус у `docs/conformance.md`
+  (реалізовано або відкладено з причиною); `npm run ac:coverage` — OK.
 
 ## 6. Головна за ролями й зручність форми (поза AC, DESIGN.md)
 
