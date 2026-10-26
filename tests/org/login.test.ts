@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Дія login з підміненим Supabase: деактивованого працівника виводимо одразу після входу (AC-ORG-12 — частина «не може
-// увійти»; деактивацію адміністратором зробить задача 4.1, тому AC ID у назві тесту поки немає).
+// увійти»; саму деактивацію адміністратором зробить задача 4.1 impl-department-setup).
 const state = {
   signInError: null as null | { message: string },
   profile: { is_active: true } as null | { is_active: boolean },
+  profileError: null as null | { message: string },
   signedOut: false,
 };
 
@@ -24,7 +25,14 @@ vi.mock("@/lib/supabase/server", () => ({
         return { error: null };
       },
     },
-    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.profile, error: null }) }) }) }),
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () =>
+            state.profileError ? { data: null, error: state.profileError } : { data: state.profile, error: null },
+        }),
+      }),
+    }),
   }),
 }));
 
@@ -41,6 +49,7 @@ describe("вхід", () => {
   beforeEach(() => {
     state.signInError = null;
     state.profile = { is_active: true };
+    state.profileError = null;
     state.signedOut = false;
   });
 
@@ -52,6 +61,18 @@ describe("вхід", () => {
   it("AC-ORG-12: деактивованого працівника виведено й повернуто на вхід з повідомленням про деактивацію", async () => {
     state.profile = null; // RLS не віддає профіль неактивному
     await expect(login(form())).rejects.toThrow("REDIRECT /login?error=inactive");
+    expect(state.signedOut).toBe(true);
+  });
+
+  it("AC-ORG-12: профіль із is_active = false — так само вихід і повідомлення про деактивацію", async () => {
+    state.profile = { is_active: false };
+    await expect(login(form())).rejects.toThrow("REDIRECT /login?error=inactive");
+    expect(state.signedOut).toBe(true);
+  });
+
+  it("помилка читання профілю — нейтральне «спробуйте ще раз», а не «деактивовано»", async () => {
+    state.profileError = { message: "network error" };
+    await expect(login(form())).rejects.toThrow("REDIRECT /login?error=unavailable");
     expect(state.signedOut).toBe(true);
   });
 

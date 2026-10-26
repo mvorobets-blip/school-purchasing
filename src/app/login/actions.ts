@@ -24,8 +24,17 @@ export async function login(formData: FormData) {
   }
 
   // Деактивований працівник не входить (AC-ORG-12): RLS не віддає йому навіть власного профілю, тож відсутній чи
-  // неактивний профіль — вихід і повідомлення на сторінці входу.
-  const { data: profile } = await supabase.from("profiles").select("is_active").eq("id", data.user.id).maybeSingle();
+  // неактивний профіль — вихід і повідомлення на сторінці входу. Помилка читання профілю — не «деактивовано»:
+  // активному працівнику показуємо нейтральне «спробуйте ще раз», а не хибну причину.
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  if (profileError) {
+    await supabase.auth.signOut();
+    redirect("/login?error=unavailable");
+  }
   if (!profile?.is_active) {
     await supabase.auth.signOut();
     redirect("/login?error=inactive");

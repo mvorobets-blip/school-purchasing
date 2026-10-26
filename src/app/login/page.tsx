@@ -10,6 +10,7 @@ const ERRORS: Record<string, string> = {
   missing: "Enter your email and password.",
   invalid: "Incorrect email or password.",
   inactive: messageFor("DEACTIVATED"),
+  unavailable: "Could not sign in. Try again.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
