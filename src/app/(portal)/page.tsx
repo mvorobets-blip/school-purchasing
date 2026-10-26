@@ -12,7 +12,8 @@ import { messageFor } from "@/lib/org/messages";
 import { ROLE_LABEL } from "@/lib/org/roles";
 import { cn } from "@/lib/utils";
 import { getAwaitingDecision } from "@/lib/purchase/awaiting";
-import { countByStatus, formatSubmitted, lineSummaries, pendingByDepartment } from "@/lib/purchase/dashboard";
+import { countByStatus, lineSummaries, pendingByDepartment } from "@/lib/purchase/dashboard";
+import { formatSubmitted } from "@/lib/purchase/date";
 import { departmentOptions, PURCHASE_TYPE_LABEL, purchaseTypeOptions, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 

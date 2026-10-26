@@ -30,11 +30,6 @@ export function lineSummaries(
   return result;
 }
 
-// Дата подання для списків головної: «26 Oct» за київським часом (школа в Києві).
-export function formatSubmitted(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Europe/Kyiv" });
-}
-
 // Скільки заявок «Очікує схвалення» в кожному відділі — для «Needs attention» адміністратора
 // (заявки відділу без схвалювача чекають, AC-FRM-12).
 export function pendingByDepartment(rows: readonly { status: string; department_id: string }[]): Map<string, number> {

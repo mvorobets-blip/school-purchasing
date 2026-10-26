@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { countByStatus, formatSubmitted, lineSummaries, pendingByDepartment } from "@/lib/purchase/dashboard";
+import { countByStatus, lineSummaries, pendingByDepartment } from "@/lib/purchase/dashboard";
+import { formatSubmitted } from "@/lib/purchase/date";
 
 describe("головна: підрахунки", () => {
   it("рахує заявки за статусами, невідомий статус пропускає", () => {
