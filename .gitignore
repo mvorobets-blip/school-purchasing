@@ -44,3 +44,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Тестові акаунти PM (паролі) — лише локально; у git — тільки зашифрований accounts.zip
+accounts.txt
