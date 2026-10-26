@@ -92,7 +92,7 @@ export default async function Home() {
       <div className="flex min-w-56 flex-1 flex-col gap-1">
         <h1 className="text-2xl font-semibold">Welcome{user.fullName ? `, ${user.fullName}` : ""}</h1>
         <p className="text-sm text-muted-foreground">
-          {ROLE_LABEL[user.role]}{" "}
+          {ROLE_LABEL[user.role]} · ID:{" "}
           <span data-testid="user-role" className="font-mono">
             {user.role}
           </span>{" "}
@@ -103,7 +103,7 @@ export default async function Home() {
     </div>
   );
   const newPurchase = (variant: "default" | "outline") => (
-    <Link href="/requests/new" className={buttonVariants({ variant, className: "w-full sm:w-auto" })}>
+    <Link href="/requests/new" className={cn(buttonVariants({ variant, className: "w-full sm:w-auto" }))}>
       <Plus aria-hidden="true" />
       New purchase
     </Link>
@@ -124,7 +124,7 @@ export default async function Home() {
                 {approveIn} · oldest submitted {formatSubmitted(awaiting.requests[0].created_at)}
               </span>
             </span>
-            <Link href="/approvals" className={buttonVariants({ className: "w-full sm:w-auto" })}>
+            <Link href="/approvals" className={cn(buttonVariants({ className: "w-full sm:w-auto" }))}>
               Review requests
             </Link>
           </>

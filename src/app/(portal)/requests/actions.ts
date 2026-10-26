@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
-import { parseLines } from "@/lib/purchase/form";
+import { invalidNumberFields, parseLines } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 
 export type SubmitPurchaseState = {
@@ -40,6 +40,11 @@ export async function submitPurchase(
 
   const lines = parseLines(formData);
   if (lines.length === 0) return { status: "error", message: messageFor("NO_LINES"), ...keep };
+  // Неможливі числа (кількість ≤ 0, від'ємна ціна) — окреме повідомлення, а не «Fill in all line fields»: усі поля ж
+  // заповнено. База перевіряє те саме (INVALID_LINE), якщо дію викликати напряму.
+  if (lines.some((l) => invalidNumberFields(l).length > 0)) {
+    return { status: "error", message: messageFor("INVALID_NUMBER"), ...keep };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_purchase", {

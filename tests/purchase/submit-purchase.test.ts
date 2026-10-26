@@ -65,6 +65,16 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
+  it("кількість 0 чи від'ємна ціна — «Quantity must be greater than 0 and price 0 or more», до бази не звертаємось", async () => {
+    const state = await submitPurchase(
+      idle,
+      form({ "name.1": "Папір А4", "purpose.1": "Для друку", "quantity.1": "0", "price.1": "-1" }),
+    );
+    expect(state.message).toBe("Quantity must be greater than 0 and price 0 or more");
+    expect(state.departmentId).toBe(DEPT);
+    expect(rpcCalls).toHaveLength(0);
+  });
+
   it("AC-FRM-11: після подання — «Мої заявки» з повідомленням «Закупівлю подано»", async () => {
     await expect(submitPurchase(idle, form(ONE_LINE))).rejects.toThrow("REDIRECT /requests?ok=SUBMITTED");
     expect(rpcCalls).toHaveLength(1);

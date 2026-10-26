@@ -12,6 +12,9 @@ import { messageFor } from "@/lib/org/messages";
 import {
   emptyLineFields,
   initialDepartment,
+  invalidNumberFields,
+  isBlockedNumberKey,
+  withoutSign,
   submitBlocked,
   type LineField,
   type Option,
@@ -38,14 +41,31 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
   const [purchaseType, setPurchaseType] = useState(initial.purchaseType);
   const [lines, setLines] = useState<Line[]>([blankLine(1)]);
   const [departmentMissing, setDepartmentMissing] = useState(false);
+  // Відповідь сервера, яку людина вже почала виправляти: повідомлення ховаємо, щойно щось змінено у формі
+  // (воно вже не описує поточний стан); червоні рамки лишаються лише на полях, які ще порожні чи неможливі.
+  const [editedAfter, setEditedAfter] = useState<SubmitPurchaseState | null>(null);
 
   const isError = state.status === "error";
+  const showMessage = isError && editedAfter !== state;
   const forbidden = isError && state.message === messageFor("FORBIDDEN");
   const markEmpty = isError && state.message === messageFor("INVALID_LINE");
+  const markNumbers = isError && state.message === messageFor("INVALID_NUMBER");
   const blocked = forbidden && submitBlocked(state, { departmentId, purchaseType });
 
-  const updateLine = (key: number, field: LineField, value: string) =>
+  const edited = () => setEditedAfter(state);
+  const updateLine = (key: number, field: LineField, value: string) => {
+    edited();
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, [field]: value } : l)));
+  };
+  // Кількість і ціна: без «-», «+» і «e» — від'ємного числа не ввести навіть вставкою.
+  const numberField = {
+    type: "number",
+    inputMode: "decimal",
+    min: 0,
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (isBlockedNumberKey(e.key)) e.preventDefault();
+    },
+  } as const;
 
   return (
     <form
@@ -60,7 +80,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
       }}
       className="flex max-w-2xl flex-col gap-6"
     >
-      {isError ? (
+      {showMessage ? (
         <Alert variant={forbidden ? "default" : "destructive"} data-testid="purchase-message">
           {state.message}
         </Alert>
@@ -75,6 +95,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               items={departments}
               value={departmentId || null}
               onValueChange={(v) => {
+                edited();
                 setDepartmentId(String(v ?? ""));
                 setDepartmentMissing(false);
               }}
@@ -108,7 +129,10 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               name="purchaseType"
               items={types}
               value={purchaseType}
-              onValueChange={(v) => setPurchaseType(String(v ?? ""))}
+              onValueChange={(v) => {
+                edited();
+                setPurchaseType(String(v ?? ""));
+              }}
               required
             >
               <SelectTrigger id="purchase-type" className="w-full" data-testid="purchase-type">
@@ -131,7 +155,10 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
           Lines
         </h2>
         {lines.map((line, index) => {
-          const empty = new Set(markEmpty ? emptyLineFields(line) : []);
+          const wrong = new Set([
+            ...(markEmpty ? emptyLineFields(line) : []),
+            ...(markNumbers ? invalidNumberFields(line) : []),
+          ]);
           const field = (name: LineField, label: string, extra: React.ComponentProps<typeof Input> = {}) => (
             <div className={name === "name" || name === "purpose" ? "flex flex-col gap-2 sm:col-span-2" : "flex flex-col gap-2"}>
               <Label htmlFor={`${name}-${line.key}`}>{label}</Label>
@@ -139,8 +166,10 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
                 id={`${name}-${line.key}`}
                 name={`${name}.${line.key}`}
                 value={line[name]}
-                onChange={(e) => updateLine(line.key, name, e.target.value)}
-                aria-invalid={empty.has(name) || undefined}
+                onChange={(e) =>
+                  updateLine(line.key, name, name === "quantity" || name === "price" ? withoutSign(e.target.value) : e.target.value)
+                }
+                aria-invalid={wrong.has(name) || undefined}
                 {...extra}
               />
             </div>
@@ -150,14 +179,17 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 {field("name", "Item")}
                 {field("purpose", "Purpose")}
-                {field("quantity", "Quantity", { type: "number", inputMode: "decimal", step: "any" })}
-                {field("price", "Price", { type: "number", inputMode: "decimal", step: "0.01" })}
+                {field("quantity", "Quantity", { ...numberField, step: "any" })}
+                {field("price", "Price", { ...numberField, step: "0.01" })}
                 {lines.length > 1 ? (
                   <Button
                     type="button"
                     variant="ghost"
                     className="justify-self-start text-muted-foreground"
-                    onClick={() => setLines((ls) => ls.filter((l) => l.key !== line.key))}
+                    onClick={() => {
+                      edited();
+                      setLines((ls) => ls.filter((l) => l.key !== line.key));
+                    }}
                   >
                     <Trash2 aria-hidden="true" />
                     Remove line {index + 1}
@@ -171,7 +203,10 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
           type="button"
           variant="outline"
           className="self-start"
-          onClick={() => setLines((ls) => [...ls, blankLine(Math.max(0, ...ls.map((l) => l.key)) + 1)])}
+          onClick={() => {
+            edited();
+            setLines((ls) => [...ls, blankLine(Math.max(0, ...ls.map((l) => l.key)) + 1)]);
+          }}
         >
           <Plus aria-hidden="true" />
           Add line

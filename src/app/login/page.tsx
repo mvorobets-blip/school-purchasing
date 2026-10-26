@@ -1,11 +1,9 @@
-import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { messageFor } from "@/lib/org/messages";
-import { login } from "./actions";
+import type { LoginState } from "./actions";
+import { LoginForm } from "./login-form";
 
+// Тексти помилок входу (AC-LANG-02); ключ приходить станом форми або (для старих посилань) параметром ?error=.
 const ERRORS: Record<string, string> = {
   missing: "Enter your email and password.",
   invalid: "Incorrect email or password.",
@@ -15,7 +13,7 @@ const ERRORS: Record<string, string> = {
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { error } = await searchParams;
-  const message = typeof error === "string" && Object.hasOwn(ERRORS, error) ? ERRORS[error] : undefined;
+  const initialError = typeof error === "string" && Object.hasOwn(ERRORS, error) ? (error as LoginState["error"]) : null;
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12 sm:px-6">
@@ -26,20 +24,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={login} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" autoComplete="email" required />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" autoComplete="current-password" required />
-            </div>
-            {message ? <Alert variant="destructive">{message}</Alert> : null}
-            <Button type="submit" size="lg" className="w-full">
-              Sign in
-            </Button>
-          </form>
+          <LoginForm errors={ERRORS} initialError={initialError} />
         </CardContent>
       </Card>
     </main>

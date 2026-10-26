@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { initials } from "@/lib/org/permissions";
-import { ROLE_LABEL } from "@/lib/org/roles";
 import { getAwaitingDecision } from "@/lib/purchase/awaiting";
 import { signOut } from "../login/actions";
 
@@ -31,7 +30,6 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
         user={{
           name: user.fullName ?? user.email ?? "—",
           email: user.email,
-          roleLabel: ROLE_LABEL[user.role],
           initials: initials(user.fullName, user.email),
           isAdmin: user.role === "admin",
           isApprover: awaiting.departmentIds.length > 0,
@@ -39,7 +37,8 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
         }}
       />
       <SidebarInset className="bg-transparent">
-        <header className="flex items-center gap-3 border-b px-4 py-2.5 sm:px-8">
+        {/* Верхня смуга — лише на телефоні (бічна панель там висувна): меню, назва й хто увійшов, без ролі. */}
+        <header className="flex items-center gap-3 border-b px-4 py-2.5 sm:px-8 md:hidden">
           <SidebarTrigger aria-label="Open menu" className="md:hidden" />
           <Link href="/" className="flex items-center gap-2 font-semibold md:hidden">
             <ShoppingBasket className="size-4 text-accent-foreground" aria-hidden="true" />
@@ -51,9 +50,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
                 {initials(user.fullName, user.email)}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden sm:inline">
-              {user.fullName ?? user.email} · <span className="text-muted-foreground">{ROLE_LABEL[user.role]}</span>
-            </span>
+            <span className="hidden sm:inline">{user.fullName ?? user.email}</span>
           </div>
         </header>
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-8 sm:py-8">{children}</div>

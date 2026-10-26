@@ -1,9 +1,10 @@
 import { Building2, ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { InfoTip } from "@/components/portal/info-tip";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { ForbiddenCard } from "@/components/portal/forbidden-card";
+import { CLICKABLE_ROW, RowLink } from "@/components/portal/row-link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { canAccessSettings } from "@/lib/org/access";
@@ -11,6 +12,7 @@ import { getCurrentUser } from "@/lib/org/current-user";
 import { departmentsWithoutApprover } from "@/lib/org/departments";
 import { messageFor } from "@/lib/org/messages";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { CreateDepartmentDialog } from "./create-department-form";
 
 // Список відділів для адміністратора. «No approver» — у відділі немає жодного активного схвалювача (AC-ORG-14).
@@ -19,7 +21,7 @@ export default async function DepartmentsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!canAccessSettings(user)) {
-    return <Alert data-testid="forbidden">{messageFor("FORBIDDEN")}</Alert>;
+    return <ForbiddenCard hint="Only administrators can open settings." backHref="/" backLabel="Back to home" />;
   }
 
   const supabase = await createClient();
@@ -87,17 +89,17 @@ export default async function DepartmentsPage() {
               {departments.map((d) => {
                 const approvers = approverNames(d.id);
                 return (
-                  <TableRow key={d.id} data-testid="department-row" className="group">
+                  <TableRow key={d.id} data-testid="department-row" className={cn("group", CLICKABLE_ROW)}>
                     <TableCell className="pl-4">
-                      <Link
+                      <RowLink
                         href={`/admin/departments/${d.id}`}
-                        className="flex items-center gap-3 font-medium text-foreground hover:text-accent-foreground"
+                        className="flex items-center gap-3 font-medium text-foreground group-hover:text-accent-foreground"
                       >
                         <span className="flex size-8 items-center justify-center rounded-lg bg-accent text-accent-foreground">
                           <Building2 className="size-4" aria-hidden="true" />
                         </span>
                         {d.name}
-                      </Link>
+                      </RowLink>
                     </TableCell>
                     <TableCell className="tabular-nums">{requesterCount(d.id)}</TableCell>
                     <TableCell>

@@ -1,7 +1,8 @@
 import { Inbox } from "lucide-react";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/portal/status-badge";
+import { ForbiddenCard } from "@/components/portal/forbidden-card";
+import { CLICKABLE_ROW, RowLink, ROW_ACTIONS } from "@/components/portal/row-link";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,6 +12,7 @@ import { getAwaitingDecision } from "@/lib/purchase/awaiting";
 import { formatSubmitted } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { DecisionButtons } from "./decision-buttons";
 
 const OK_TEXT: Record<string, string> = { APPROVED: "Request approved.", REJECTED: "Request rejected." };
@@ -30,7 +32,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
     return (
       <>
         <h1 className="text-2xl font-semibold">Awaiting decision</h1>
-        <Alert data-testid="forbidden">{messageFor("FORBIDDEN")}</Alert>
+        <ForbiddenCard hint="Only approvers see requests awaiting a decision." backHref="/" backLabel="Back to home" />
       </>
     );
   }
@@ -85,11 +87,11 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
                 const submitted = formatSubmitted(r.created_at);
                 const department = names.get(r.department_id) ?? "—";
                 return (
-                  <TableRow key={r.id} data-testid="decision-row">
+                  <TableRow key={r.id} data-testid="decision-row" className={cn("group", CLICKABLE_ROW)}>
                     <TableCell className="pl-4 tabular-nums">
-                      <Link href={`/requests/${r.id}`} className="font-medium hover:text-accent-foreground">
+                      <RowLink href={`/requests/${r.id}`} className="font-medium group-hover:text-accent-foreground">
                         {submitted}
-                      </Link>
+                      </RowLink>
                     </TableCell>
                     <TableCell data-testid="decision-author">{authorOf.get(r.id) ?? "—"}</TableCell>
                     <TableCell>{department}</TableCell>
@@ -97,7 +99,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
                     <TableCell>
                       <StatusBadge status="pending" />
                     </TableCell>
-                    <TableCell className="pr-4">
+                    <TableCell className={cn("pr-4", ROW_ACTIONS)}>
                       <DecisionButtons requestId={r.id} label={`${department}, ${submitted}`} />
                     </TableCell>
                   </TableRow>

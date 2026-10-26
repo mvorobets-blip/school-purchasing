@@ -70,10 +70,14 @@ export default async function ProfilePage() {
           <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <div className="flex flex-col gap-1">
               <dt className="text-muted-foreground">Role</dt>
-              <dd className="flex items-center gap-2">
+              {/* Підпис ролі англійською й незмінний ідентифікатор поруч (AC-LANG-08). */}
+              <dd className="flex flex-col items-start gap-1">
                 <Badge variant="secondary">{ROLE_LABEL[user.role]}</Badge>
-                <span data-testid="profile-role" className="font-mono text-sm text-muted-foreground">
-                  {user.role}
+                <span className="text-sm text-muted-foreground">
+                  ID:{" "}
+                  <span data-testid="profile-role" className="font-mono">
+                    {user.role}
+                  </span>
                 </span>
               </dd>
             </div>

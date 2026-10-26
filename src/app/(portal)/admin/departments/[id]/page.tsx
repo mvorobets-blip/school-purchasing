@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ForbiddenCard } from "@/components/portal/forbidden-card";
 import { InfoTip } from "@/components/portal/info-tip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -38,9 +39,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!canAccessSettings(user)) {
-    return (
-      <Alert data-testid="forbidden">{messageFor("FORBIDDEN")}</Alert>
-    );
+    return <ForbiddenCard hint="Only administrators can open settings." backHref="/" backLabel="Back to home" />;
   }
 
   const { id } = await params;

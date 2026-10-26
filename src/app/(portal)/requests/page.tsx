@@ -2,6 +2,7 @@ import { ChevronRight, ListChecks, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/portal/status-badge";
+import { CLICKABLE_ROW, RowLink } from "@/components/portal/row-link";
 import { Alert } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { messageFor } from "@/lib/org/messages";
 import { formatSubmitted } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 
 // «Мої заявки»: лише власні заявки зі статусами (AC-FRM-10), «Purchase submitted» після подання (AC-FRM-11),
 // порожній стан «You have not submitted any requests yet» (AC-FRM-14). Умова author_id + RLS: чужих рядків база не віддає.
@@ -38,7 +40,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
     <>
       <div className="flex flex-wrap items-end gap-4">
         <h1 className="flex-1 text-2xl font-semibold">My requests</h1>
-        <Link href="/requests/new" className={buttonVariants()}>
+        <Link href="/requests/new" className={cn(buttonVariants())}>
           <Plus aria-hidden="true" />
           New purchase
         </Link>
@@ -77,11 +79,11 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
             </TableHeader>
             <TableBody>
               {requests.map((r) => (
-                <TableRow key={r.id} data-testid="request-row" className="group">
+                <TableRow key={r.id} data-testid="request-row" className={cn("group", CLICKABLE_ROW)}>
                   <TableCell className="pl-4 tabular-nums">
-                    <Link href={`/requests/${r.id}`} className="font-medium hover:text-accent-foreground">
+                    <RowLink href={`/requests/${r.id}`} className="font-medium group-hover:text-accent-foreground">
                       {formatSubmitted(r.created_at)}
-                    </Link>
+                    </RowLink>
                   </TableCell>
                   <TableCell>{names.get(r.department_id) ?? "—"}</TableCell>
                   <TableCell>{PURCHASE_TYPE_LABEL[r.purchase_type as PurchaseType] ?? r.purchase_type}</TableCell>
@@ -89,7 +91,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
                     <StatusBadge status={r.status} />
                   </TableCell>
                   <TableCell className="pr-4 text-right">
-                    <ChevronRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+                    <ChevronRight className="ml-auto size-4 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
                   </TableCell>
                 </TableRow>
               ))}

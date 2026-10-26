@@ -3,6 +3,9 @@ import {
   departmentOptions,
   emptyLineFields,
   initialDepartment,
+  invalidNumberFields,
+  isBlockedNumberKey,
+  withoutSign,
   parseLines,
   purchaseTypeOptions,
   submitBlocked,
@@ -89,5 +92,28 @@ describe("поведінка форми закупівлі", () => {
     expect(submitBlocked(refused, { departmentId: "d2", purchaseType: "self_purchase" })).toBe(false);
     expect(submitBlocked(refused, { departmentId: "d1", purchaseType: "purchasing_department" })).toBe(false);
     expect(submitBlocked(null, { departmentId: "d1", purchaseType: "self_purchase" })).toBe(false);
+  });
+});
+
+describe("числа в рядку закупівлі", () => {
+  const line = (quantity: string, price: string) => ({ name: "Папір А4", purpose: "Друк", quantity, price });
+
+  it("кількість > 0 і ціна ≥ 0 — допустимі; ціна 0 і дробова кількість теж", () => {
+    expect(invalidNumberFields(line("3", "20.00"))).toEqual([]);
+    expect(invalidNumberFields(line("1.5", "0"))).toEqual([]);
+  });
+
+  it("кількість 0 чи від'ємна, ціна від'ємна, не число — неможливі; порожні поля тут не рахуємо", () => {
+    expect(invalidNumberFields(line("0", "20"))).toEqual(["quantity"]);
+    expect(invalidNumberFields(line("-2", "-1"))).toEqual(["quantity", "price"]);
+    expect(invalidNumberFields(line("abc", "Infinity"))).toEqual(["quantity", "price"]);
+    expect(invalidNumberFields(line("", ""))).toEqual([]);
+  });
+
+  it("мінус, плюс і експоненту в кількість і ціну не ввести навіть вставкою", () => {
+    expect(["-", "+", "e", "E"].every(isBlockedNumberKey)).toBe(true);
+    expect(isBlockedNumberKey("5")).toBe(false);
+    expect(withoutSign("-5")).toBe("5");
+    expect(withoutSign("1e3")).toBe("13");
   });
 });
