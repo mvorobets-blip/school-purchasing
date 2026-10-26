@@ -45,6 +45,10 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
       .order("position"),
     supabase.from("departments").select("name").eq("id", request.department_id).maybeSingle(),
   ]);
+  // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
+  if (linesRes.error || deptRes.error) {
+    return <Alert variant="destructive">Не вдалося завантажити заявку. Оновіть сторінку.</Alert>;
+  }
 
   return (
     <>

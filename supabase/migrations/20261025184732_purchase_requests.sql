@@ -97,7 +97,12 @@ create policy purchase_request_lines_select_visible
   on public.purchase_request_lines
   for select
   to authenticated
-  using (exists (select 1 from public.purchase_requests as r where r.id = request_id));
+  -- Явна перевірка активного користувача (правило AGENTS.md) і видимість заявки: підзапит іде з RLS заявки
+  -- (автор, схвалювач відділу, адміністратор), тож чужих рядків не видно.
+  using (
+    (select private.is_active_user())
+    and exists (select 1 from public.purchase_requests as r where r.id = request_id)
+  );
 
 -- ── 4. Подання закупівлі ───────────────────────────────────────────────────────
 -- p_lines — масив об'єктів {name, purpose, quantity, price}. Помилки:
