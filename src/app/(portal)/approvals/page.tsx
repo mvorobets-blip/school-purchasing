@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
+import { getAwaitingDecision } from "@/lib/purchase/awaiting";
+import { formatSubmitted } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 import { DecisionButtons } from "./decision-buttons";
@@ -20,16 +22,11 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
   if (!user) redirect("/login");
   const { ok } = await searchParams;
 
-  const supabase = await createClient();
-  const { data: memberships, error: membersError } = await supabase
-    .from("department_members")
-    .select("department_id")
-    .eq("profile_id", user.id)
-    .eq("is_approver", true);
-  if (membersError) return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
+  // Ті самі умови й запити, що й лічильник у бічній панелі (getAwaitingDecision): список і число не розійдуться.
+  const awaiting = await getAwaitingDecision(user.id);
+  if (awaiting.failed) return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
 
-  const approverOf = memberships.map((m) => m.department_id);
-  if (approverOf.length === 0) {
+  if (awaiting.departmentIds.length === 0) {
     return (
       <>
         <h1 className="text-2xl font-semibold">Awaiting decision</h1>
@@ -38,21 +35,11 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
     );
   }
 
-  const [requestsRes, deptsRes] = await Promise.all([
-    supabase
-      .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, created_at")
-      .in("department_id", approverOf)
-      .eq("status", "pending")
-      .neq("author_id", user.id)
-      .order("created_at"),
-    supabase.from("departments").select("id, name"),
-  ]);
-  if (requestsRes.error || deptsRes.error) {
-    return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
-  }
+  const supabase = await createClient();
+  const deptsRes = await supabase.from("departments").select("id, name");
+  if (deptsRes.error) return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
   const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
-  const requests = requestsRes.data;
+  const requests = awaiting.requests;
   // Хто подав: лише ім'я й лише для заявок, які схвалювач бачить (private.request_author_names) — профілі колег закриті.
   const authorsRes = requests.length
     ? await supabase.rpc("request_author_names", { p_request_ids: requests.map((r) => r.id) })
@@ -95,7 +82,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
             </TableHeader>
             <TableBody>
               {requests.map((r) => {
-                const submitted = new Date(r.created_at).toLocaleDateString("uk-UA", { timeZone: "America/New_York" });
+                const submitted = formatSubmitted(r.created_at);
                 const department = names.get(r.department_id) ?? "—";
                 return (
                   <TableRow key={r.id} data-testid="decision-row">
@@ -108,7 +95,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
                     <TableCell>{department}</TableCell>
                     <TableCell>{PURCHASE_TYPE_LABEL[r.purchase_type as PurchaseType] ?? r.purchase_type}</TableCell>
                     <TableCell>
-                      <StatusBadge status={r.status} />
+                      <StatusBadge status="pending" />
                     </TableCell>
                     <TableCell className="pr-4">
                       <DecisionButtons requestId={r.id} label={`${department}, ${submitted}`} />

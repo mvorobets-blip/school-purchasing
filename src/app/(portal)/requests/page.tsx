@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
+import { formatSubmitted } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 
@@ -79,7 +80,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
                 <TableRow key={r.id} data-testid="request-row" className="group">
                   <TableCell className="pl-4 tabular-nums">
                     <Link href={`/requests/${r.id}`} className="font-medium hover:text-accent-foreground">
-                      {new Date(r.created_at).toLocaleDateString("uk-UA", { timeZone: "America/New_York" })}
+                      {formatSubmitted(r.created_at)}
                     </Link>
                   </TableCell>
                   <TableCell>{names.get(r.department_id) ?? "—"}</TableCell>
