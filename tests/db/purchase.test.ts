@@ -48,6 +48,18 @@ describe("подання закупівлі (база)", () => {
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
+  it("AC-FRM-02: прямий insert у purchase_requests відхилено навіть у свій відділ (немає grant), нової заявки немає", async () => {
+    const before = await pendingCountOf(MEMBER_1);
+    await expect(
+      t.asUser(
+        MEMBER_1,
+        "insert into public.purchase_requests (author_id, department_id, purchase_type) values ($1, $2, 'purchasing_department')",
+        [MEMBER_1, dept["Початкова школа"]],
+      ),
+    ).rejects.toThrow(/permission denied/);
+    expect(await pendingCountOf(MEMBER_1)).toBe(before);
+  });
+
   it("AC-FRM-04: «Самостійна закупівля» без дозволу напряму не подана, нової заявки немає", async () => {
     const before = await pendingCountOf(MEMBER_1);
     await expect(submit(MEMBER_1, "Початкова школа", "self_purchase", LINE)).rejects.toThrow(/FORBIDDEN/);

@@ -64,20 +64,20 @@
 | AC-ORG-32 | зняття ролі адміністратора іншим адміністратором зі схваленням відділу — `approver` | — | — | відкладено (задача 4.1 плану impl-department-setup — деактивація й захист адміністратора не реалізовані до здачі зрізу) |
 | AC-ORG-33 | автосхвалення не ввімкнути не заявнику — «Спершу додайте працівника до відділу як заявника» | `supabase/migrations/20261021231637_department_members_functions.sql`, `src/app/(portal)/admin/departments/[id]/actions.ts`, `src/lib/org/membership.ts` | `tests/org/membership.test.ts` | реалізовано |
 | AC-ORG-34 | дубль назви відділу (без урахування регістру) не створюється — «Відділ з такою назвою вже є» | `src/app/(portal)/admin/departments/actions.ts`, `supabase/migrations/20261021213618_department_setup.sql` | `tests/org/departments.test.ts` | реалізовано |
-| AC-FRM-01 | у виборі відділу лише відділи, де працівник заявник | — | — | відкладено (чекає реалізації) |
-| AC-FRM-02 | подання в чужий відділ напряму не подано | — | — | відкладено (чекає реалізації) |
-| AC-FRM-03 | без дозволу немає типу «Самостійна закупівля» | — | — | відкладено (чекає реалізації) |
-| AC-FRM-04 | «Самостійна закупівля» без дозволу напряму не подана | — | — | відкладено (чекає реалізації) |
-| AC-FRM-05 | працівник без відділів бачить «You have not been added to any department…» без полів | — | — | відкладено (чекає реалізації) |
-| AC-FRM-06 | без рядків — «Add at least one line», відділ і тип лишаються | — | — | відкладено (чекає реалізації) |
-| AC-FRM-07 | подана закупівля має статус «Очікує схвалення» | — | — | відкладено (чекає реалізації) |
-| AC-FRM-08 | чужу закупівлю за посиланням не показано — «Not enough permissions» | — | — | відкладено (чекає реалізації) |
-| AC-FRM-09 | гість бачить сторінку входу замість форми | — | — | відкладено (чекає реалізації) |
-| AC-FRM-10 | «Мої заявки» — лише власні заявки зі статусами | — | — | відкладено (чекає реалізації) |
-| AC-FRM-11 | після подання — «Мої заявки» й «Purchase submitted» | — | — | відкладено (чекає реалізації) |
-| AC-FRM-12 | подання у відділ без схвалювача — «Очікує схвалення» | — | — | відкладено (чекає реалізації) |
-| AC-FRM-13 | подання єдиним схвалювачем свого відділу — «Очікує схвалення» | — | — | відкладено (чекає реалізації) |
-| AC-FRM-14 | порожній стан «You have not submitted any requests yet» | — | — | відкладено (чекає реалізації) |
+| AC-FRM-01 | у виборі відділу лише відділи, де працівник заявник | `src/lib/purchase/form.ts` (departmentOptions) | `tests/purchase/form.test.ts` | реалізовано |
+| AC-FRM-02 | подання в чужий відділ напряму не подано | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase; без grant insert) | `tests/db/purchase.test.ts`, `tests/purchase/submit-purchase.test.ts` | реалізовано |
+| AC-FRM-03 | без дозволу немає типу «Самостійна закупівля» | `src/lib/purchase/form.ts` (purchaseTypeOptions) | `tests/purchase/form.test.ts` | реалізовано |
+| AC-FRM-04 | «Самостійна закупівля» без дозволу напряму не подана | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase) | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-05 | працівник без відділів бачить «You have not been added to any department…» без полів | `src/app/(portal)/requests/new/page.tsx`, `src/lib/purchase/form.ts` | `tests/purchase/form.test.ts` | реалізовано |
+| AC-FRM-06 | без рядків — «Add at least one line», відділ і тип лишаються | `src/app/(portal)/requests/actions.ts` (submitPurchase), `supabase/migrations/20261025184732_purchase_requests.sql` | `tests/db/purchase.test.ts`, `tests/purchase/submit-purchase.test.ts` | реалізовано |
+| AC-FRM-07 | подана закупівля має статус «Очікує схвалення» | `supabase/migrations/20261025184732_purchase_requests.sql` | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-08 | чужу закупівлю за посиланням не показано — «Not enough permissions» | `supabase/migrations/20261025184732_purchase_requests.sql` (purchase_requests_select_visible), `src/app/(portal)/requests/[id]/page.tsx` | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-09 | гість бачить сторінку входу замість форми | `src/proxy.ts`, `supabase/migrations/20261025184732_purchase_requests.sql` (без grant для anon) | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-10 | «Мої заявки» — лише власні заявки зі статусами | `src/app/(portal)/requests/page.tsx`, `supabase/migrations/20261025184732_purchase_requests.sql` (RLS) | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-11 | після подання — «Мої заявки» й «Purchase submitted» | `src/app/(portal)/requests/actions.ts` (submitPurchase) | `tests/purchase/submit-purchase.test.ts` | реалізовано |
+| AC-FRM-12 | подання у відділ без схвалювача — «Очікує схвалення» | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase) | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-13 | подання єдиним схвалювачем свого відділу — «Очікує схвалення» | `supabase/migrations/20261025184732_purchase_requests.sql` (private.submit_purchase) | `tests/db/purchase.test.ts` | реалізовано |
+| AC-FRM-14 | порожній стан «You have not submitted any requests yet» | `src/app/(portal)/requests/page.tsx` | `tests/purchase/my-requests-page.test.tsx` | реалізовано |
 | AC-FRM-15 | рядок без усіх полів — «Fill in all line fields», не подано | — | — | відкладено (чекає реалізації) |
 | AC-APR-01 | у списку для рішення лише заявки свого відділу | — | — | відкладено (чекає реалізації) |
 | AC-APR-02 | схвалення заявки свого відділу — «Схвалено» | — | — | відкладено (чекає реалізації) |
