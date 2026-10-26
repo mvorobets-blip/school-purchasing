@@ -124,7 +124,7 @@ begin
   if not private.is_active_user() then
     raise exception 'FORBIDDEN' using errcode = '42501';
   end if;
-  if false then -- mutation: department check removed
+  if not (v_admin or private.is_member_of(p_department_id)) then
     raise exception 'FORBIDDEN' using errcode = '42501';
   end if;
   if p_purchase_type is null or p_purchase_type not in ('purchasing_department', 'self_purchase') then
