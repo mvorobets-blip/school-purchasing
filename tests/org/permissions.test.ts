@@ -4,15 +4,15 @@ import { initials, purchaseTypeAccess, requestTypeAccess } from "@/lib/org/permi
 const allowed = (list: { label: string; allowed: boolean }[]) => list.filter((t) => t.allowed).map((t) => t.label);
 
 describe("типи заявок і закупівлі у власному профілі", () => {
-  it("працівник без дозволів: лише «Закупівля», «Відшкодування» і «Відділ закупівель»", () => {
-    expect(allowed(requestTypeAccess("requester", []))).toEqual(["Закупівля", "Відшкодування"]);
-    expect(allowed(purchaseTypeAccess("requester", []))).toEqual(["Відділ закупівель"]);
+  it("працівник без дозволів: лише «Purchase», «Reimbursement» і «Purchasing department»", () => {
+    expect(allowed(requestTypeAccess("requester", []))).toEqual(["Purchase", "Reimbursement"]);
+    expect(allowed(purchaseTypeAccess("requester", []))).toEqual(["Purchasing department"]);
   });
 
   it("дозвіл додає саме свій тип", () => {
-    expect(allowed(requestTypeAccess("approver", ["card_expense"]))).toContain("Витрата карткою");
-    expect(allowed(requestTypeAccess("approver", ["card_expense"]))).not.toContain("Запит на чек");
-    expect(allowed(purchaseTypeAccess("requester", ["self_purchase"]))).toContain("Самостійна закупівля");
+    expect(allowed(requestTypeAccess("approver", ["card_expense"]))).toContain("Card expense");
+    expect(allowed(requestTypeAccess("approver", ["card_expense"]))).not.toContain("Check request");
+    expect(allowed(purchaseTypeAccess("requester", ["self_purchase"]))).toContain("Self-purchase");
   });
 
   it("адміністратор без окремих дозволів має всі типи", () => {

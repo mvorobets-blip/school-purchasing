@@ -11,8 +11,8 @@ import { messageFor } from "@/lib/org/messages";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 
-// «Мої заявки»: лише власні заявки зі статусами (AC-FRM-10), «Закупівлю подано» після подання (AC-FRM-11),
-// порожній стан «Ви ще не подали жодної заявки» (AC-FRM-14). Умова author_id + RLS: чужих рядків база не віддає.
+// «Мої заявки»: лише власні заявки зі статусами (AC-FRM-10), «Purchase submitted» після подання (AC-FRM-11),
+// порожній стан «You have not submitted any requests yet» (AC-FRM-14). Умова author_id + RLS: чужих рядків база не віддає.
 export default async function MyRequestsPage({ searchParams }: PageProps<"/requests">) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -28,7 +28,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
     supabase.from("departments").select("id, name"),
   ]);
   if (requestsRes.error || deptsRes.error) {
-    return <Alert variant="destructive">Не вдалося завантажити заявки. Оновіть сторінку.</Alert>;
+    return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
   }
   const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
   const requests = requestsRes.data;
@@ -36,10 +36,10 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
   return (
     <>
       <div className="flex flex-wrap items-end gap-4">
-        <h1 className="flex-1 text-2xl font-semibold">Мої заявки</h1>
+        <h1 className="flex-1 text-2xl font-semibold">My requests</h1>
         <Link href="/requests/new" className={buttonVariants()}>
           <Plus aria-hidden="true" />
-          Нова закупівля
+          New purchase
         </Link>
       </div>
 
@@ -65,12 +65,12 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
           <Table data-testid="my-requests">
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Подано</TableHead>
-                <TableHead>Відділ</TableHead>
-                <TableHead>Тип закупівлі</TableHead>
-                <TableHead>Статус</TableHead>
+                <TableHead className="pl-4">Submitted</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Purchase type</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="w-10 pr-4">
-                  <span className="sr-only">Відкрити</span>
+                  <span className="sr-only">Open</span>
                 </TableHead>
               </TableRow>
             </TableHeader>

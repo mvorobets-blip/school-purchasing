@@ -39,7 +39,7 @@ function SubmitButton({ disabled, children }: { disabled: boolean; children: Rea
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={disabled || pending}>
-      {pending ? "Зберігаємо…" : children}
+      {pending ? "Saving…" : children}
     </Button>
   );
 }
@@ -64,7 +64,7 @@ function PersonForm({
         <Label htmlFor={id}>{label}</Label>
         <Select name="profileId" items={people} required>
           <SelectTrigger id={id} className="w-full">
-            <SelectValue placeholder="Оберіть працівника" />
+            <SelectValue placeholder="Choose an employee" />
           </SelectTrigger>
           <SelectContent>
             {people.map((p) => (
@@ -76,7 +76,7 @@ function PersonForm({
         </Select>
       </div>
       <DialogFooter>
-        <DialogClose render={<Button type="button" variant="outline" />}>Скасувати</DialogClose>
+        <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
         <SubmitButton disabled={people.length === 0}>{submitLabel}</SubmitButton>
       </DialogFooter>
     </form>
@@ -85,7 +85,7 @@ function PersonForm({
 
 // Головна дія сторінки — «Додати заявника»; рідші дії — у меню «Ще дії».
 // Призначення схвалювачем і автосхвалення пропонують усіх працівників: не заявника відхилить база з
-// «Спершу додайте працівника до відділу як заявника» (AC-ORG-02, AC-ORG-33).
+// «Add the employee to the department as a requester first» (AC-ORG-02, AC-ORG-33).
 export function DepartmentActions({
   addRequester,
   setApprover,
@@ -106,16 +106,16 @@ export function DepartmentActions({
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="outline" />}>
           <Settings2 aria-hidden="true" />
-          Ще дії
+          More actions
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-60">
           <DropdownMenuItem onClick={() => setDialog("approver")}>
             <ShieldCheck aria-hidden="true" />
-            Призначити схвалювачем…
+            Assign as approver…
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setDialog("auto")}>
             <Zap aria-hidden="true" />
-            Увімкнути автосхвалення…
+            Turn on auto-approval…
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -123,22 +123,22 @@ export function DepartmentActions({
       <Dialog>
         <DialogTrigger render={<Button />}>
           <Plus aria-hidden="true" />
-          Додати заявника
+          Add requester
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Додати заявника</DialogTitle>
-            <DialogDescription>Заявник подає заявки від імені цього відділу.</DialogDescription>
+            <DialogTitle>Add requester</DialogTitle>
+            <DialogDescription>A requester submits requests on behalf of this department.</DialogDescription>
           </DialogHeader>
           {candidates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Усі працівники вже є заявниками цього відділу.</p>
+            <p className="text-sm text-muted-foreground">All employees are already requesters of this department.</p>
           ) : null}
           <PersonForm
             id="add-requester-profile"
-            label="Працівник"
+            label="Employee"
             action={addRequester}
             people={candidates}
-            submitLabel="Додати"
+            submitLabel="Add"
           />
         </DialogContent>
       </Dialog>
@@ -146,15 +146,15 @@ export function DepartmentActions({
       <Dialog open={dialog === "approver"} onOpenChange={(open) => setDialog(open ? "approver" : null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Призначити схвалювачем</DialogTitle>
-            <DialogDescription>Схвалювачем можна призначити лише заявника цього відділу.</DialogDescription>
+            <DialogTitle>Assign as approver</DialogTitle>
+            <DialogDescription>Only a requester of this department can be assigned as approver.</DialogDescription>
           </DialogHeader>
           <PersonForm
             id="assign-approver-profile"
-            label="Працівник"
+            label="Employee"
             action={setApprover}
             people={everyone}
-            submitLabel="Призначити"
+            submitLabel="Assign"
           />
         </DialogContent>
       </Dialog>
@@ -162,15 +162,15 @@ export function DepartmentActions({
       <Dialog open={dialog === "auto"} onOpenChange={(open) => setDialog(open ? "auto" : null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Увімкнути автосхвалення</DialogTitle>
-            <DialogDescription>Заявки цього працівника у відділі схвалюватимуться без схвалювача.</DialogDescription>
+            <DialogTitle>Turn on auto-approval</DialogTitle>
+            <DialogDescription>This employee&apos;s requests in the department will be approved without an approver.</DialogDescription>
           </DialogHeader>
           <PersonForm
             id="auto-approve-profile"
-            label="Працівник"
+            label="Employee"
             action={setAutoApprove}
             people={everyone}
-            submitLabel="Увімкнути"
+            submitLabel="Turn on"
           />
         </DialogContent>
       </Dialog>
@@ -211,35 +211,35 @@ export function MemberMenu({ profileId, name, remove }: { profileId: string; nam
       <DropdownMenu>
         <DropdownMenuTrigger
           render={<Button variant="ghost" size="icon-sm" disabled={pending} />}
-          aria-label={`Дії для ${name}`}
+          aria-label={`Actions for ${name}`}
         >
           <MoreHorizontal aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem variant="destructive" onClick={() => setConfirm(true)}>
             <UserMinus aria-hidden="true" />
-            Прибрати із заявників
+            Remove from requesters
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Прибрати із заявників?</DialogTitle>
+            <DialogTitle>Remove from requesters?</DialogTitle>
             <DialogDescription>
-              {name} більше не подаватиме заявки від цього відділу; схвалення й автосхвалення в цьому відділі теж буде
-              знято.
+              {name} will no longer submit requests for this department; approval and auto-approval in this department will also be
+              removed.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>Скасувати</DialogClose>
+            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
             <Button
               type="button"
               variant="destructive"
               disabled={pending}
               onClick={() => startTransition(() => remove(formWith(profileId)))}
             >
-              Прибрати
+              Remove
             </Button>
           </DialogFooter>
         </DialogContent>

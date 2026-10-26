@@ -34,10 +34,10 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
       />
       <SidebarInset className="bg-transparent">
         <header className="flex items-center gap-3 border-b px-4 py-2.5 sm:px-8">
-          <SidebarTrigger aria-label="Відкрити меню" className="md:hidden" />
+          <SidebarTrigger aria-label="Open menu" className="md:hidden" />
           <Link href="/" className="flex items-center gap-2 font-semibold md:hidden">
             <ShoppingBasket className="size-4 text-accent-foreground" aria-hidden="true" />
-            Шкільні закупівлі
+            School Purchasing
           </Link>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <Avatar className="size-8">

@@ -3,11 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { messageFor } from "@/lib/org/messages";
 import { login } from "./actions";
 
 const ERRORS: Record<string, string> = {
-  missing: "Вкажіть email і пароль.",
-  invalid: "Невірний email або пароль.",
+  missing: "Enter your email and password.",
+  invalid: "Incorrect email or password.",
+  inactive: messageFor("DEACTIVATED"),
+  unavailable: "Could not sign in. Try again.",
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
@@ -19,7 +22,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="text-2xl font-semibold">Вхід</h1>
+            <h1 className="text-2xl font-semibold">Sign in</h1>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -29,12 +32,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
               <Input id="email" name="email" type="email" autoComplete="email" required />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Пароль</Label>
+              <Label htmlFor="password">Password</Label>
               <Input id="password" name="password" type="password" autoComplete="current-password" required />
             </div>
             {message ? <Alert variant="destructive">{message}</Alert> : null}
             <Button type="submit" size="lg" className="w-full">
-              Увійти
+              Sign in
             </Button>
           </form>
         </CardContent>

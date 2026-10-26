@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Сторінка заявки. Бачать автор, схвалювач її відділу й адміністратор (RLS). Іншим — «Недостатньо прав» без даних:
+// Сторінка заявки. Бачать автор, схвалювач її відділу й адміністратор (RLS). Іншим — «Not enough permissions» без даних:
 // не розрізняємо «немає» й «чужа», щоб не розкривати вміст (AC-FRM-08, AC-APR-03).
 export default async function RequestPage({ params }: PageProps<"/requests/[id]">) {
   const user = await getCurrentUser();
@@ -22,7 +22,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
     <div className="flex flex-col gap-4">
       <Alert data-testid="forbidden">{messageFor("FORBIDDEN")}</Alert>
       <Link href="/requests" className="text-sm underline">
-        До моїх заявок
+        Back to my requests
       </Link>
     </div>
   );
@@ -34,7 +34,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
     .select("id, department_id, purchase_type, status, reject_reason, created_at")
     .eq("id", id)
     .maybeSingle();
-  if (error) return <Alert variant="destructive">Не вдалося завантажити заявку. Оновіть сторінку.</Alert>;
+  if (error) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   if (!request) return forbidden;
 
   const [linesRes, deptRes] = await Promise.all([
@@ -47,33 +47,33 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   ]);
   // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
   if (linesRes.error || deptRes.error) {
-    return <Alert variant="destructive">Не вдалося завантажити заявку. Оновіть сторінку.</Alert>;
+    return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   }
 
   return (
     <>
       <div className="flex flex-col gap-1">
         <Link href="/requests" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Мої заявки
+          ← My requests
         </Link>
-        <h1 className="text-2xl font-semibold">Закупівля</h1>
+        <h1 className="text-2xl font-semibold">Purchase</h1>
       </div>
 
       <Card>
         <CardContent>
           <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Відділ</dt>
+              <dt className="text-muted-foreground">Department</dt>
               <dd className="font-medium">{deptRes.data?.name ?? "—"}</dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Тип закупівлі</dt>
+              <dt className="text-muted-foreground">Purchase type</dt>
               <dd className="font-medium">
                 {PURCHASE_TYPE_LABEL[request.purchase_type as PurchaseType] ?? request.purchase_type}
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Статус</dt>
+              <dt className="text-muted-foreground">Status</dt>
               <dd>
                 <StatusBadge status={request.status} />
               </dd>
@@ -81,7 +81,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
             {request.status === "rejected" && request.reject_reason ? (
               // Причину відхилення видно поруч зі статусом — припущення розробника за питанням PM #59 (AC-APR-07).
               <div className="flex flex-col gap-1">
-                <dt className="text-muted-foreground">Причина відхилення</dt>
+                <dt className="text-muted-foreground">Rejection reason</dt>
                 <dd data-testid="reject-reason">{request.reject_reason}</dd>
               </div>
             ) : null}
@@ -91,15 +91,15 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
 
       <Card className="pb-0">
         <CardHeader>
-          <CardTitle>Рядки</CardTitle>
+          <CardTitle>Lines</CardTitle>
         </CardHeader>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="pl-4">Назва</TableHead>
-              <TableHead>Мета</TableHead>
-              <TableHead className="text-right">Кількість</TableHead>
-              <TableHead className="pr-4 text-right">Ціна</TableHead>
+              <TableHead className="pl-4">Item</TableHead>
+              <TableHead>Purpose</TableHead>
+              <TableHead className="text-right">Quantity</TableHead>
+              <TableHead className="pr-4 text-right">Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

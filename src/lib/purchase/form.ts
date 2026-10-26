@@ -6,8 +6,8 @@ export type Option = { value: string; label: string };
 export type PurchaseLine = { name: string; purpose: string; quantity: string; price: string };
 
 export const PURCHASE_TYPE_LABEL: Record<PurchaseType, string> = {
-  purchasing_department: "Відділ закупівель",
-  self_purchase: "Самостійна закупівля",
+  purchasing_department: "Purchasing department",
+  self_purchase: "Self-purchase",
 };
 
 // Відділи у формі: адміністратор — усі (AC-ORG-22, AC-ORG-29); інші — лише ті, де вони заявники (AC-FRM-01).

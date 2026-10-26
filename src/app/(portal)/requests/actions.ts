@@ -19,13 +19,13 @@ type RpcError = { code?: string; message?: string } | null;
 function errorMessage(error: RpcError): string {
   if (error?.code === "42501" || error?.message?.includes("FORBIDDEN")) return messageFor("FORBIDDEN");
   if (error?.message?.includes("NO_LINES")) return messageFor("NO_LINES");
-  if (error?.message?.includes("INVALID_LINE")) return "Заповніть назву, мету, кількість і ціну в кожному рядку.";
-  return "Не вдалося подати закупівлю. Спробуйте ще раз.";
+  if (error?.message?.includes("INVALID_LINE")) return "Fill in the item, purpose, quantity and price in every line.";
+  return "Could not submit the purchase. Try again.";
 }
 
 // Подання закупівлі. Права (відділ, тип, рядки) перевіряє private.submit_purchase у базі: дію можна викликати напряму,
 // тож перевірка в UI — лише зручність (AC-FRM-02, AC-FRM-04). Помилка лишає обрані відділ і тип у формі (AC-FRM-06);
-// успіх — «Мої заявки» з «Закупівлю подано» (AC-FRM-11).
+// успіх — «Мої заявки» з «Purchase submitted» (AC-FRM-11).
 export async function submitPurchase(
   _prev: SubmitPurchaseState,
   formData: FormData,

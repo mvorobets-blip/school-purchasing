@@ -31,7 +31,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
       <Card>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="purchase-department">Відділ</Label>
+            <Label htmlFor="purchase-department">Department</Label>
             <Select
               name="departmentId"
               items={departments}
@@ -40,7 +40,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               required
             >
               <SelectTrigger id="purchase-department" className="w-full" data-testid="purchase-department">
-                <SelectValue placeholder="Оберіть відділ" />
+                <SelectValue placeholder="Choose a department" />
               </SelectTrigger>
               <SelectContent>
                 {departments.map((d) => (
@@ -52,7 +52,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="purchase-type">Тип закупівлі</Label>
+            <Label htmlFor="purchase-type">Purchase type</Label>
             <Select
               name="purchaseType"
               items={types}
@@ -61,7 +61,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               required
             >
               <SelectTrigger id="purchase-type" className="w-full" data-testid="purchase-type">
-                <SelectValue placeholder="Оберіть тип" />
+                <SelectValue placeholder="Choose a type" />
               </SelectTrigger>
               <SelectContent>
                 {types.map((t) => (
@@ -77,25 +77,25 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
 
       <section aria-labelledby="lines-title" className="flex flex-col gap-3">
         <h2 id="lines-title" className="text-lg font-medium">
-          Рядки
+          Lines
         </h2>
         {lines.map((n, index) => (
           <Card key={n}>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2 sm:col-span-2">
-                <Label htmlFor={`name-${n}`}>Назва</Label>
+                <Label htmlFor={`name-${n}`}>Item</Label>
                 <Input id={`name-${n}`} name={`name.${n}`} />
               </div>
               <div className="flex flex-col gap-2 sm:col-span-2">
-                <Label htmlFor={`purpose-${n}`}>Мета</Label>
+                <Label htmlFor={`purpose-${n}`}>Purpose</Label>
                 <Input id={`purpose-${n}`} name={`purpose.${n}`} />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor={`quantity-${n}`}>Кількість</Label>
+                <Label htmlFor={`quantity-${n}`}>Quantity</Label>
                 <Input id={`quantity-${n}`} name={`quantity.${n}`} type="number" inputMode="decimal" step="any" />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor={`price-${n}`}>Ціна</Label>
+                <Label htmlFor={`price-${n}`}>Price</Label>
                 <Input id={`price-${n}`} name={`price.${n}`} type="number" inputMode="decimal" step="0.01" />
               </div>
               {lines.length > 1 ? (
@@ -106,7 +106,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
                   onClick={() => setLines((ls) => ls.filter((x) => x !== n))}
                 >
                   <Trash2 aria-hidden="true" />
-                  Прибрати рядок {index + 1}
+                  Remove line {index + 1}
                 </Button>
               ) : null}
             </CardContent>
@@ -119,7 +119,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
           onClick={() => setLines((ls) => [...ls, Math.max(0, ...ls) + 1])}
         >
           <Plus aria-hidden="true" />
-          Додати рядок
+          Add line
         </Button>
       </section>
 
@@ -133,7 +133,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
       ) : null}
 
       <Button type="submit" disabled={pending} className="w-full sm:w-auto sm:self-start">
-        {pending ? "Подаємо…" : "Подати"}
+        {pending ? "Submitting…" : "Submit"}
       </Button>
     </form>
   );

@@ -73,8 +73,9 @@
 Шрифт — Onest через `next/font` (`--font-onest` → `--font-sans`, кирилиця й латиниця), моно — Geist Mono для номерів заявок (`PUR-1042`). Мінімальний
 розмір тексту — `text-sm` (14 px); винятки — `text-xs` у `Badge` та ініціалах аватара, 13 px — підписи розділів
 бічної панелі (великими літерами, `sidebar-foreground`, не сірі). Суми, кількості й номери — `tabular-nums`. Мова
-інтерфейсу — українська; TODO: питання PM ValiaBihun/2026-quitcode-dream-team#56 (англійський інтерфейс, вимога
-ValiaBihun/2026-quitcode-dream-team#49) — тексти тримаємо в одному місці сторінки, щоб переклад був заміною рядків.
+інтерфейсу — англійська (вимога ValiaBihun/2026-quitcode-dream-team#49, у зрізі WS7 — відповідь PM на
+ValiaBihun/2026-quitcode-dream-team#56): тексти — дослівно з таблиці PM; повідомлення — у `src/lib/org/messages.ts`; дані, які
+ввели люди (назви відділів, причини), — без перекладу. Перевірка — тест AC-LANG-01 (`tests/lang/ui-language.test.ts`).
 
 | Роль | Клас | Де |
 |---|---|---|
@@ -126,12 +127,12 @@ ValiaBihun/2026-quitcode-dream-team#49) — тексти тримаємо в о�
 
 | Стан | Як виглядає | Приклад тексту |
 |---|---|---|
-| Порожній список | `text-sm text-muted-foreground`, без таблиці | «Відділів ще немає.», «Заявок на рішення немає» |
-| Помилка дії | `Alert variant="destructive"` над формою; введене лишається у формі | «Відділ з такою назвою вже є», «Додайте хоча б один рядок» |
-| Відмова в доступі | `Alert` (default, нейтральний — не червоний), без даних | «Недостатньо прав» |
-| Помилка завантаження | `Alert variant="destructive"` замість таблиці, не «порожньо» | «Не вдалося завантажити відділи. Оновіть сторінку.» |
+| Порожній список | `text-sm text-muted-foreground`, без таблиці | «No departments yet.», «No requests awaiting your decision» |
+| Помилка дії | `Alert variant="destructive"` над формою; введене лишається у формі | «A department with this name already exists», «Add at least one line» |
+| Відмова в доступі | `Alert` (default, нейтральний — не червоний), без даних | «Not enough permissions» |
+| Помилка завантаження | `Alert variant="destructive"` замість таблиці, не «порожньо» | «Could not load departments. Refresh the page.» |
 | Завантаження | кнопка `disabled`, текст дії лишається | — |
-| Успіх | `Alert` (default) над розділом | «Закупівлю подано», «Працівника додано як заявника» |
+| Успіх | `Alert` (default) над розділом | «Purchase submitted», «The employee was added to the department as a requester.» |
 | Вимкнена дія | `disabled` + пояснення поруч `text-muted-foreground` | — |
 
 ## 7. Доступність — мінімум
@@ -149,7 +150,7 @@ ValiaBihun/2026-quitcode-dream-team#49) — тексти тримаємо в о�
 |---|---|
 | `bg-primary text-primary-foreground` | `bg-zinc-900 text-white`, `bg-[#0f6b6e]`, `style={{ color: "#…" }}` |
 | компонент `Button` з потрібним варіантом | власний `<button className="…">` у сторінці |
-| «Недостатньо прав» — нейтральний `Alert` | червоний текст для відмови в доступі |
+| «Not enough permissions» — нейтральний `Alert` | червоний текст для відмови в доступі |
 | `destructive` лише для «Відхилити» й помилок | червоний для звичайних повідомлень і підказок |
 | статус — `Badge` з текстом і `bg-status-*` | крапка чи колір рядка без тексту |
 | новий токен через розділ 9 | новий колір «лише для цієї сторінки», градієнти |

@@ -24,10 +24,10 @@ describe("Дія createDepartment", () => {
     currentUser.value = { id: "u1", role: "admin", isActive: true };
   });
 
-  it("AC-ORG-34: помилку бази 23505 (дубль назви) дія перекладає в «Відділ з такою назвою вже є»", async () => {
+  it("AC-ORG-34: помилку бази 23505 (дубль назви) дія перекладає в «A department with this name already exists»", async () => {
     insertResult.error = { code: "23505" };
     const state = await createDepartment(idle, form("початкова школа"));
-    expect(state).toEqual({ status: "error", message: "Відділ з такою назвою вже є" });
+    expect(state).toEqual({ status: "error", message: "A department with this name already exists" });
   });
 
   it("AC-ORG-34: відділ з новою назвою створено (контроль до випадку дубля)", async () => {
@@ -35,9 +35,9 @@ describe("Дія createDepartment", () => {
     expect(state.status).toBe("ok");
   });
 
-  it("AC-ORG-09: не-адміністратор отримує «Недостатньо прав», навіть викликавши дію напряму", async () => {
+  it("AC-ORG-09: не-адміністратор отримує «Not enough permissions», навіть викликавши дію напряму", async () => {
     currentUser.value = { id: "u2", role: "requester", isActive: true };
     const state = await createDepartment(idle, form("Бібліотека"));
-    expect(state).toEqual({ status: "error", message: "Недостатньо прав" });
+    expect(state).toEqual({ status: "error", message: "Not enough permissions" });
   });
 });

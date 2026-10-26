@@ -16,11 +16,28 @@ export async function login(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     // Не показуємо текст помилки Auth: він може підказати, чи існує email.
     redirect("/login?error=invalid");
+  }
+
+  // Деактивований працівник не входить (AC-ORG-12): RLS не віддає йому навіть власного профілю, тож відсутній чи
+  // неактивний профіль — вихід і повідомлення на сторінці входу. Помилка читання профілю — не «деактивовано»:
+  // активному працівнику показуємо нейтральне «спробуйте ще раз», а не хибну причину.
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  if (profileError) {
+    await supabase.auth.signOut();
+    redirect("/login?error=unavailable");
+  }
+  if (!profile?.is_active) {
+    await supabase.auth.signOut();
+    redirect("/login?error=inactive");
   }
 
   revalidatePath("/", "layout");

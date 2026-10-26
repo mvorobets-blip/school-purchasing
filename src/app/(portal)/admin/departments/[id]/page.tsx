@@ -19,18 +19,18 @@ import { DepartmentActions, MemberMenu, MemberSwitch, type Person } from "./memb
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const OK_TEXT: Record<string, string> = {
-  REQUESTER_ADDED: "Працівника додано до відділу як заявника.",
-  REQUESTER_REMOVED: "Працівника прибрано із заявників відділу.",
-  APPROVER_SET: "Схвалювача призначено.",
-  APPROVER_REMOVED: "Працівника прибрано зі схвалювачів.",
-  AUTO_APPROVE_ON: "Автосхвалення ввімкнено.",
-  AUTO_APPROVE_OFF: "Автосхвалення вимкнено.",
+  REQUESTER_ADDED: "The employee was added to the department as a requester.",
+  REQUESTER_REMOVED: "The employee was removed from the department's requesters.",
+  APPROVER_SET: "Approver assigned.",
+  APPROVER_REMOVED: "The employee is no longer an approver.",
+  AUTO_APPROVE_ON: "Auto-approval turned on.",
+  AUTO_APPROVE_OFF: "Auto-approval turned off.",
 };
 
 function errorText(code: string): string {
   if (code === "NOT_REQUESTER") return messageFor("NOT_REQUESTER");
   if (code === "FORBIDDEN") return messageFor("FORBIDDEN");
-  return "Не вдалося зберегти зміну. Спробуйте ще раз.";
+  return "Could not save the change. Try again.";
 }
 
 // Заявники, схвалювачі й автосхвалення відділу (AC-ORG-01 … 06, 15, 19, 20, 24, 33).
@@ -56,7 +56,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
   ]);
   if (deptRes.error || membersRes.error || profilesRes.error) {
     return (
-      <Alert variant="destructive">Не вдалося завантажити відділ. Оновіть сторінку.</Alert>
+      <Alert variant="destructive">Could not load the department. Refresh the page.</Alert>
     );
   }
   if (!deptRes.data) notFound();
@@ -79,13 +79,13 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <Link href="/admin/departments" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Усі відділи
+            ← All departments
           </Link>
           <h1 className="text-2xl font-semibold">{department.name}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span>Заявників: {members.length}</span>
+            <span>Requesters: {members.length}</span>
             <span aria-hidden="true">·</span>
-            <span>Схвалювачів: {activeApprovers}</span>
+            <span>Approvers: {activeApprovers}</span>
             {activeApprovers === 0 ? (
               <Badge className="bg-status-pending text-status-pending-foreground">{messageFor("NO_APPROVER")}</Badge>
             ) : null}
@@ -108,7 +108,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
         </Alert>
       ) : null}
       {typeof error === "string" ? (
-        // «Недостатньо прав» — нейтрально (PM: людина нічого не зламала); помилки дій — червоні.
+        // «Not enough permissions» — нейтрально (PM: людина нічого не зламала); помилки дій — червоні.
         <Alert variant={error === "FORBIDDEN" ? "default" : "destructive"} data-testid="member-message">
           {errorText(error)}
         </Alert>
@@ -117,9 +117,9 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
       <Card className={members.length === 0 ? undefined : "pb-0"}>
         <CardHeader>
           <CardTitle className="flex items-center gap-1">
-            Заявники відділу
-            <InfoTip label="Про заявників, схвалювачів і автосхвалення">
-              Схвалювач вирішує заявки відділу; автосхвалення — заявки працівника схвалюються одразу.
+            Department requesters
+            <InfoTip label="About requesters, approvers and auto-approval">
+              An approver decides the department&apos;s requests; with auto-approval an employee&apos;s requests are approved right away.
             </InfoTip>
           </CardTitle>
         </CardHeader>
@@ -128,19 +128,19 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
             <span className="flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
               <Users className="size-5" aria-hidden="true" />
             </span>
-            <p className="font-medium">У відділі ще немає заявників.</p>
-            <p className="text-sm text-muted-foreground">Додайте працівника кнопкою «Додати заявника».</p>
+            <p className="font-medium">The department has no requesters yet.</p>
+            <p className="text-sm text-muted-foreground">Add an employee with «Add requester».</p>
           </CardContent>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Працівник</TableHead>
-                <TableHead>Роль</TableHead>
-                <TableHead>Схвалювач</TableHead>
-                <TableHead>Автосхвалення</TableHead>
+                <TableHead className="pl-4">Employee</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Approver</TableHead>
+                <TableHead>Auto-approval</TableHead>
                 <TableHead className="w-12 pr-4">
-                  <span className="sr-only">Дії</span>
+                  <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -162,7 +162,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
                             <span className="truncate text-sm text-muted-foreground">{m.profile.email}</span>
                           ) : null}
                         </div>
-                        {m.profile && !m.profile.is_active ? <Badge variant="secondary">деактивований</Badge> : null}
+                        {m.profile && !m.profile.is_active ? <Badge variant="secondary">deactivated</Badge> : null}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -173,7 +173,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
                         profileId={m.profile_id}
                         checked={m.is_approver}
                         action={setApprover.bind(null, id)}
-                        label={`Схвалювач: ${name}`}
+                        label={`Approver: ${name}`}
                       />
                     </TableCell>
                     <TableCell>
@@ -181,7 +181,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
                         profileId={m.profile_id}
                         checked={m.auto_approve}
                         action={setAutoApprove.bind(null, id)}
-                        label={`Автосхвалення: ${name}`}
+                        label={`Auto-approval: ${name}`}
                       />
                     </TableCell>
                     <TableCell className="pr-4 text-right">

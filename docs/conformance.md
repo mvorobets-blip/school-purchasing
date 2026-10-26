@@ -42,7 +42,7 @@
 | AC-ORG-09 | без ролі `admin` немає доступу до працівників і відділів — «Недостатньо прав» | `src/app/(portal)/admin/layout.tsx`, `src/lib/org/access.ts` | `tests/org/access.test.ts` | реалізовано |
 | AC-ORG-10 | єдиний активний адміністратор не знімає з себе роль | — | — | відкладено (задача 4.1 плану impl-department-setup — деактивація й захист адміністратора не реалізовані до здачі зрізу) |
 | AC-ORG-11 | адміністратор без відділів лишається `admin` | `supabase/migrations/20261021213618_department_setup.sql`, `supabase/migrations/20261021231637_department_members_functions.sql`, `src/lib/org/roles.ts` | `tests/org/roles.test.ts` | реалізовано |
-| AC-ORG-12 | деактивований працівник не входить у систему й бачить «Account deactivated. Contact your administrator» | — | — | відкладено (задача 4.1 плану impl-department-setup — деактивацію адміністратором ще не реалізовано) |
+| AC-ORG-12 | деактивований працівник не входить у систему й бачить «Account deactivated. Contact your administrator» | — | — | відкладено (вхід деактивованого вже блокує `src/app/login/actions.ts`, тест «AC-ORG-12: …» у `tests/org/login.test.ts`; саму деактивацію адміністратором — задача 4.1 плану impl-department-setup) |
 | AC-ORG-14 | відділ без активного схвалювача позначено «Немає схвалювача» | `src/app/(portal)/admin/departments/page.tsx`, `src/lib/org/departments.ts` | `tests/org/departments.test.ts` | реалізовано |
 | AC-ORG-15 | зняття із заявників відділу знімає автосхвалення цього відділу | `supabase/migrations/20261021231637_department_members_functions.sql`, `src/lib/org/roles.ts` | `tests/org/membership.test.ts` | реалізовано |
 | AC-ORG-16 | деактивованого працівника немає у виборі схвалювача відділу | — | — | відкладено (задача 4.1 плану impl-department-setup — деактивація й захист адміністратора не реалізовані до здачі зрізу) |
@@ -86,10 +86,10 @@
 | AC-APR-05 | схвалювач не схвалює власну заявку | — | — | відкладено (чекає реалізації) |
 | AC-APR-06 | відхилення без причини — «Provide a reason», статус не змінено | — | — | відкладено (чекає реалізації) |
 | AC-APR-07 | відхилення з причиною — «Відхилено», причину показано на сторінці заявки | — | — | відкладено (чекає реалізації) |
-| AC-LANG-01 | усі написи інтерфейсу англійською, без українських слів | — | — | відкладено (чекає реалізації) |
-| AC-LANG-02 | сторінка входу й помилка входу англійською | — | — | відкладено (чекає реалізації) |
-| AC-LANG-03 | відмова — «Not enough permissions» без розкриття вмісту | — | — | відкладено (чекає реалізації) |
-| AC-LANG-04 | без рядків — «Add at least one line» | — | — | відкладено (чекає реалізації) |
-| AC-LANG-05 | відхилення без причини — «Provide a reason» | — | — | відкладено (чекає реалізації) |
-| AC-LANG-06 | статуси текстом «Awaiting approval», «Approved», «Rejected» | — | — | відкладено (чекає реалізації) |
-| AC-LANG-08 | ідентифікатори ролей без змін, підпис ролі англійською | — | — | відкладено (чекає реалізації) |
+| AC-LANG-01 | усі написи інтерфейсу англійською, без українських слів | `src/app/layout.tsx` (lang="en"), `src/lib/org/messages.ts` | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-02 | сторінка входу й помилка входу англійською | `src/app/login/page.tsx` | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-03 | відмова — «Not enough permissions» без розкриття вмісту | `src/lib/org/messages.ts` (FORBIDDEN) | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-04 | без рядків — «Add at least one line» | `src/lib/org/messages.ts` (NO_LINES) | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-05 | відхилення без причини — «Provide a reason» | `src/lib/org/messages.ts` (NO_REASON) | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-06 | статуси текстом «Awaiting approval», «Approved», «Rejected» | `src/lib/purchase/status.ts` (STATUS_LABEL) | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-08 | ідентифікатори ролей без змін, підпис ролі англійською | `src/lib/org/roles.ts` (ROLE_LABEL) | `tests/lang/ui-language.test.ts` | реалізовано |

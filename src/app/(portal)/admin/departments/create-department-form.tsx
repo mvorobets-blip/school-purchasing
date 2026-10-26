@@ -41,16 +41,16 @@ export function CreateDepartmentDialog() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger render={<Button />}>
           <Plus aria-hidden="true" />
-          Створити відділ
+          Create department
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Новий відділ</DialogTitle>
-            <DialogDescription>Назва — до {DEPARTMENT_NAME_MAX} символів, без повторів.</DialogDescription>
+            <DialogTitle>New department</DialogTitle>
+            <DialogDescription>Name — up to {DEPARTMENT_NAME_MAX} characters, no duplicates.</DialogDescription>
           </DialogHeader>
           <form action={formAction} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="department-name">Назва відділу</Label>
+              <Label htmlFor="department-name">Department name</Label>
               <Input id="department-name" name="name" required maxLength={DEPARTMENT_NAME_MAX} autoFocus />
             </div>
             {state.status === "error" ? (
@@ -59,9 +59,9 @@ export function CreateDepartmentDialog() {
               </Alert>
             ) : null}
             <DialogFooter>
-              <DialogClose render={<Button type="button" variant="outline" />}>Скасувати</DialogClose>
+              <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
               <Button type="submit" disabled={pending}>
-                {pending ? "Створюємо…" : "Створити"}
+                {pending ? "Creating…" : "Create"}
               </Button>
             </DialogFooter>
           </form>

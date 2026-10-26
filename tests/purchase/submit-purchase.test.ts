@@ -42,11 +42,11 @@ describe("дія submitPurchase", () => {
     currentUser.value = { id: "u1", role: "requester", isActive: true };
   });
 
-  it("AC-FRM-06: без рядків — «Додайте хоча б один рядок», відділ і тип лишаються, до бази не звертаємось", async () => {
+  it("AC-FRM-06: без рядків — «Add at least one line», відділ і тип лишаються, до бази не звертаємось", async () => {
     const state = await submitPurchase(idle, form());
     expect(state).toEqual({
       status: "error",
-      message: "Додайте хоча б один рядок",
+      message: "Add at least one line",
       departmentId: DEPT,
       purchaseType: "purchasing_department",
     });
@@ -58,17 +58,17 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
-  it("AC-FRM-02: відмову бази (чужий відділ) показано як «Недостатньо прав», без переходу", async () => {
+  it("AC-FRM-02: відмову бази (чужий відділ) показано як «Not enough permissions», без переходу", async () => {
     rpcResult.error = { code: "42501", message: "FORBIDDEN" };
     const state = await submitPurchase(idle, form(ONE_LINE));
-    expect(state.message).toBe("Недостатньо прав");
+    expect(state.message).toBe("Not enough permissions");
     expect(state.departmentId).toBe(DEPT);
   });
 
   it("гість чи неактивний користувач — відмова без запису", async () => {
     currentUser.value = null;
     const state = await submitPurchase(idle, form(ONE_LINE));
-    expect(state.message).toBe("Недостатньо прав");
+    expect(state.message).toBe("Not enough permissions");
     expect(rpcCalls).toHaveLength(0);
   });
 });

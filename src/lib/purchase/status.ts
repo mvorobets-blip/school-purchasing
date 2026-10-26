@@ -2,9 +2,9 @@ export type PurchaseStatus = "pending" | "approved" | "rejected";
 
 // Статус завжди з текстом; колір лише підсилює (PM «Вигляд і тон»; DESIGN.md — токени status-*).
 export const STATUS_LABEL: Record<PurchaseStatus, string> = {
-  pending: "Очікує схвалення",
-  approved: "Схвалено",
-  rejected: "Відхилено",
+  pending: "Awaiting approval",
+  approved: "Approved",
+  rejected: "Rejected",
 };
 
 export const STATUS_CLASS: Record<PurchaseStatus, string> = {

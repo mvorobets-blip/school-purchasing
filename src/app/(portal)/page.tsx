@@ -55,10 +55,10 @@ export default async function Home() {
   return (
     <>
       <section className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Вітаємо{user.fullName ? `, ${user.fullName}` : ""}</h1>
+        <h1 className="text-2xl font-semibold">Welcome{user.fullName ? `, ${user.fullName}` : ""}</h1>
         <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
           <div className="flex gap-2">
-            <dt>Роль</dt>
+            <dt>Role</dt>
             <dd className="text-foreground">
               {ROLE_LABEL[user.role]}{" "}
               <span data-testid="user-role" className="font-mono text-muted-foreground">
@@ -75,18 +75,18 @@ export default async function Home() {
         </dl>
       </section>
 
-      {loadError ? <Alert variant="destructive">Не вдалося завантажити дані. Оновіть сторінку.</Alert> : null}
+      {loadError ? <Alert variant="destructive">Could not load data. Refresh the page.</Alert> : null}
 
       {user.role === "admin" ? (
-        <section aria-label="Огляд" className="grid gap-4 sm:grid-cols-3">
-          <Stat label="Відділів" value={departments.length} />
-          <Stat label="Заявників у відділах" value={members.length} />
-          <Stat label="Без схвалювача" value={attention.length} hint={`з ${departments.length} відділів`} />
+        <section aria-label="Overview" className="grid gap-4 sm:grid-cols-3">
+          <Stat label="Departments" value={departments.length} />
+          <Stat label="Requesters in departments" value={members.length} />
+          <Stat label="Without an approver" value={attention.length} hint={`of ${departments.length} departments`} />
         </section>
       ) : (
-        <section aria-label="Огляд" className="grid gap-4 sm:grid-cols-2">
-          <Stat label="Мої відділи" value={own.length} />
-          <Stat label="Схвалюю у відділах" value={own.filter((m) => m.is_approver).length} />
+        <section aria-label="Overview" className="grid gap-4 sm:grid-cols-2">
+          <Stat label="My departments" value={own.length} />
+          <Stat label="I approve in departments" value={own.filter((m) => m.is_approver).length} />
         </section>
       )}
 
@@ -96,9 +96,9 @@ export default async function Home() {
             <span className="flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
               <ListChecks className="size-5" aria-hidden="true" />
             </span>
-            <p className="font-medium">Заявок ще немає</p>
+            <p className="font-medium">No requests yet</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Тут з&apos;являться ваші заявки й заявки на рішення, коли запрацює форма закупівлі.
+              Your requests and requests awaiting your decision will appear here.
             </p>
           </CardContent>
         </Card>
@@ -106,11 +106,11 @@ export default async function Home() {
         {user.role === "admin" ? (
           <Card>
             <CardHeader>
-              <CardTitle>Потребують уваги</CardTitle>
+              <CardTitle>Needs attention</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
               {attention.length === 0 ? (
-                <p className="text-sm text-muted-foreground">У кожному відділі є схвалювач.</p>
+                <p className="text-sm text-muted-foreground">Every department has an approver.</p>
               ) : (
                 attention.map((d) => (
                   <Link
@@ -132,11 +132,11 @@ export default async function Home() {
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle>Мій профіль</CardTitle>
+              <CardTitle>My profile</CardTitle>
             </CardHeader>
             <CardContent>
               <Link href="/profile" className="text-sm font-medium text-accent-foreground hover:underline">
-                Мої відділи й дозволи →
+                My departments and permissions →
               </Link>
             </CardContent>
           </Card>
