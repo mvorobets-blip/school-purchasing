@@ -47,7 +47,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   ]);
   // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
   if (linesRes.error || deptRes.error) {
-    return <Alert variant="destructive">Не вдалося завантажити заявку. Оновіть сторінку.</Alert>;
+    return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   }
 
   return (

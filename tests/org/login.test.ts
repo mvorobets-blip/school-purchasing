@@ -49,7 +49,7 @@ describe("вхід", () => {
     expect(state.signedOut).toBe(false);
   });
 
-  it("деактивованого працівника виведено й повернуто на вхід з повідомленням про деактивацію", async () => {
+  it("AC-ORG-12: деактивованого працівника виведено й повернуто на вхід з повідомленням про деактивацію", async () => {
     state.profile = null; // RLS не віддає профіль неактивному
     await expect(login(form())).rejects.toThrow("REDIRECT /login?error=inactive");
     expect(state.signedOut).toBe(true);
