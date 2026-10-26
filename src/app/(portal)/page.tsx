@@ -206,7 +206,7 @@ export default async function Home() {
                     <>
                       {authorName.get(r.author_id) ?? "—"} · {deptName.get(r.department_id) ?? "—"} · {formatSubmitted(r.created_at)}
                       {r.status === "pending" && withoutApprover.has(r.department_id) ? (
-                        <span> · no approver</span>
+                        <span> · {messageFor("NO_APPROVER")}</span>
                       ) : null}
                     </>
                   }

@@ -1,5 +1,5 @@
-// Дата подання заявки в усіх списках («26 Oct»): час America/New_York — припущення PM у вимогах 47 і 48
-// («Дати й час — за часом America/New_York, як у першому зрізі»); англійський інтерфейс.
+// Дата подання заявки в усіх списках: формат як у першому зрізі («25.10.2026», лише цифри) — вимога 49 не змінює
+// форматів дат («лишаються за попередніми вимогами»); час America/New_York — припущення PM у вимогах 47 і 48.
 export function formatSubmitted(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "America/New_York" });
+  return new Date(iso).toLocaleDateString("uk-UA", { timeZone: "America/New_York" });
 }
