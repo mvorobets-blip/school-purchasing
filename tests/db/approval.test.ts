@@ -134,6 +134,39 @@ describe("рішення схвалювача (база)", () => {
     );
   });
 
+  const authorNames = (user: string, ids: string[]) =>
+    t.asUser<Record<string, unknown>>(user, "select * from public.request_author_names($1::uuid[])", [ids]);
+
+  it("AC-APR-08: схвалювач бачить ім'я автора заявки свого відділу з профілю", async () => {
+    const [member1] = await t.asService<{ full_name: string }>("select full_name from public.profiles where id = $1", [
+      MEMBER_1,
+    ]);
+    expect(member1.full_name).toBeTruthy();
+    expect(await authorNames(MARIA, [primary1])).toEqual([{ request_id: primary1, author_name: member1.full_name }]);
+  });
+
+  it("AC-APR-09: автор без імені в профілі — схвалювач бачить його email", async () => {
+    const [before] = await t.asService<{ full_name: string | null; email: string }>(
+      "select full_name, email from public.profiles where id = $1",
+      [MEMBER_1],
+    );
+    try {
+      for (const empty of [null, "  "]) {
+        await t.asService("update public.profiles set full_name = $2 where id = $1", [MEMBER_1, empty]);
+        expect(await authorNames(MARIA, [primary1])).toEqual([{ request_id: primary1, author_name: before.email }]);
+      }
+    } finally {
+      await t.asService("update public.profiles set full_name = $2 where id = $1", [MEMBER_1, before.full_name]);
+    }
+  });
+
+  it("AC-APR-10: про автора схвалювач отримує лише ім'я — без ролі, відділів і дозволів", async () => {
+    const [row] = await authorNames(MARIA, [primary1]);
+    expect(Object.keys(row).sort()).toEqual(["author_name", "request_id"]);
+    // Профіль колеги закритий RLS: роль автора напряму не прочитати.
+    expect(await t.asUser(MARIA, "select role from public.profiles where id = $1", [MEMBER_1])).toEqual([]);
+  });
+
   it("AC-FRM-13: єдиний схвалювач відділу не вирішує власну заявку — вона чекає «Очікує схвалення»", async () => {
     await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true)", [
       dept["Вища школа"],

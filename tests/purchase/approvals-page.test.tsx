@@ -83,4 +83,29 @@ describe("сторінка «Awaiting decision»", () => {
       ]),
     );
   });
+
+  it("AC-APR-08: у списку для рішення стовпець «Author» з ім'ям автора кожної заявки", async () => {
+    data.approverOf = [{ department_id: "d1" }];
+    data.requests = [
+      { id: "r1", department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" },
+    ];
+    const html = await render();
+    expect(html).toContain(">Author</th>");
+    expect(html).toMatch(/data-testid="decision-author"[^>]*>Андрій Демо-Перший</);
+  });
+
+  it("AC-APR-10: список для рішення не читає профілю й дозволів автора — лише ім'я з request_author_names", async () => {
+    data.approverOf = [{ department_id: "d1" }];
+    data.requests = [
+      { id: "r1", department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" },
+    ];
+    await render();
+    expect(queried).not.toContain("profiles");
+    expect(queried).not.toContain("employee_permissions");
+    // department_members читаємо лише для самого схвалювача (його відділи), не для автора.
+    expect(filters.filter((f) => f.startsWith("department_members."))).toEqual([
+      "department_members.eq(profile_id,u1)",
+      "department_members.eq(is_approver,true)",
+    ]);
+  });
 });
