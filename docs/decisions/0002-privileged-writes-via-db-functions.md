@@ -28,6 +28,9 @@ POST, а Data API приймає запити з тим самим токено�
   правила форми й стану — `NO_LINES`, `INVALID_LINE`, `NO_REASON`, `NOT_PENDING`.
 - Тонкі обгортки `public.submit_purchase` / `public.decide_purchase` (`security invoker`) з `grant execute` лише
   `authenticated` — їх викликає Server Action через `supabase.rpc(…)` і перетворює код помилки на повідомлення PM.
+  Обгортка виконується з правами того, хто викликає, тож `authenticated` має й `usage` на схему `private` (з
+  міграцій WS6) і `grant execute` на обидві функції `private.*`; `public` і `anon` — `revoke execute`. Права
+  перевіряють самі функції першими рядками, тож прямий виклик `private.*` нічого не обходить.
 - Server Action теж перевіряє вхід (`getClaims()` + профіль — ADR 0003) і форму, але це зручність для повідомлень, а
   не захист: захист — у базі.
 

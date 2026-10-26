@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // Архітектурне правило «авторизація лише через getClaims()» (ADR docs/decisions/0003-server-auth-via-get-claims.md).
 // getSession() читає сесію з cookie без перевірки підпису JWT — на сервері їй вірити не можна. Тому в коді застосунку
-// жодного getSession: ні виклику, ні посилання (const f = supabase.auth.getSession). Коментарі не перевіряємо — там
-// можна пояснити, чому getSession не використовуємо.
+// жодного getSession: ні виклику, ні посилання (const f = supabase.auth.getSession). Пропускаємо лише рядки-коментарі
+// (починаються з `//`, `/*` чи `*`) — там можна пояснити, чому getSession не використовуємо. Усе інше перевіряємо,
+// зокрема код із коментарем у кінці рядка: краще зайва тривога, ніж пропущений виклик (`//` трапляється й у JSX-тексті,
+// URL чи regex, тож «вирізати коментарі» в середині рядка ненадійно).
 // Шукає в src/. Якщо теки src/ немає — у app/, components/ і lib/ кореня.
 // Використання: node scripts/check-no-get-session.mjs [--root <dir>]
-// Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (ні src/, ні app/, components/, lib/).
+// Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (ні src/, ні app/, components/, lib/)
+// або теку не вдалося прочитати.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -35,8 +38,10 @@ function walk(dir, out = []) {
   let entries;
   try {
     entries = readdirSync(dir);
-  } catch {
-    return out;
+  } catch (error) {
+    // Непрочитана тека — не «порушень немає»: інакше скрипт сказав би OK, не перевіривши файли.
+    console.error(`check-no-get-session: не вдалося прочитати теку ${dir}: ${error.message}`);
+    process.exit(2);
   }
   for (const name of entries) {
     if (SKIP_DIRS.has(name)) continue;
@@ -47,53 +52,25 @@ function walk(dir, out = []) {
   return out;
 }
 
-// Прибирає коментарі `// …` і `/* … */`, зберігаючи переноси рядків (номери рядків не зсуваються).
-// Рядкові літерали пропускаємо як є, щоб `"https://…"` не сприйняти за коментар.
-function stripComments(text) {
-  let out = "";
-  let i = 0;
-  while (i < text.length) {
-    const c = text[i];
-    const next = text[i + 1];
-    if (c === "/" && next === "/") {
-      while (i < text.length && text[i] !== "\n") i++;
-    } else if (c === "/" && next === "*") {
-      i += 2;
-      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) {
-        if (text[i] === "\n") out += "\n";
-        i++;
-      }
-      i += 2;
-    } else if (c === '"' || c === "'" || c === "`") {
-      const quote = c;
-      out += c;
-      i++;
-      while (i < text.length && text[i] !== quote) {
-        if (text[i] === "\\") {
-          out += text[i];
-          i++;
-        }
-        out += text[i];
-        i++;
-      }
-      out += text[i] ?? "";
-      i++;
-    } else {
-      out += c;
-      i++;
-    }
+// Частина рядка, яку перевіряємо: рядок-коментар — порожньо; `/* … */ код` — лише код після `*/`; решта — увесь рядок.
+function codePart(line) {
+  const t = line.trim();
+  if (t.startsWith("//") || t.startsWith("*")) return "";
+  if (t.startsWith("/*")) {
+    const end = t.indexOf("*/");
+    return end < 0 ? "" : t.slice(end + 2);
   }
-  return out;
+  return line;
 }
 
 const problems = [];
 
 for (const file of BASES.flatMap((b) => walk(join(root, b)))) {
   const rel = relative(root, file).split(sep).join("/");
-  stripComments(readFileSync(file, "utf8"))
+  readFileSync(file, "utf8")
     .split(/\r?\n/)
     .forEach((line, i) => {
-      if (/\bgetSession\b/.test(line)) {
+      if (/\bgetSession\b/.test(codePart(line))) {
         problems.push(`${rel}:${i + 1}  getSession — на сервері не перевіряє підпис JWT; використовуйте supabase.auth.getClaims()`);
       }
     });
