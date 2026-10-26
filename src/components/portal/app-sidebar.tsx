@@ -3,6 +3,7 @@
 import {
   Building2,
   ClipboardList,
+  Inbox,
   ChevronDown,
   ChevronsUpDown,
   LayoutDashboard,
@@ -40,7 +41,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-export type SidebarUser = { name: string; email: string | null; roleLabel: string; initials: string; isAdmin: boolean };
+export type SidebarUser = { name: string; email: string | null; roleLabel: string; initials: string; isAdmin: boolean; isApprover: boolean };
 
 type Page = { href: string; label: string; icon: LucideIcon };
 type Section = { label: string; pages: Page[] };
@@ -61,6 +62,8 @@ function sectionsFor(user: SidebarUser): Section[] {
     pages: [
       { href: "/requests/new", label: "New purchase", icon: Plus },
       { href: "/requests", label: "My requests", icon: ClipboardList },
+      // Список для рішення — лише схвалювачам (AC-APR-04: заявник його не бачить).
+      ...(user.isApprover ? [{ href: "/approvals", label: "Awaiting decision", icon: Inbox }] : []),
     ],
   });
   if (user.isAdmin) {

@@ -72,6 +72,14 @@ describe("подання закупівлі (база)", () => {
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
+  it("AC-FRM-15: рядок лише з назвою не подано, нової заявки немає", async () => {
+    const before = await pendingCountOf(MEMBER_1);
+    await expect(
+      submit(MEMBER_1, "Початкова школа", "purchasing_department", [{ name: "Папір А4" }]),
+    ).rejects.toThrow(/INVALID_LINE/);
+    expect(await pendingCountOf(MEMBER_1)).toBe(before);
+  });
+
   it("AC-FRM-07: подана закупівля має статус «Очікує схвалення»", async () => {
     const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", LINE);
     const [row] = await t.asService<{ status: string; author_id: string }>(

@@ -36,6 +36,9 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
     .maybeSingle();
   if (error) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   if (!request) return forbidden;
+  // Ім'я автора — лише ім'я й лише якщо заявку дозволено бачити (private.request_author_names).
+  const { data: authorRows } = await supabase.rpc("request_author_names", { p_request_ids: [id] });
+  const authorName = authorRows?.[0]?.author_name ?? "—";
 
   const [linesRes, deptRes] = await Promise.all([
     supabase
@@ -63,6 +66,12 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
         <CardContent>
           <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <div className="flex flex-col gap-1">
+              <dt className="text-muted-foreground">Submitted by</dt>
+              <dd className="font-medium" data-testid="request-author">
+                {authorName}
+              </dd>
+            </div>
+            <div className="flex flex-col gap-1">
               <dt className="text-muted-foreground">Department</dt>
               <dd className="font-medium">{deptRes.data?.name ?? "—"}</dd>
             </div>
@@ -79,7 +88,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
               </dd>
             </div>
             {request.status === "rejected" && request.reject_reason ? (
-              // Причину відхилення видно поруч зі статусом — припущення розробника за питанням PM #59 (AC-APR-07).
+              // Причину відхилення видно поруч зі статусом автору й схвалювачам відділу — рішення PM #59 (AC-APR-07).
               <div className="flex flex-col gap-1">
                 <dt className="text-muted-foreground">Rejection reason</dt>
                 <dd data-testid="reject-reason">{request.reject_reason}</dd>

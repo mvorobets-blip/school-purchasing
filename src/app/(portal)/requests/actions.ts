@@ -19,7 +19,7 @@ type RpcError = { code?: string; message?: string } | null;
 function errorMessage(error: RpcError): string {
   if (error?.code === "42501" || error?.message?.includes("FORBIDDEN")) return messageFor("FORBIDDEN");
   if (error?.message?.includes("NO_LINES")) return messageFor("NO_LINES");
-  if (error?.message?.includes("INVALID_LINE")) return "Fill in the item, purpose, quantity and price in every line.";
+  if (error?.message?.includes("INVALID_LINE")) return messageFor("INVALID_LINE");
   return "Could not submit the purchase. Try again.";
 }
 

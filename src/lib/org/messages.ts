@@ -1,4 +1,5 @@
-// Тексти повідомлень — дослівно з вимог PM (requirements/2-…, 39-…, 40-…, 47-…, 48-…).
+// Тексти повідомлень — дослівно з вимог PM (requirements/2-…, 39-…, 40-…, 47-…, 48-…;
+// англійські тексти — таблиця requirements/49-…).
 export const MESSAGES = {
   NOT_REQUESTER: "Add the employee to the department as a requester first",
   FORBIDDEN: "Not enough permissions",
@@ -7,6 +8,7 @@ export const MESSAGES = {
   NO_APPROVER: "No approver",
   NO_DEPARTMENTS: "You have not been added to any department. Contact your administrator.",
   NO_LINES: "Add at least one line",
+  INVALID_LINE: "Fill in all line fields",
   SUBMITTED: "Purchase submitted",
   NO_REQUESTS: "You have not submitted any requests yet",
   NO_REASON: "Provide a reason",

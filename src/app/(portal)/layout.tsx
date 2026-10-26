@@ -8,6 +8,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { getCurrentUser } from "@/lib/org/current-user";
 import { initials } from "@/lib/org/permissions";
 import { ROLE_LABEL } from "@/lib/org/roles";
+import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../login/actions";
 
 // Оболонка порталу для всіх сторінок після входу: бічна панель з розділами за роллю й користувачем.
@@ -16,6 +17,13 @@ import { signOut } from "../login/actions";
 export default async function PortalLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
+  const { count: approverOf } = await supabase
+    .from("department_members")
+    .select("department_id", { count: "exact", head: true })
+    .eq("profile_id", user.id)
+    .eq("is_approver", true);
 
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
@@ -30,6 +38,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
           roleLabel: ROLE_LABEL[user.role],
           initials: initials(user.fullName, user.email),
           isAdmin: user.role === "admin",
+          isApprover: (approverOf ?? 0) > 0,
         }}
       />
       <SidebarInset className="bg-transparent">
