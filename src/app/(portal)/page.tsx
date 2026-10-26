@@ -91,8 +91,12 @@ export default async function Home() {
     <div className="flex flex-wrap items-end gap-4">
       <div className="flex min-w-56 flex-1 flex-col gap-1">
         <h1 className="text-2xl font-semibold">Welcome{user.fullName ? `, ${user.fullName}` : ""}</h1>
-        <p className="text-sm text-muted-foreground" data-testid="user-role">
+        {/* Підпис ролі й незмінний ідентифікатор поруч (AC-LANG-08), як у профілі. */}
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
           {ROLE_LABEL[user.role]}
+          <code data-testid="user-role" className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-foreground">
+            {user.role}
+          </code>
         </p>
       </div>
       {action}

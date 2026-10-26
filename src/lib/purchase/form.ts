@@ -89,11 +89,7 @@ export function invalidNumberFields(line: PurchaseLine): LineField[] {
   return bad;
 }
 
-// input type="number" дозволяє «-», «+» і експоненту «e»; у кількості й ціні їх не буває, тож їх не вводимо взагалі.
+// input type="number" дозволяє «-», «+» і експоненту «e»; у кількості й ціні їх не буває, тож їх не набираємо.
 export function isBlockedNumberKey(key: string): boolean {
   return key === "-" || key === "+" || key === "e" || key === "E";
-}
-
-export function withoutSign(value: string): string {
-  return value.replace(/[-+eE]/g, "");
 }

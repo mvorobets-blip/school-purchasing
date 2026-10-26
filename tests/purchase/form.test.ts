@@ -5,7 +5,6 @@ import {
   initialDepartment,
   invalidNumberFields,
   isBlockedNumberKey,
-  withoutSign,
   parseLines,
   purchaseTypeOptions,
   submitBlocked,
@@ -110,10 +109,8 @@ describe("числа в рядку закупівлі", () => {
     expect(invalidNumberFields(line("", ""))).toEqual([]);
   });
 
-  it("мінус, плюс і експоненту в кількість і ціну не ввести навіть вставкою", () => {
+  it("мінус, плюс і експоненту в кількість і ціну не набрати з клавіатури", () => {
     expect(["-", "+", "e", "E"].every(isBlockedNumberKey)).toBe(true);
     expect(isBlockedNumberKey("5")).toBe(false);
-    expect(withoutSign("-5")).toBe("5");
-    expect(withoutSign("1e3")).toBe("13");
   });
 });

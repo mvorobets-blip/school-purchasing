@@ -14,7 +14,6 @@ import {
   initialDepartment,
   invalidNumberFields,
   isBlockedNumberKey,
-  withoutSign,
   submitBlocked,
   type LineField,
   type Option,
@@ -49,7 +48,6 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
   const showMessage = isError && editedAfter !== state;
   const forbidden = isError && state.message === messageFor("FORBIDDEN");
   const markEmpty = isError && state.message === messageFor("INVALID_LINE");
-  const markNumbers = isError && state.message === messageFor("INVALID_NUMBER");
   const blocked = forbidden && submitBlocked(state, { departmentId, purchaseType });
 
   const edited = () => setEditedAfter(state);
@@ -57,7 +55,8 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
     edited();
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, [field]: value } : l)));
   };
-  // Кількість і ціна: без «-», «+» і «e» — від'ємного числа не ввести навіть вставкою.
+  // Кількість і ціна: «-», «+» і «e» не набрати з клавіатури; вставлене не переписуємо — неможливе значення база
+  // відхилить, і поле буде позначено після «Fill in all line fields».
   const numberField = {
     type: "number",
     inputMode: "decimal",
@@ -157,7 +156,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
         {lines.map((line, index) => {
           const wrong = new Set([
             ...(markEmpty ? emptyLineFields(line) : []),
-            ...(markNumbers ? invalidNumberFields(line) : []),
+            ...(markEmpty ? invalidNumberFields(line) : []),
           ]);
           const field = (name: LineField, label: string, extra: React.ComponentProps<typeof Input> = {}) => (
             <div className={name === "name" || name === "purpose" ? "flex flex-col gap-2 sm:col-span-2" : "flex flex-col gap-2"}>
@@ -166,9 +165,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
                 id={`${name}-${line.key}`}
                 name={`${name}.${line.key}`}
                 value={line[name]}
-                onChange={(e) =>
-                  updateLine(line.key, name, name === "quantity" || name === "price" ? withoutSign(e.target.value) : e.target.value)
-                }
+                onChange={(e) => updateLine(line.key, name, e.target.value)}
                 aria-invalid={wrong.has(name) || undefined}
                 {...extra}
               />

@@ -65,14 +65,15 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
-  it("кількість 0 чи від'ємна ціна — «Quantity must be greater than 0 and price 0 or more», до бази не звертаємось", async () => {
+  it("кількість 0 чи від'ємна ціна — рядок іде в базу, її відмова INVALID_LINE — «Fill in all line fields»", async () => {
+    rpcResult.error = { code: "P0001", message: "INVALID_LINE" };
     const state = await submitPurchase(
       idle,
       form({ "name.1": "Папір А4", "purpose.1": "Для друку", "quantity.1": "0", "price.1": "-1" }),
     );
-    expect(state.message).toBe("Quantity must be greater than 0 and price 0 or more");
+    expect(state.message).toBe("Fill in all line fields");
     expect(state.departmentId).toBe(DEPT);
-    expect(rpcCalls).toHaveLength(0);
+    expect(rpcCalls).toHaveLength(1);
   });
 
   it("AC-FRM-11: після подання — «Мої заявки» з повідомленням «Закупівлю подано»", async () => {
