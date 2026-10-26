@@ -78,8 +78,8 @@ describe("check-no-get-session", () => {
     expect(runScript("check-no-get-session.mjs", bad).code).toBe(1);
   });
 
-  // root читає теку з правами 000, тож під root цей випадок не відтворити — пропускаємо.
-  it.skipIf(process.getuid?.() === 0)("тека, яку не вдалося прочитати, — помилка, а не OK", () => {
+  // root читає теку з правами 000, а у Windows chmod 000 не забирає читання — там цей випадок не відтворити.
+  it.skipIf(process.platform === "win32" || process.getuid?.() === 0)("тека, яку не вдалося прочитати, — помилка, а не OK", () => {
     const dir = project("const ok = 1;");
     const locked = path.join(dir, "src", "locked");
     mkdirSync(locked);
