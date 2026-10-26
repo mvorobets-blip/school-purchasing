@@ -125,7 +125,7 @@ ValiaBihun/2026-quitcode-dream-team#56): тексти — дослівно з т
   Будівельні блоки — `src/components/portal/dashboard.tsx`:
   - картки-числа (`StatLink`): іконка-чип статусу (`bg-status-*`) або декоративна (`bg-accent`), число `tabular-nums`;
     з посиланням — уся картка клікабельна з `ring-ring` на фокусі; на телефоні три картки — один щільний ряд;
-  - рядок заявки (`RequestRow`): перша позиція «Папір А4 + 2 more», відділ · тип · дата («26 Oct», київський час),
+  - рядок заявки (`RequestRow`): перша позиція «Папір А4 + 2 more», відділ · тип · дата («26 Oct», час America/New_York — припущення PM),
     `StatusBadge`; у відхиленої — причина під рядком (межа `border-border`, текст `muted-foreground`);
   - посилання розділу («All my requests», «Profile») — текст `text-accent-foreground`, без стрілок; зона натискання
     `min-h-10`, фокус `ring-ring`.

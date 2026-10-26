@@ -185,7 +185,7 @@ export default async function Home() {
             href="/admin/departments"
             icon={TriangleAlert}
             iconClass="bg-status-pending text-status-pending-foreground"
-            label="Without an approver"
+            label="No approver"
             value={attention.length}
             hint={`of ${departments.length} departments`}
           />
