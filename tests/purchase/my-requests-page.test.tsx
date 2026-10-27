@@ -5,12 +5,13 @@ import { messageFor } from "@/lib/org/messages";
 // Сторінка «Мої заявки» (server component) з підміненими getCurrentUser і Supabase: що бачить працівник
 // за порожнього й непорожнього списку. Права на рядки перевіряє tests/db/purchase.test.ts (RLS).
 const data: { requests: Record<string, unknown>[] } = { requests: [] };
+const filters: string[] = [];
 
 function query(table: string) {
   const rows = table === "purchase_requests" ? data.requests : [{ id: "d1", name: "Початкова школа" }];
   const builder = {
     select: () => builder,
-    eq: () => builder,
+    eq: (col: string, val: unknown) => (filters.push(`${table}.eq(${col},${String(val)})`), builder),
     order: () => builder,
     then: (resolve: (v: unknown) => void) => resolve({ data: rows, error: null }),
   };
@@ -29,12 +30,36 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ from: que
 
 const { default: MyRequestsPage } = await import("@/app/(portal)/requests/page");
 
-const render = async () =>
-  renderToStaticMarkup(await MyRequestsPage({ searchParams: Promise.resolve({}) } as never));
+const render = async (params: Record<string, string> = {}) =>
+  renderToStaticMarkup(await MyRequestsPage({ searchParams: Promise.resolve(params) } as never));
 
 describe("сторінка «Мої заявки»", () => {
   beforeEach(() => {
     data.requests = [];
+    filters.length = 0;
+  });
+
+  it("AC-FRM-10: «Мої заявки» запитують лише заявки автора, що увійшов, і показують «Awaiting approval»", async () => {
+    data.requests = [
+      { id: "r1", department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" },
+    ];
+    const html = await render();
+    expect(filters).toContain("purchase_requests.eq(author_id,u1)");
+    expect(html).toContain("Awaiting approval");
+  });
+
+  it("AC-FRM-11: після подання «Мої заявки» показують повідомлення «Purchase submitted» і нову заявку", async () => {
+    data.requests = [
+      { id: "r1", department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" },
+    ];
+    const html = await render({ ok: "SUBMITTED" });
+    expect(html).toMatch(/data-testid="purchase-message"[^>]*>Purchase submitted</);
+    expect(html).toContain('data-testid="my-requests"');
+  });
+
+  it("AC-FRM-11: без ?ok=SUBMITTED (заявку не подавали) повідомлення «Purchase submitted» немає", async () => {
+    const html = await render();
+    expect(html).not.toContain("Purchase submitted");
   });
 
   it("AC-FRM-14: без заявок — порожній стан з текстом PM і без таблиці", async () => {

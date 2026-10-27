@@ -5,7 +5,11 @@ import { messageFor } from "@/lib/org/messages";
 // Сторінка заявки (server component) з підміненими getCurrentUser і Supabase. Хто бачить заявку, вирішує RLS
 // (tests/db/purchase.test.ts); тут — що показує сторінка за кожної відповіді бази.
 const ID = "11111111-1111-4111-8111-111111111111";
-const db: { request: Record<string, unknown> | null; linesError: boolean } = { request: null, linesError: false };
+const db: { request: Record<string, unknown> | null; linesError: boolean; authorError: boolean } = {
+  request: null,
+  linesError: false,
+  authorError: false,
+};
 const queried: string[] = [];
 
 function query(table: string) {
@@ -40,14 +44,19 @@ vi.mock("@/lib/org/current-user", () => ({
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     from: query,
-    rpc: async () => ({ data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null }),
+    rpc: async () =>
+      db.authorError
+        ? { data: null, error: { message: "boom" } }
+        : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null },
   }),
 }));
 
 const { default: RequestPage } = await import("@/app/(portal)/requests/[id]/page");
 
-const render = async () =>
-  renderToStaticMarkup(await RequestPage({ params: Promise.resolve({ id: ID }) } as never));
+const render = async (search: Record<string, string> = {}) =>
+  renderToStaticMarkup(
+    await RequestPage({ params: Promise.resolve({ id: ID }), searchParams: Promise.resolve(search) } as never),
+  );
 
 describe("сторінка заявки", () => {
   beforeEach(() => {
@@ -60,6 +69,7 @@ describe("сторінка заявки", () => {
       created_at: "2026-10-26T10:00:00Z",
     };
     db.linesError = false;
+    db.authorError = false;
     queried.length = 0;
   });
 
@@ -82,6 +92,28 @@ describe("сторінка заявки", () => {
     expect(queried).not.toContain("profiles");
     expect(queried).not.toContain("department_members");
     expect(queried).not.toContain("employee_permissions");
+  });
+
+  it("AC-APR-07: відхилена заявка — статус «Rejected» і причина поруч", async () => {
+    db.request = { ...db.request, status: "rejected", reject_reason: "Немає бюджету" };
+    const html = await render();
+    expect(html).toContain("Rejected");
+    expect(html).toContain("Немає бюджету");
+  });
+
+  it("«← Назад»: зі списку «Awaiting decision» — туди, інакше — до «My requests»", async () => {
+    const fromApprovals = await render({ from: "approvals" });
+    expect(fromApprovals).toMatch(/href="\/approvals"[^>]*>.*Awaiting decision/);
+    const direct = await render();
+    expect(direct).toMatch(/href="\/requests"[^>]*>.*My requests/);
+    expect(direct).not.toContain("Awaiting decision");
+  });
+
+  it("помилка запиту автора — повідомлення про помилку, а не «—» замість імені", async () => {
+    db.authorError = true;
+    const html = await render();
+    expect(html).toContain("Could not load the request. Refresh the page.");
+    expect(html).not.toContain("Папір А4");
   });
 
   it("помилка завантаження рядків — повідомлення про помилку, а не порожня таблиця", async () => {

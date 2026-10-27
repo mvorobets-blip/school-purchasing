@@ -66,10 +66,42 @@ describe("подання закупівлі (база)", () => {
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
+  it("AC-ORG-23: адміністратор без дозволу «Самостійна закупівля» подає саме її — заявку створено", async () => {
+    const perms = await t.asService<{ n: number }>(
+      "select count(*)::int as n from public.employee_permissions where profile_id = $1 and permission = 'self_purchase'",
+      [ADMIN],
+    );
+    expect(perms[0].n).toBe(0);
+    const [{ id }] = await submit(ADMIN, "Початкова школа", "self_purchase", LINE);
+    const [row] = await t.asService<{ purchase_type: string; status: string }>(
+      "select purchase_type, status from public.purchase_requests where id = $1",
+      [id],
+    );
+    expect(row).toEqual({ purchase_type: "self_purchase", status: "pending" });
+  });
+
+  it("адміністратор подає закупівлю у відділ, де він не заявник (ORG-22 / ORG-29 для «Закупівлі»)", async () => {
+    const [{ id }] = await submit(ADMIN, "Вища школа", "purchasing_department", LINE);
+    const [row] = await t.asService<{ department_id: string }>("select department_id from public.purchase_requests where id = $1", [id]);
+    expect(row.department_id).toBe(dept["Вища школа"]);
+  });
+
   it("AC-FRM-06: без рядків закупівлю не подано", async () => {
     const before = await pendingCountOf(MEMBER_1);
     await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", [])).rejects.toThrow(/NO_LINES/);
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
+  });
+
+  it("ціна на межі numeric(12, 2): 9 999 999 999.99 приймається, а те, що округлюється до 10 000 000 000, — INVALID_LINE, не 22003", async () => {
+    const line = (price: string) => [{ name: "Папір А4", purpose: "Друк", quantity: 1, price }];
+    const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", line("9999999999.99"));
+    const [saved] = await t.asService<{ price: string }>("select price::text as price from public.purchase_request_lines where request_id = $1", [id]);
+    expect(saved.price).toBe("9999999999.99");
+    for (const price of ["9999999999.995", "9999999999.996", "9999999999.999", "10000000000"]) {
+      const before = await pendingCountOf(MEMBER_1);
+      await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", line(price))).rejects.toThrow(/INVALID_LINE/);
+      expect(await pendingCountOf(MEMBER_1)).toBe(before);
+    }
   });
 
   it("AC-FRM-15: рядок лише з назвою не подано, нової заявки немає", async () => {

@@ -32,7 +32,8 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
           email: user.email,
           initials: initials(user.fullName, user.email),
           isAdmin: user.role === "admin",
-          isApprover: awaiting.departmentIds.length > 0,
+          // Помилка запиту — не «не схвалювач»: пункт лишається, а сторінка «Awaiting decision» покаже помилку.
+          isApprover: awaiting.failed || awaiting.departmentIds.length > 0,
           awaitingCount: awaiting.requests.length,
         }}
       />

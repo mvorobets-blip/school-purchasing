@@ -46,6 +46,8 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
   const authorsRes = requests.length
     ? await supabase.rpc("request_author_names", { p_request_ids: requests.map((r) => r.id) })
     : null;
+  // Помилка запиту авторів — помилка завантаження списку, а не «—» у стовпці «Author».
+  if (authorsRes?.error) return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
   const authorOf = new Map((authorsRes?.data ?? []).map((a) => [a.request_id, a.author_name]));
 
   return (
@@ -89,7 +91,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
                 return (
                   <TableRow key={r.id} data-testid="decision-row" className={cn("group", CLICKABLE_ROW)}>
                     <TableCell className="pl-4 tabular-nums">
-                      <RowLink href={`/requests/${r.id}`} className="font-medium group-hover:text-accent-foreground">
+                      <RowLink href={`/requests/${r.id}?from=approvals`} className="font-medium group-hover:text-accent-foreground">
                         {submitted}
                       </RowLink>
                     </TableCell>
