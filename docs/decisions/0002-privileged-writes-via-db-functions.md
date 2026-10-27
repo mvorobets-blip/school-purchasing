@@ -37,6 +37,13 @@ POST, а Data API приймає запити з тим самим токено�
 Міграції: `supabase/migrations/20261025184732_purchase_requests.sql` (задача 1),
 `supabase/migrations/20261025192130_purchase_decisions.sql` (задача 3 плану `impl-purchase-approval`).
 
+Доповнення 2026-10-27 (рішення те саме, нових записів функціями немає): читання імені автора теж іде функцією
+`private.request_author_names(ids)` (`security definer`, `search_path = ''`, обгортка `public`, `execute` лише
+`authenticated`) — профілі колег закриті RLS, тож функція віддає лише ім'я (без імені — email) і лише для заявок, які
+людина бачить: `20261026160000_request_author_names.sql`, `20261026222326_request_author_email_fallback.sql`.
+`private.submit_purchase` замінено новою міграцією `20261027132703_submit_purchase_rounded_price_limit.sql` (межа ціни
+після округлення); застосовані міграції не змінено.
+
 ## Розглянуті варіанти
 
 - Прямий `insert` / `update` з політиками RLS (`with check`) — ні: правило «щонайменше один рядок» і «всі поля
