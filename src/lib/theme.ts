@@ -8,7 +8,21 @@ export function themeFromCookie(value: string | undefined): Theme | undefined {
   return value === "light" || value === "dark" ? value : undefined;
 }
 
-// Без збереженого вибору — системна тема; виконується в <head> до малювання сторінки.
+// Куди перемкне кнопка й її підпис (називає наступну тему, а не поточну).
+export const nextTheme = (current: Theme): Theme => (current === "dark" ? "light" : "dark");
+export const toggleLabel = (current: Theme) => `Switch to ${nextTheme(current)} theme`;
+
+// Клік перемикача: атрибут <html data-theme> і cookie на рік — сервер наступних сторінок поставить ту саму тему.
+export function applyTheme(doc: { documentElement: { dataset: DOMStringMap }; cookie: string }, theme: Theme) {
+  doc.documentElement.dataset.theme = theme;
+  doc.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=31536000; samesite=lax`;
+}
+
+// Виконується в <head> до малювання сторінки. Без вибору в cookie — системна тема, і далі стежимо за її зміною
+// у відкритій вкладці; щойно людина обрала тему (cookie theme), системні зміни більше не перезаписують вибір.
 export const THEME_SCRIPT =
-  "(function(){var d=document.documentElement;if(!d.dataset.theme){d.dataset.theme=" +
-  "window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}})();";
+  "(function(){var d=document.documentElement,m=window.matchMedia('(prefers-color-scheme: dark)');" +
+  "function chosen(){return /(?:^|; )theme=(?:light|dark)(?:;|$)/.test(document.cookie);}" +
+  "function sync(){if(!chosen())d.dataset.theme=m.matches?'dark':'light';}" +
+  "if(!d.dataset.theme)sync();" +
+  "if(m.addEventListener)m.addEventListener('change',sync);})();";
