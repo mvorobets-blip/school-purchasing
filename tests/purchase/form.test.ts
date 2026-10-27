@@ -32,13 +32,20 @@ describe("варіанти у формі закупівлі", () => {
     expect(departmentOptions("requester", [], DEPARTMENTS)).toEqual([]);
   });
 
-  it("з дозволом і для адміністратора доступні обидва типи; адміністратору — усі відділи", () => {
+  it("з дозволом «Самостійна закупівля» працівнику доступні обидва типи", () => {
     expect(purchaseTypeOptions("requester", ["self_purchase"]).map((o) => o.value)).toEqual([
       "purchasing_department",
       "self_purchase",
     ]);
-    expect(purchaseTypeOptions("admin", []).map((o) => o.value)).toHaveLength(2);
+  });
+
+  it("AC-ORG-23: адміністратор без дозволу «Самостійна закупівля» може обрати будь-який тип, зокрема її", () => {
+    expect(purchaseTypeOptions("admin", []).map((o) => o.label)).toEqual(["Purchasing department", "Self-purchase"]);
+  });
+
+  it("адміністратору — усі відділи для «Закупівлі», навіть без членства чи з одним відділом (ORG-22 / ORG-29)", () => {
     expect(departmentOptions("admin", [], DEPARTMENTS)).toHaveLength(3);
+    expect(departmentOptions("admin", [DEPARTMENTS[0].id], DEPARTMENTS)).toHaveLength(3);
   });
 });
 

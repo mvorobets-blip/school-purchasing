@@ -66,6 +66,26 @@ describe("подання закупівлі (база)", () => {
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
+  it("AC-ORG-23: адміністратор без дозволу «Самостійна закупівля» подає саме її — заявку створено", async () => {
+    const perms = await t.asService<{ n: number }>(
+      "select count(*)::int as n from public.employee_permissions where profile_id = $1 and permission = 'self_purchase'",
+      [ADMIN],
+    );
+    expect(perms[0].n).toBe(0);
+    const [{ id }] = await submit(ADMIN, "Початкова школа", "self_purchase", LINE);
+    const [row] = await t.asService<{ purchase_type: string; status: string }>(
+      "select purchase_type, status from public.purchase_requests where id = $1",
+      [id],
+    );
+    expect(row).toEqual({ purchase_type: "self_purchase", status: "pending" });
+  });
+
+  it("адміністратор подає закупівлю у відділ, де він не заявник (ORG-22 / ORG-29 для «Закупівлі»)", async () => {
+    const [{ id }] = await submit(ADMIN, "Вища школа", "purchasing_department", LINE);
+    const [row] = await t.asService<{ department_id: string }>("select department_id from public.purchase_requests where id = $1", [id]);
+    expect(row.department_id).toBe(dept["Вища школа"]);
+  });
+
   it("AC-FRM-06: без рядків закупівлю не подано", async () => {
     const before = await pendingCountOf(MEMBER_1);
     await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", [])).rejects.toThrow(/NO_LINES/);
