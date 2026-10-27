@@ -36,13 +36,6 @@ describe("англійський інтерфейс", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("AC-LANG-02: сторінка входу й помилки входу — англійською", () => {
-    const login = withoutComments(readFileSync("src/app/login/page.tsx", "utf8"));
-    expect(login).toContain("Incorrect email or password.");
-    expect(login).toContain("Sign in");
-    expect(CYRILLIC.test(login)).toBe(false);
-  });
-
   it("AC-LANG-03: відмова — «Not enough permissions»", () => {
     expect(MESSAGES.FORBIDDEN).toBe("Not enough permissions");
   });

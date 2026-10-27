@@ -83,6 +83,18 @@ export function submitBlocked(
 export const LINE_TEXT_LIMIT = 200; // назва й мета рядка
 export const REASON_LIMIT = 500; // причина відхилення
 
+// Повідомлення про задовгий текст — власний текст розробника (PM меж і тексту не задавав; відгук PM на рев'ю WS7, #3):
+// поле maxLength не дає набрати більше, тож людина бачить його лише при прямому виклику дії. Довжину рахуємо в символах
+// Unicode, як char_length у базі.
+export const LINE_TOO_LONG = `Name and purpose can be up to ${LINE_TEXT_LIMIT} characters`;
+export const REASON_TOO_LONG = `The reason can be up to ${REASON_LIMIT} characters`;
+export const textLength = (text: string) => [...text].length;
+export const hasTooLongLine = (lines: readonly PurchaseLine[]) =>
+  lines.some((l) => textLength(l.name) > LINE_TEXT_LIMIT || textLength(l.purpose) > LINE_TEXT_LIMIT);
+// Відмова check-обмеження довжини в базі (…_name_length, …_purpose_length, …_reject_reason_length).
+export const isTextLengthError = (error: { code?: string; message?: string } | null) =>
+  error?.code === "23514" && /_length\b/.test(error.message ?? "");
+
 // Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00.
 // Ту саму межу (після округлення) перевіряє private.submit_purchase — міграція
 // 20261027132703_submit_purchase_rounded_price_limit.sql — і відповідає INVALID_LINE; тут позначаємо поле заздалегідь.

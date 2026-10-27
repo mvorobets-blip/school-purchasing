@@ -90,9 +90,9 @@
 | AC-APR-09 | без імені в профілі — email автора замість імені | `supabase/migrations/20261026222326_request_author_email_fallback.sql` (coalesce імені й email) | `tests/db/approval.test.ts` | реалізовано |
 | AC-APR-10 | ролі, відділів і дозволів автора схвалювач не бачить | `supabase/migrations/20261026222326_request_author_email_fallback.sql` (лише ім'я), сторінки не читають профілю автора | `tests/db/approval.test.ts`, `tests/purchase/approvals-page.test.tsx`, `tests/purchase/request-page.test.tsx` | реалізовано |
 | AC-LANG-01 | усі написи інтерфейсу англійською, без українських слів | `src/app/layout.tsx` (lang="en"), `src/lib/org/messages.ts` | `tests/lang/ui-language.test.ts` | реалізовано |
-| AC-LANG-02 | сторінка входу й помилка входу англійською | `src/app/login/page.tsx` | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-02 | сторінка входу й помилка входу англійською | `src/app/login/page.tsx` | `tests/lang/ui-language-render.test.tsx` | реалізовано |
 | AC-LANG-03 | відмова — «Not enough permissions» без розкриття вмісту | `src/lib/org/messages.ts` (FORBIDDEN) | `tests/lang/ui-language.test.ts`, `tests/purchase/request-page.test.tsx` | реалізовано |
 | AC-LANG-04 | без рядків — «Add at least one line» | `src/lib/org/messages.ts` (NO_LINES) | `tests/lang/ui-language.test.ts`, `tests/purchase/submit-purchase.test.ts` | реалізовано |
 | AC-LANG-05 | відхилення без причини — «Provide a reason» | `src/lib/org/messages.ts` (NO_REASON) | `tests/lang/ui-language.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
 | AC-LANG-06 | статуси текстом «Awaiting approval», «Approved», «Rejected» | `src/lib/purchase/status.ts` (STATUS_LABEL) | `tests/lang/ui-language.test.ts`, `tests/purchase/my-requests-page.test.tsx`, `tests/purchase/request-page.test.tsx` | реалізовано |
-| AC-LANG-08 | ідентифікатори ролей без змін, підпис ролі англійською | `src/lib/org/roles.ts` (ROLE_LABEL) | `tests/lang/ui-language.test.ts` | реалізовано |
+| AC-LANG-08 | ідентифікатори ролей без змін, підпис ролі англійською | `src/lib/org/roles.ts` (ROLE_LABEL), `src/app/(portal)/profile/page.tsx` | `tests/lang/ui-language.test.ts`, `tests/lang/ui-language-render.test.tsx` | реалізовано |

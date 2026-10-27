@@ -8,6 +8,21 @@
 порівнює, як різні розробники (і їхні агенти) прочитали й реалізували ті самі вимоги. В агенції шаблон так само береться
 для нового клієнтського проєкту.
 
+## Прод: school-purchasing
+
+- **URL:** https://therapy-scheduling-ten.vercel.app (Vercel, прод з `main`; назва проєкту Vercel лишилась з дня 0).
+- **Розгорнутий коміт:** кожен merge у `main` розгортається автоматично; актуальний — GitHub → **Deployments →
+  production** (коміт кожного розгортання). Здача WS7 — `498ec2f` (розгорнуто 27.10.2026 о 16:26 UTC).
+- **Міграції:** застосовує job `db-deploy` (`ci.yml`) через секрет `SUPABASE_DB_URL` (`mode=db-url`, не `skip`).
+  Міграції 27.10 застосовано: `20261027132703_submit_purchase_rounded_price_limit.sql` — прогін
+  [40514071073](https://github.com/mvorobets-blip/school-purchasing/actions/runs/40514071073),
+  `20261027142924_purchase_text_limits.sql` — прогін
+  [40533068443](https://github.com/mvorobets-blip/school-purchasing/actions/runs/40533068443) («Applying migration …»
+  в журналі `db-deploy`); на `498ec2f` — «Remote database is up to date»
+  ([40540502937](https://github.com/mvorobets-blip/school-purchasing/actions/runs/40540502937)).
+- **Відомий борг:** межі довжини тексту — `NOT VALID` (нові й змінені рядки перевіряються); `VALIDATE CONSTRAINT` —
+  окремою міграцією після перевірки довжин наявних рядків на проді.
+
 - **Застосунок:** Next.js 16 (App Router, `src/`), вхід email + пароль через Supabase Auth, сторінка
   з email і роллю користувача з таблиці `profiles`; сесію оновлює `src/proxy.ts`.
 - **База як код:** ваша власна база Supabase; `supabase/migrations/` (профілі й ролі з RLS і явними GRANT),

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
+import { isTextLengthError, REASON_LIMIT, REASON_TOO_LONG, textLength } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 
 export type DecisionState = { status: "idle" | "error"; message: string };
@@ -16,6 +17,7 @@ function errorMessage(error: RpcError): string {
   if (error?.message?.includes("NO_REASON")) return messageFor("NO_REASON");
   if (error?.message?.includes("NOT_PENDING")) return "This request has already been decided.";
   if (error?.code === "42501" || error?.message?.includes("FORBIDDEN")) return messageFor("FORBIDDEN");
+  if (isTextLengthError(error)) return REASON_TOO_LONG;
   return "Could not save the decision. Try again.";
 }
 
@@ -33,6 +35,7 @@ export async function decidePurchase(
 
   const reason = String(formData.get("reason") ?? "").trim();
   if (decision === "reject" && !reason) return { status: "error", message: messageFor("NO_REASON") };
+  if (decision === "reject" && textLength(reason) > REASON_LIMIT) return { status: "error", message: REASON_TOO_LONG };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("decide_purchase", {
