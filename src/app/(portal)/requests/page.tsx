@@ -23,26 +23,34 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
   if (!user) redirect("/login");
   const { ok, page: pageParam } = await searchParams;
   const page = pageFromParam(pageParam);
-  const { from, to } = pageRange(page);
+  const loadError = <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
 
   const supabase = await createClient();
+  // Сторінки по 50 (?page=N). Спершу точна кількість (лише count, без рядків): запит рядків за межами діапазону
+  // PostgREST відхиляє (416), тож номер за межами — одразу перенаправлення на останню сторінку.
+  const countRes = await supabase
+    .from("purchase_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("author_id", user.id);
+  if (countRes.error) return loadError;
+  const total = countRes.count ?? 0;
+  if (page > pageCount(total)) redirect(`/requests?page=${pageCount(total)}`);
+
+  // Нові спершу; id — другий ключ, щоб порядок між сторінками був сталим, коли дати однакові.
+  const { from, to } = pageRange(page);
   const [requestsRes, deptsRes] = await Promise.all([
     supabase
       .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, created_at", { count: "exact" })
+      .select("id, department_id, purchase_type, status, created_at")
       .eq("author_id", user.id)
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
       .range(from, to),
     supabase.from("departments").select("id, name"),
   ]);
-  if (requestsRes.error || deptsRes.error) {
-    return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
-  }
+  if (requestsRes.error || deptsRes.error) return loadError;
   const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
   const requests = requestsRes.data;
-  // Сторінки по 50 (?page=N), загальна кількість — count: "exact"; номер за межами — на останню сторінку.
-  const total = requestsRes.count ?? requests.length;
-  if (page > pageCount(total)) redirect(`/requests?page=${pageCount(total)}`);
 
   return (
     <>

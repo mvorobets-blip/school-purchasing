@@ -4,17 +4,26 @@ import { messageFor } from "@/lib/org/messages";
 
 // Сторінка «Мої заявки» (server component) з підміненими getCurrentUser і Supabase: що бачить працівник
 // за порожнього й непорожнього списку. Права на рядки перевіряє tests/db/purchase.test.ts (RLS).
-const data: { requests: Record<string, unknown>[]; total: number | null } = { requests: [], total: null };
+const data: { requests: Record<string, unknown>[] } = { requests: [] };
 const filters: string[] = [];
 
+// Мок як PostgREST: select(…, { head: true }) — лише кількість; .range(from, to) — зріз рядків; count — уся кількість.
 function query(table: string) {
-  const rows = table === "purchase_requests" ? data.requests : [{ id: "d1", name: "Початкова школа" }];
+  const all = table === "purchase_requests" ? data.requests : [{ id: "d1", name: "Початкова школа" }];
+  let rows: Record<string, unknown>[] | null = all;
   const builder = {
-    select: () => builder,
+    select: (_cols: string, opts?: { head?: boolean }) => {
+      if (opts?.head) rows = null;
+      return builder;
+    },
     eq: (col: string, val: unknown) => (filters.push(`${table}.eq(${col},${String(val)})`), builder),
     order: () => builder,
-    range: () => builder,
-    then: (resolve: (v: unknown) => void) => resolve({ data: rows, count: data.total ?? (Array.isArray(rows) ? rows.length : null), error: null }),
+    range: (from: number, to: number) => {
+      filters.push(`${table}.range(${from},${to})`);
+      rows = all.slice(from, to + 1);
+      return builder;
+    },
+    then: (resolve: (v: unknown) => void) => resolve({ data: rows, count: all.length, error: null }),
   };
   return builder;
 }
@@ -37,7 +46,6 @@ const render = async (params: Record<string, string> = {}) =>
 describe("сторінка «Мої заявки»", () => {
   beforeEach(() => {
     data.requests = [];
-    data.total = null;
     filters.length = 0;
   });
 
@@ -77,24 +85,26 @@ describe("сторінка «Мої заявки»", () => {
     expect(statuses).toEqual(["Awaiting approval", "Approved", "Rejected"]);
   });
 
-  it("понад 50 заявок — сторінка 2 показує «Showing 51–60 of 60» і «Previous» на першу сторінку", async () => {
-    data.requests = Array.from({ length: 10 }, (_, i) => ({
+  it("понад 50 заявок — сторінка 2 бере .range(50, 99): 10 рядків, «Showing 51–60 of 60», «Previous» на першу", async () => {
+    data.requests = Array.from({ length: 60 }, (_, i) => ({
       id: `r${i}`,
       department_id: "d1",
       purchase_type: "purchasing_department",
       status: "pending",
       created_at: "2026-10-26T10:00:00Z",
     }));
-    data.total = 60;
     const html = await render({ page: "2" });
+    expect(filters).toContain("purchase_requests.range(50,99)");
+    expect(html.match(/data-testid="purchase-status"/g)).toHaveLength(10);
     expect(html).toContain("Showing 51–60 of 60");
     expect(html).toContain('href="/requests?page=1"');
     expect(html).not.toContain('href="/requests?page=3"');
   });
 
-  it("сторінка за межами — перенаправлення на останню", async () => {
-    data.total = 60;
+  it("сторінка за межами — перенаправлення на останню, рядки не запитуються (PostgREST відповів би 416)", async () => {
+    data.requests = Array.from({ length: 60 }, (_, i) => ({ id: `r${i}`, department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" }));
     await expect(render({ page: "9" })).rejects.toThrow("REDIRECT /requests?page=2");
+    expect(filters.some((f) => f.includes(".range("))).toBe(false);
   });
 
   it("до 50 заявок — без навігації сторінками", async () => {

@@ -104,7 +104,7 @@ describe("сторінка заявки", () => {
 
   it("AC-LANG-06: статус на сторінці заявки підписано текстом «Awaiting approval»", async () => {
     const html = await render();
-    expect(html).toMatch(/data-testid="[^"]*status[^"]*"[^>]*>Awaiting approval<|>Awaiting approval</);
+    expect(html).toMatch(/data-testid="purchase-status"[^>]*>Awaiting approval</);
   });
 
   it("AC-APR-07: відхилена заявка — статус «Rejected» і причина поруч", async () => {
