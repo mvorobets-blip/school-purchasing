@@ -53,6 +53,13 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(0);
   });
 
+  it("AC-LANG-04: заявку без рядків не подано, людина бачить англійське «Add at least one line»", async () => {
+    const state = await submitPurchase(idle, form());
+    expect(state.message).toBe("Add at least one line");
+    expect(state.message).not.toMatch(/[А-Яа-яІіЇїЄєҐґ]/);
+    expect(rpcCalls).toHaveLength(0);
+  });
+
   it("AC-FRM-15: рядок лише з назвою — «Fill in all line fields», рядок іде в базу, відділ і тип лишаються", async () => {
     rpcResult.error = { code: "P0001", message: "INVALID_LINE" };
     const state = await submitPurchase(idle, form({ "name.1": "Папір А4" }));

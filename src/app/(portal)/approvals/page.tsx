@@ -8,7 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
+import { Pagination } from "@/components/portal/pagination";
 import { getAwaitingDecision } from "@/lib/purchase/awaiting";
+import { pageCount, pageFromParam } from "@/lib/purchase/pagination";
 import { formatSubmitted } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
@@ -22,10 +24,12 @@ const OK_TEXT: Record<string, string> = { APPROVED: "Request approved.", REJECTE
 export default async function ApprovalsPage({ searchParams }: PageProps<"/approvals">) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const { ok } = await searchParams;
+  const { ok, page: pageParam } = await searchParams;
+  const page = pageFromParam(pageParam);
 
   // Ті самі умови й запити, що й лічильник у бічній панелі (getAwaitingDecision): список і число не розійдуться.
-  const awaiting = await getAwaitingDecision(user.id);
+  // Сторінка — по 50 рядків (?page=N); номер за межами — на останню сторінку.
+  const awaiting = await getAwaitingDecision(user.id, page);
   if (awaiting.failed) return <Alert variant="destructive">Could not load requests. Refresh the page.</Alert>;
 
   if (awaiting.departmentIds.length === 0) {
@@ -36,6 +40,8 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
       </>
     );
   }
+
+  if (page > pageCount(awaiting.total)) redirect(`/approvals?page=${pageCount(awaiting.total)}`);
 
   const supabase = await createClient();
   const deptsRes = await supabase.from("departments").select("id, name");
@@ -111,6 +117,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
           </Table>
         </Card>
       )}
+      <Pagination page={page} total={awaiting.total} href={(p) => `/approvals?page=${p}`} />
     </>
   );
 }

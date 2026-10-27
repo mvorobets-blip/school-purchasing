@@ -14,6 +14,7 @@ import {
   initialDepartment,
   invalidNumberFields,
   isBlockedNumberKey,
+  LINE_TEXT_LIMIT,
   submitBlocked,
   type LineField,
   type Option,
@@ -174,8 +175,8 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
           return (
             <Card key={line.key}>
               <CardContent className="grid gap-4 sm:grid-cols-2">
-                {field("name", "Item")}
-                {field("purpose", "Purpose")}
+                {field("name", "Item", { maxLength: LINE_TEXT_LIMIT })}
+                {field("purpose", "Purpose", { maxLength: LINE_TEXT_LIMIT })}
                 {field("quantity", "Quantity", { ...numberField, step: "any" })}
                 {field("price", "Price", { ...numberField, step: "0.01" })}
                 {lines.length > 1 ? (

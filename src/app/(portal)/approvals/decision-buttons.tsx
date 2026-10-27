@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { REASON_LIMIT } from "@/lib/purchase/form";
 import { decidePurchase, type DecisionState } from "./actions";
 
 const idle: DecisionState = { status: "idle", message: "" };
@@ -44,7 +45,7 @@ export function DecisionButtons({ requestId, label }: { requestId: string; label
             <form action={reject} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor={`reason-${requestId}`}>Reason</Label>
-                <Textarea id={`reason-${requestId}`} name="reason" rows={3} />
+                <Textarea id={`reason-${requestId}`} name="reason" rows={3} maxLength={REASON_LIMIT} />
               </div>
               {rejectState.status === "error" ? (
                 <Alert variant="destructive" data-testid="decision-message">

@@ -26,15 +26,24 @@ const statusOf = async (id: string) => {
   );
   return row;
 };
-// Список для рішення — як на сторінці «На рішення»: подані заявки відділів, які людина схвалює, крім власних.
-const decisionList = (user: string) =>
-  t.asUser<{ id: string }>(
+// Список для рішення — ті самі два запити, що робить getAwaitingDecision (src/lib/purchase/awaiting.ts), під RLS
+// людини: 1) відділи, де вона схвалювач; 2) заявки цих відділів «pending», крім власних. Що awaiting.ts будує саме ці
+// фільтри, перевіряє tests/purchase/awaiting.test.ts.
+const decisionList = async (user: string) => {
+  const departments = await t.asUser<{ department_id: string }>(
     user,
-    `select r.id from public.purchase_requests as r
-       join public.department_members as m
-         on m.department_id = r.department_id and m.profile_id = (select auth.uid()) and m.is_approver
-      where r.status = 'pending' and r.author_id <> (select auth.uid())`,
+    "select department_id from public.department_members where profile_id = $1 and is_approver = true",
+    [user],
   );
+  if (departments.length === 0) return [];
+  return t.asUser<{ id: string }>(
+    user,
+    `select id from public.purchase_requests
+      where department_id = any($1::uuid[]) and status = 'pending' and author_id <> $2
+      order by created_at`,
+    [departments.map((d) => d.department_id), user],
+  );
+};
 
 let primary1: string;
 let primary2: string;
@@ -91,6 +100,14 @@ describe("рішення схвалювача (база)", () => {
   it("AC-APR-02: Марія схвалює заявку свого відділу — «Схвалено»", async () => {
     await decide(MARIA, primary2, "approve");
     expect((await statusOf(primary2)).status).toBe("approved");
+  });
+
+  it("причина відхилення до 500 символів (технічна межа): 501 — рішення не збережено, статус «pending»", async () => {
+    const id = await submit(MEMBER_1, "Початкова школа");
+    await expect(decide(MARIA, id, "reject", "п".repeat(501))).rejects.toThrow(/purchase_requests_reject_reason_length/);
+    expect(await statusOf(id)).toEqual({ status: "pending", reject_reason: null });
+    await decide(MARIA, id, "reject", "п".repeat(500));
+    expect((await statusOf(id)).status).toBe("rejected");
   });
 
   it("AC-APR-07: відхилення з причиною «Немає бюджету» — «Відхилено», причину збережено", async () => {

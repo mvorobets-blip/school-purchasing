@@ -34,7 +34,7 @@ export default async function PortalLayout({ children }: LayoutProps<"/">) {
           isAdmin: user.role === "admin",
           // Помилка запиту — не «не схвалювач»: пункт лишається, а сторінка «Awaiting decision» покаже помилку.
           isApprover: awaiting.failed || awaiting.departmentIds.length > 0,
-          awaitingCount: awaiting.requests.length,
+          awaitingCount: awaiting.total,
         }}
       />
       <SidebarInset className="bg-transparent">
