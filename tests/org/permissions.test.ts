@@ -15,6 +15,10 @@ describe("типи заявок і закупівлі у власному про
     expect(allowed(purchaseTypeAccess("requester", ["self_purchase"]))).toContain("Self-purchase");
   });
 
+  it("AC-ORG-25: у профілі адміністратора без дозволу серед дозволених типів заявок є «Card expense»", () => {
+    expect(requestTypeAccess("admin", []).find((t) => t.label === "Card expense")).toEqual({ label: "Card expense", allowed: true });
+  });
+
   it("адміністратор без окремих дозволів має всі типи", () => {
     expect(requestTypeAccess("admin", []).every((t) => t.allowed)).toBe(true);
     expect(purchaseTypeAccess("admin", []).every((t) => t.allowed)).toBe(true);
