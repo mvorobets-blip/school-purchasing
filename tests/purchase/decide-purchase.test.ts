@@ -61,4 +61,26 @@ describe("дія decidePurchase", () => {
   it("AC-APR-02: схвалення повертає до списку з повідомленням", async () => {
     await expect(decidePurchase(REQUEST, "approve", idle, form())).rejects.toThrow("REDIRECT /approvals?ok=APPROVED");
   });
+
+  it("причина довша за 500 символів — зрозуміле повідомлення, до бази не звертаємось", async () => {
+    expect(await decidePurchase(REQUEST, "reject", idle, form("я".repeat(501)))).toEqual({
+      status: "error",
+      message: "The reason can be up to 500 characters",
+    });
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("причина рівно з 500 символів іде в базу без змін", async () => {
+    const reason = "я".repeat(500);
+    await expect(decidePurchase(REQUEST, "reject", idle, form(reason))).rejects.toThrow("REDIRECT /approvals?ok=REJECTED");
+    expect(rpcCalls).toEqual([["decide_purchase", { p_request_id: REQUEST, p_decision: "reject", p_reason: reason }]]);
+  });
+
+  it("відмову check-обмеження довжини причини в базі показано тим самим повідомленням", async () => {
+    rpcResult.error = {
+      code: "23514",
+      message: 'new row for relation "purchase_requests" violates check constraint "purchase_requests_reject_reason_length"',
+    };
+    expect((await decidePurchase(REQUEST, "reject", idle, form("Немає бюджету"))).message).toBe("The reason can be up to 500 characters");
+  });
 });

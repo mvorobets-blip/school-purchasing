@@ -83,7 +83,7 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
-  it("AC-FRM-11: після подання — «Мої заявки» з повідомленням «Закупівлю подано»", async () => {
+  it("AC-FRM-11: після подання — «My requests» з повідомленням «Purchase submitted»", async () => {
     await expect(submitPurchase(idle, form(ONE_LINE))).rejects.toThrow("REDIRECT /requests?ok=SUBMITTED");
     expect(rpcCalls).toHaveLength(1);
   });
@@ -100,5 +100,22 @@ describe("дія submitPurchase", () => {
     const state = await submitPurchase(idle, form(ONE_LINE));
     expect(state.message).toBe("Not enough permissions");
     expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("назва чи мета довша за 200 символів — зрозуміле повідомлення, до бази не звертаємось, відділ і тип лишаються", async () => {
+    for (const field of ["name.1", "purpose.1"]) {
+      const state = await submitPurchase(idle, form({ ...ONE_LINE, [field]: "я".repeat(201) }));
+      expect(state).toMatchObject({ status: "error", message: "Name and purpose can be up to 200 characters", departmentId: DEPT });
+    }
+    expect(rpcCalls).toHaveLength(0);
+    await expect(submitPurchase(idle, form({ ...ONE_LINE, "name.1": "я".repeat(200) }))).rejects.toThrow("REDIRECT");
+  });
+
+  it("відмову check-обмеження довжини в базі показано тим самим повідомленням", async () => {
+    rpcResult.error = {
+      code: "23514",
+      message: 'new row for relation "purchase_request_lines" violates check constraint "purchase_request_lines_name_length"',
+    };
+    expect((await submitPurchase(idle, form(ONE_LINE))).message).toBe("Name and purpose can be up to 200 characters");
   });
 });

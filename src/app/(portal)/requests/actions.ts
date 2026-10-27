@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
-import { parseLines } from "@/lib/purchase/form";
+import { hasTooLongLine, isTextLengthError, LINE_TOO_LONG, parseLines } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 
 export type SubmitPurchaseState = {
@@ -20,6 +20,7 @@ function errorMessage(error: RpcError): string {
   if (error?.code === "42501" || error?.message?.includes("FORBIDDEN")) return messageFor("FORBIDDEN");
   if (error?.message?.includes("NO_LINES")) return messageFor("NO_LINES");
   if (error?.message?.includes("INVALID_LINE")) return messageFor("INVALID_LINE");
+  if (isTextLengthError(error)) return LINE_TOO_LONG;
   return "Could not submit the purchase. Try again.";
 }
 
@@ -40,6 +41,7 @@ export async function submitPurchase(
 
   const lines = parseLines(formData);
   if (lines.length === 0) return { status: "error", message: messageFor("NO_LINES"), ...keep };
+  if (hasTooLongLine(lines)) return { status: "error", message: LINE_TOO_LONG, ...keep };
   // Неможливі числа (кількість ≤ 0, від'ємна ціна) база відхиляє як INVALID_LINE → «Fill in all line fields»: власного
   // тексту немає — межі значень PM переніс у наступний зріз (вимога 47, #60).
 
