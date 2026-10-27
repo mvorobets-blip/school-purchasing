@@ -13,16 +13,21 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Сторінка заявки. Бачать автор, схвалювач її відділу й адміністратор (RLS). Іншим — «Not enough permissions» без даних:
 // не розрізняємо «немає» й «чужа», щоб не розкривати вміст (AC-FRM-08, AC-APR-03).
-export default async function RequestPage({ params }: PageProps<"/requests/[id]">) {
+export default async function RequestPage({ params, searchParams }: PageProps<"/requests/[id]">) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const { id } = await params;
+  // Звідки прийшли: зі списку «Awaiting decision» (?from=approvals) — туди й «← Назад», інакше — «My requests».
+  const fromApprovals = (await searchParams)?.from === "approvals";
+  const back = fromApprovals
+    ? { href: "/approvals", label: "Awaiting decision" }
+    : { href: "/requests", label: "My requests" };
 
   const forbidden = (
     <ForbiddenCard
       hint="You can open your own requests and requests of departments you approve."
-      backHref="/requests"
-      backLabel="Back to my requests"
+      backHref={back.href}
+      backLabel={`Back to ${back.label.toLowerCase()}`}
     />
   );
   if (!UUID.test(id)) return forbidden;
@@ -37,7 +42,9 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   if (!request) return forbidden;
   // Автор — ім'я, без імені в профілі — email, і лише якщо заявку дозволено бачити (private.request_author_names;
   // AC-APR-08, 09); ролі, відділів і дозволів автора сторінка не читає (AC-APR-10). Підпис «Author» — таблиця PM (#49).
-  const { data: authorRows } = await supabase.rpc("request_author_names", { p_request_ids: [id] });
+  // Помилка запиту автора — помилка завантаження, а не «—» замість імені.
+  const { data: authorRows, error: authorError } = await supabase.rpc("request_author_names", { p_request_ids: [id] });
+  if (authorError) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   const authorName = authorRows?.[0]?.author_name ?? "—";
 
   const [linesRes, deptRes] = await Promise.all([
@@ -56,7 +63,7 @@ export default async function RequestPage({ params }: PageProps<"/requests/[id]"
   return (
     <>
       <div className="flex flex-col gap-1">
-        <BackLink href="/requests">My requests</BackLink>
+        <BackLink href={back.href}>{back.label}</BackLink>
         <h1 className="text-2xl font-semibold">Purchase</h1>
       </div>
 

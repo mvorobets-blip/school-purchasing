@@ -9,6 +9,7 @@ const data: { approverOf: { department_id: string }[]; requests: Record<string, 
   requests: [],
 };
 const queried: string[] = [];
+let authorError = false;
 const filters: string[] = [];
 
 function query(table: string) {
@@ -41,7 +42,10 @@ vi.mock("@/lib/org/current-user", () => ({
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     from: query,
-    rpc: async () => ({ data: [{ request_id: "r1", author_name: "Андрій Демо-Перший" }], error: null }),
+    rpc: async () =>
+      authorError
+        ? { data: null, error: { message: "boom" } }
+        : { data: [{ request_id: "r1", author_name: "Андрій Демо-Перший" }], error: null },
   }),
 }));
 
@@ -55,6 +59,18 @@ describe("сторінка «Awaiting decision»", () => {
     data.requests = [];
     queried.length = 0;
     filters.length = 0;
+    authorError = false;
+  });
+
+  it("помилка запиту авторів — повідомлення про помилку, а не «—» у стовпці «Author»", async () => {
+    data.approverOf = [{ department_id: "d1" }];
+    data.requests = [
+      { id: "r1", department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" },
+    ];
+    authorError = true;
+    const html = await render();
+    expect(html).toContain("Could not load requests. Refresh the page.");
+    expect(html).not.toContain('data-testid="decision-list"');
   });
 
   it("AC-APR-04: людина без відділів для схвалення бачить «Not enough permissions», заявки не запитуються", async () => {
@@ -92,6 +108,8 @@ describe("сторінка «Awaiting decision»", () => {
     const html = await render();
     expect(html).toContain(">Author</th>");
     expect(html).toMatch(/data-testid="decision-author"[^>]*>Андрій Демо-Перший</);
+    // Сторінка заявки зі списку повертає «← Назад» сюди, а не в «My requests».
+    expect(html).toContain('href="/requests/r1?from=approvals"');
   });
 
   it("AC-APR-10: список для рішення не читає профілю й дозволів автора — лише ім'я з request_author_names", async () => {
