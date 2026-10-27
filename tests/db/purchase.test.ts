@@ -104,6 +104,15 @@ describe("подання закупівлі (база)", () => {
     }
   });
 
+  it("довжина назви й мети рядка: 200 символів приймається, 201 — ні (технічна межа)", async () => {
+    const line = (name: string, purpose: string) => [{ name, purpose, quantity: 1, price: "1.00" }];
+    await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", line("я".repeat(200), "м".repeat(200)))).resolves.toHaveLength(1);
+    const before = await pendingCountOf(MEMBER_1);
+    await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", line("я".repeat(201), "Друк"))).rejects.toThrow(/purchase_request_lines_name_length/);
+    await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", line("Папір", "м".repeat(201)))).rejects.toThrow(/purchase_request_lines_purpose_length/);
+    expect(await pendingCountOf(MEMBER_1)).toBe(before);
+  });
+
   it("AC-FRM-15: рядок лише з назвою не подано, нової заявки немає", async () => {
     const before = await pendingCountOf(MEMBER_1);
     await expect(

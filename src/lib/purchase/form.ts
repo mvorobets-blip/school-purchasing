@@ -78,6 +78,11 @@ export function submitBlocked(
   return refused !== null && refused.departmentId === current.departmentId && refused.purchaseType === current.purchaseType;
 }
 
+// Технічні межі довжини тексту (припущення розробника, PM меж не задавав): ті самі check у базі —
+// міграція 20261027142924_purchase_text_limits.sql.
+export const LINE_TEXT_LIMIT = 200; // назва й мета рядка
+export const REASON_LIMIT = 500; // причина відхилення
+
 // Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00.
 // Ту саму межу (після округлення) перевіряє private.submit_purchase — міграція
 // 20261027132703_submit_purchase_rounded_price_limit.sql — і відповідає INVALID_LINE; тут позначаємо поле заздалегідь.

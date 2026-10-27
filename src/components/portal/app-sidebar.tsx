@@ -14,7 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -82,9 +82,12 @@ function sectionsFor(user: SidebarUser): Section[] {
 }
 
 // «Мої заявки» активні й на сторінці заявки, але не на «Новій закупівлі».
-const isActive = (pathname: string, href: string) => {
+// Сторінка заявки, відкрита зі списку для рішення (?from=approvals), — «ви тут» на «Awaiting decision», а не «My requests».
+const isActive = (pathname: string, href: string, fromApprovals: boolean) => {
   if (href === "/") return pathname === "/";
-  if (href === "/requests") return pathname === "/requests" || (pathname.startsWith("/requests/") && pathname !== "/requests/new");
+  const requestPage = pathname.startsWith("/requests/") && pathname !== "/requests/new";
+  if (href === "/requests") return pathname === "/requests" || (requestPage && !fromApprovals);
+  if (href === "/approvals") return pathname.startsWith("/approvals") || (requestPage && fromApprovals);
   return pathname.startsWith(href);
 };
 
@@ -92,6 +95,7 @@ const isActive = (pathname: string, href: string) => {
 // на телефоні — висувна панель. Стан згортання пам'ятає cookie sidebar_state (компонент shadcn/ui).
 export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () => Promise<void> }) {
   const pathname = usePathname();
+  const fromApprovals = useSearchParams().get("from") === "approvals";
 
   return (
     <Sidebar collapsible="icon">
@@ -127,7 +131,7 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
                     {section.pages.map((page) => (
                       <SidebarMenuItem key={page.href}>
                         <SidebarMenuButton
-                          isActive={isActive(pathname, page.href)}
+                          isActive={isActive(pathname, page.href, fromApprovals)}
                           tooltip={page.label}
                           render={<Link href={page.href} />}
                           className="data-active:rounded-l-none data-active:border-l-2 data-active:border-sidebar-primary data-active:font-medium"

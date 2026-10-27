@@ -4,7 +4,7 @@ import { messageFor } from "@/lib/org/messages";
 
 // Сторінка «Мої заявки» (server component) з підміненими getCurrentUser і Supabase: що бачить працівник
 // за порожнього й непорожнього списку. Права на рядки перевіряє tests/db/purchase.test.ts (RLS).
-const data: { requests: Record<string, unknown>[] } = { requests: [] };
+const data: { requests: Record<string, unknown>[]; total: number | null } = { requests: [], total: null };
 const filters: string[] = [];
 
 function query(table: string) {
@@ -13,7 +13,8 @@ function query(table: string) {
     select: () => builder,
     eq: (col: string, val: unknown) => (filters.push(`${table}.eq(${col},${String(val)})`), builder),
     order: () => builder,
-    then: (resolve: (v: unknown) => void) => resolve({ data: rows, error: null }),
+    range: () => builder,
+    then: (resolve: (v: unknown) => void) => resolve({ data: rows, count: data.total ?? (Array.isArray(rows) ? rows.length : null), error: null }),
   };
   return builder;
 }
@@ -36,6 +37,7 @@ const render = async (params: Record<string, string> = {}) =>
 describe("сторінка «Мої заявки»", () => {
   beforeEach(() => {
     data.requests = [];
+    data.total = null;
     filters.length = 0;
   });
 
@@ -60,6 +62,45 @@ describe("сторінка «Мої заявки»", () => {
   it("AC-FRM-11: без ?ok=SUBMITTED (заявку не подавали) повідомлення «Purchase submitted» немає", async () => {
     const html = await render();
     expect(html).not.toContain("Purchase submitted");
+  });
+
+  it("AC-LANG-06: у списку статуси підписано текстом «Awaiting approval», «Approved», «Rejected»", async () => {
+    data.requests = ["pending", "approved", "rejected"].map((status, i) => ({
+      id: `r${i}`,
+      department_id: "d1",
+      purchase_type: "purchasing_department",
+      status,
+      created_at: "2026-10-26T10:00:00Z",
+    }));
+    const html = await render();
+    const statuses = [...html.matchAll(/data-testid="purchase-status"[^>]*>([^<]+)</g)].map((m) => m[1]);
+    expect(statuses).toEqual(["Awaiting approval", "Approved", "Rejected"]);
+  });
+
+  it("понад 50 заявок — сторінка 2 показує «Showing 51–60 of 60» і «Previous» на першу сторінку", async () => {
+    data.requests = Array.from({ length: 10 }, (_, i) => ({
+      id: `r${i}`,
+      department_id: "d1",
+      purchase_type: "purchasing_department",
+      status: "pending",
+      created_at: "2026-10-26T10:00:00Z",
+    }));
+    data.total = 60;
+    const html = await render({ page: "2" });
+    expect(html).toContain("Showing 51–60 of 60");
+    expect(html).toContain('href="/requests?page=1"');
+    expect(html).not.toContain('href="/requests?page=3"');
+  });
+
+  it("сторінка за межами — перенаправлення на останню", async () => {
+    data.total = 60;
+    await expect(render({ page: "9" })).rejects.toThrow("REDIRECT /requests?page=2");
+  });
+
+  it("до 50 заявок — без навігації сторінками", async () => {
+    data.requests = [{ id: "r1", department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-10-26T10:00:00Z" }];
+    const html = await render();
+    expect(html).not.toContain('data-testid="pagination"');
   });
 
   it("AC-FRM-14: без заявок — порожній стан з текстом PM і без таблиці", async () => {

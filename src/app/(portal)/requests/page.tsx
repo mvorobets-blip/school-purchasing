@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/portal/status-badge";
 import { CLICKABLE_ROW, RowLink } from "@/components/portal/row-link";
+import { Pagination } from "@/components/portal/pagination";
 import { Alert } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
 import { formatSubmitted } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
+import { pageCount, pageFromParam, pageRange } from "@/lib/purchase/pagination";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -19,15 +21,18 @@ import { cn } from "@/lib/utils";
 export default async function MyRequestsPage({ searchParams }: PageProps<"/requests">) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  const { ok } = await searchParams;
+  const { ok, page: pageParam } = await searchParams;
+  const page = pageFromParam(pageParam);
+  const { from, to } = pageRange(page);
 
   const supabase = await createClient();
   const [requestsRes, deptsRes] = await Promise.all([
     supabase
       .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, created_at")
+      .select("id, department_id, purchase_type, status, created_at", { count: "exact" })
       .eq("author_id", user.id)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(from, to),
     supabase.from("departments").select("id, name"),
   ]);
   if (requestsRes.error || deptsRes.error) {
@@ -35,6 +40,9 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
   }
   const names = new Map(deptsRes.data.map((d) => [d.id, d.name]));
   const requests = requestsRes.data;
+  // Сторінки по 50 (?page=N), загальна кількість — count: "exact"; номер за межами — на останню сторінку.
+  const total = requestsRes.count ?? requests.length;
+  if (page > pageCount(total)) redirect(`/requests?page=${pageCount(total)}`);
 
   return (
     <>
@@ -99,6 +107,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
           </Table>
         </Card>
       )}
+      <Pagination page={page} total={total} href={(p) => `/requests?page=${p}`} />
     </>
   );
 }

@@ -110,7 +110,7 @@ export default async function Home() {
   );
 
   // Смуга «на рішення» для кожного, хто схвалює (і адміністратора-схвалювача): її кнопка — основна на екрані.
-  const awaitingCount = awaiting.requests.length;
+  const awaitingCount = awaiting.total;
   const approveIn = awaiting.departmentIds.map((id) => deptName.get(id) ?? "—").join(", ");
   const awaitingBanner = (
     <Card data-testid="awaiting-banner">

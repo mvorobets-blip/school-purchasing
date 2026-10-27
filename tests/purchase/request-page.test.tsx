@@ -94,6 +94,19 @@ describe("сторінка заявки", () => {
     expect(queried).not.toContain("employee_permissions");
   });
 
+  it("AC-LANG-03: чужа заявка — «Not enough permissions» англійською, вміст заявки не розкрито", async () => {
+    db.request = null;
+    const html = await render();
+    expect(html).toContain("Not enough permissions");
+    expect(html).not.toContain("Недостатньо прав");
+    expect(html).not.toContain("Папір А4");
+  });
+
+  it("AC-LANG-06: статус на сторінці заявки підписано текстом «Awaiting approval»", async () => {
+    const html = await render();
+    expect(html).toMatch(/data-testid="[^"]*status[^"]*"[^>]*>Awaiting approval<|>Awaiting approval</);
+  });
+
   it("AC-APR-07: відхилена заявка — статус «Rejected» і причина поруч", async () => {
     db.request = { ...db.request, status: "rejected", reject_reason: "Немає бюджету" };
     const html = await render();

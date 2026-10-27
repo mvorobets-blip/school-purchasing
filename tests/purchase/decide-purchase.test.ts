@@ -42,6 +42,12 @@ describe("дія decidePurchase", () => {
     expect(rpcCalls).toHaveLength(0);
   });
 
+  it("AC-LANG-05: відхилення без причини не збережено, схвалювач бачить англійське «Provide a reason»", async () => {
+    const state = await decidePurchase(REQUEST, "reject", idle, form(""));
+    expect(state).toEqual({ status: "error", message: "Provide a reason" });
+    expect(state.message).not.toMatch(/[А-Яа-яІіЇїЄєҐґ]/);
+  });
+
   it("AC-APR-07: відхилення з причиною передає причину в базу й повертає до списку", async () => {
     await expect(decidePurchase(REQUEST, "reject", idle, form("Немає бюджету"))).rejects.toThrow("REDIRECT /approvals?ok=REJECTED");
     expect(rpcCalls[0]).toEqual(["decide_purchase", { p_request_id: REQUEST, p_decision: "reject", p_reason: "Немає бюджету" }]);

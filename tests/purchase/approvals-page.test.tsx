@@ -26,7 +26,8 @@ function query(table: string) {
     neq: (col: string, val: unknown) => (filters.push(`${table}.neq(${col},${String(val)})`), builder),
     in: (col: string, vals: unknown[]) => (filters.push(`${table}.in(${col},${vals.join("|")})`), builder),
     order: () => builder,
-    then: (resolve: (v: unknown) => void) => resolve({ data: rows, error: null }),
+    range: () => builder,
+    then: (resolve: (v: unknown) => void) => resolve({ data: rows, count: Array.isArray(rows) ? rows.length : null, error: null }),
   };
   return builder;
 }
