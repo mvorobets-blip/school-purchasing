@@ -29,7 +29,8 @@ ValiaBihun/2026-quitcode-dream-team#60); пагінація списків і о
   адміністратор), одне поле про автора (APR-09, 10).
 - `supabase/migrations/20261027132703_submit_purchase_rounded_price_limit.sql` (задача 3): `private.submit_purchase`
   перевіряє `round(v_price, 2) >= 10000000000` → `INVALID_LINE` (замість `22003` на `insert`); та сама межа, що
-  `PRICE_LIMIT` у `src/lib/purchase/form.ts`.
+  `PRICE_LIMIT` у `src/lib/purchase/form.ts`. Користувач бачить повідомлення AC-FRM-15 «Fill in all line fields» з
+  позначеним полем ціни; поведінку AC-FRM-15 не змінено.
 
 ## Auth
 
