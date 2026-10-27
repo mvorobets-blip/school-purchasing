@@ -78,11 +78,12 @@ export function submitBlocked(
   return refused !== null && refused.departmentId === current.departmentId && refused.purchaseType === current.purchaseType;
 }
 
-// Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00 —
-// private.submit_purchase відхиляє її як INVALID_LINE або запис переповнюється; позначаємо поле заздалегідь.
+// Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00.
+// Ту саму межу (після округлення) перевіряє private.submit_purchase — міграція
+// 20261027132703_submit_purchase_rounded_price_limit.sql — і відповідає INVALID_LINE; тут позначаємо поле заздалегідь.
 const PRICE_LIMIT = 9_999_999_999.995;
 
-// Кількість > 0, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — те саме перевіряє база
+// Кількість > 0, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — ті самі межі перевіряє база
 // (private.submit_purchase). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
 export function invalidNumberFields(line: PurchaseLine): LineField[] {
   const bad: LineField[] = [];
