@@ -58,7 +58,7 @@ describe("сторінка «New purchase»", () => {
     expect(html).not.toContain("<form");
   });
 
-  it("працівник із відділом бачить форму, а не пояснення", async () => {
+  it("AC-FRM-05: працівник із відділом бачить форму, а не пояснення про відсутність відділів", async () => {
     state.memberships = [{ department_id: "d1" }];
     const html = await render();
     expect(html).toContain("<form");

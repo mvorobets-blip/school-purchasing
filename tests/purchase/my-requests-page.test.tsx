@@ -57,7 +57,7 @@ describe("сторінка «Мої заявки»", () => {
     expect(html).toContain('data-testid="my-requests"');
   });
 
-  it("без ?ok=SUBMITTED повідомлення про подання немає", async () => {
+  it("AC-FRM-11: без ?ok=SUBMITTED (заявку не подавали) повідомлення «Purchase submitted» немає", async () => {
     const html = await render();
     expect(html).not.toContain("Purchase submitted");
   });

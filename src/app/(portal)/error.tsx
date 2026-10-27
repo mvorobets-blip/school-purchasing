@@ -3,7 +3,8 @@
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
-// Помилка завантаження сторінки порталу (зокрема профілю в getCurrentUser): показуємо її, а не порожній стан чи вхід
+// Помилка завантаження сторінки порталу: показуємо її в каркасі з бічною панеллю, а не порожній стан чи вхід. Помилки
+// самого (portal)/layout.tsx (зокрема getCurrentUser) ловить межа рівнем вище — src/app/error.tsx
 // (DESIGN.md §6, «Помилка завантаження»). «Try again» — retry(): заново запитує й рендерить сегмент (Next.js ≥ 16.3).
 export default function PortalError({ retry }: { error: unknown; retry: () => void }) {
   return (
