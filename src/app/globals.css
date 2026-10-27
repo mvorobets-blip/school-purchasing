@@ -2,7 +2,10 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Токени — за DESIGN.md (розділ 2). Темна тема — за системою (prefers-color-scheme), без класу .dark. */
+/* Варіант dark: компонентів shadcn/ui (dark:bg-input/30 тощо) — за тим самим атрибутом, що й токени, а не лише за системою. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Токени — за DESIGN.md (розділ 2). Темна тема — <html data-theme="dark"> (вибір людини або система), без класу .dark. */
 
 @theme inline {
   --color-background: var(--background);
@@ -87,69 +90,71 @@
   --status-rejected-foreground: oklch(0.42 0.15 27);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.131 0.012 285);
-    --foreground: oklch(0.963 0.007 286);
-    --card: oklch(1 0 0 / 2.5%);
-    --card-foreground: oklch(0.963 0.007 286);
-    --popover: oklch(0.173 0.019 284);
-    --popover-foreground: oklch(0.963 0.007 286);
-    --primary: oklch(0.547 0.193 286);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.201 0.02 284);
-    --secondary-foreground: oklch(0.963 0.007 286);
-    --muted: oklch(0.201 0.02 284);
-    --muted-foreground: oklch(0.718 0.023 289);
-    --accent: oklch(0.63 0.198 290 / 14%);
-    --accent-foreground: oklch(0.762 0.12 293);
-    --destructive: oklch(0.744 0.124 28);
-    --destructive-foreground: oklch(0.131 0.012 285);
-    --border: oklch(0.271 0.041 283);
-    --input: oklch(0.528 0.044 285);
-    --ring: oklch(0.63 0.198 290);
-    --sidebar: oklch(0.148 0.013 285 / 75%);
-    --sidebar-foreground: oklch(0.963 0.007 286);
-    --sidebar-primary: oklch(0.547 0.193 286);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.63 0.198 290 / 14%);
-    --sidebar-accent-foreground: oklch(0.762 0.12 293);
-    --sidebar-border: oklch(0.271 0.041 283);
-    --sidebar-ring: oklch(0.63 0.198 290);
-    --status-pending: oklch(0.809 0.138 85 / 16%);
-    --status-pending-foreground: oklch(0.877 0.098 87);
-    --status-approved: oklch(0.687 0.166 147 / 16%);
-    --status-approved-foreground: oklch(0.849 0.1 149);
-    --status-rejected: oklch(0.667 0.184 28 / 16%);
-    --status-rejected-foreground: oklch(0.809 0.091 26);
-  }
+/* Темна тема — атрибут <html data-theme="dark">: вибір людини (cookie theme, ставить сервер у src/app/layout.tsx)
+   або, поки вибору немає, системне налаштування (prefers-color-scheme — скрипт у <head> до першого малювання).
+   Значення токенів — DESIGN.md §2. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: oklch(0.131 0.012 285);
+  --foreground: oklch(0.963 0.007 286);
+  --card: oklch(1 0 0 / 2.5%);
+  --card-foreground: oklch(0.963 0.007 286);
+  --popover: oklch(0.173 0.019 284);
+  --popover-foreground: oklch(0.963 0.007 286);
+  --primary: oklch(0.547 0.193 286);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.201 0.02 284);
+  --secondary-foreground: oklch(0.963 0.007 286);
+  --muted: oklch(0.201 0.02 284);
+  --muted-foreground: oklch(0.718 0.023 289);
+  --accent: oklch(0.63 0.198 290 / 14%);
+  --accent-foreground: oklch(0.762 0.12 293);
+  --destructive: oklch(0.744 0.124 28);
+  --destructive-foreground: oklch(0.131 0.012 285);
+  --border: oklch(0.271 0.041 283);
+  --input: oklch(0.528 0.044 285);
+  --ring: oklch(0.63 0.198 290);
+  --sidebar: oklch(0.148 0.013 285 / 75%);
+  --sidebar-foreground: oklch(0.963 0.007 286);
+  --sidebar-primary: oklch(0.547 0.193 286);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.63 0.198 290 / 14%);
+  --sidebar-accent-foreground: oklch(0.762 0.12 293);
+  --sidebar-border: oklch(0.271 0.041 283);
+  --sidebar-ring: oklch(0.63 0.198 290);
+  --status-pending: oklch(0.809 0.138 85 / 16%);
+  --status-pending-foreground: oklch(0.877 0.098 87);
+  --status-approved: oklch(0.687 0.166 147 / 16%);
+  --status-approved-foreground: oklch(0.849 0.1 149);
+  --status-rejected: oklch(0.667 0.184 28 / 16%);
+  --status-rejected-foreground: oklch(0.809 0.091 26);
+}
 
-  /* Тло темної теми: ледь помітні статичні зорі й слабкий фіолетовий серпанок угорі (DESIGN.md §2), без анімації. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(1200px 380px at 55% -120px, oklch(0.63 0.198 290 / 10%), transparent 70%),
-      radial-gradient(1px 1px at 12% 18%, oklch(1 0 0 / 55%), transparent 60%),
-      radial-gradient(1px 1px at 27% 62%, oklch(1 0 0 / 35%), transparent 60%),
-      radial-gradient(1px 1px at 41% 33%, oklch(1 0 0 / 45%), transparent 60%),
-      radial-gradient(1px 1px at 58% 78%, oklch(1 0 0 / 30%), transparent 60%),
-      radial-gradient(1px 1px at 66% 22%, oklch(1 0 0 / 50%), transparent 60%),
-      radial-gradient(1px 1px at 79% 55%, oklch(1 0 0 / 35%), transparent 60%),
-      radial-gradient(1px 1px at 88% 12%, oklch(1 0 0 / 45%), transparent 60%),
-      radial-gradient(1px 1px at 93% 84%, oklch(1 0 0 / 30%), transparent 60%),
-      radial-gradient(1px 1px at 6% 88%, oklch(1 0 0 / 40%), transparent 60%),
-      radial-gradient(1px 1px at 34% 90%, oklch(1 0 0 / 25%), transparent 60%),
-      radial-gradient(1.5px 1.5px at 72% 40%, oklch(1 0 0 / 35%), transparent 60%),
-      radial-gradient(1px 1px at 48% 8%, oklch(1 0 0 / 40%), transparent 60%);
-    background-size:
-      100% 100%,
-      640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px,
-      640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px;
-  }
+/* Тло темної теми: ледь помітні статичні зорі й слабкий фіолетовий серпанок угорі (DESIGN.md §2), без анімації. */
+:root[data-theme="dark"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 380px at 55% -120px, oklch(0.63 0.198 290 / 10%), transparent 70%),
+    radial-gradient(1px 1px at 12% 18%, oklch(1 0 0 / 55%), transparent 60%),
+    radial-gradient(1px 1px at 27% 62%, oklch(1 0 0 / 35%), transparent 60%),
+    radial-gradient(1px 1px at 41% 33%, oklch(1 0 0 / 45%), transparent 60%),
+    radial-gradient(1px 1px at 58% 78%, oklch(1 0 0 / 30%), transparent 60%),
+    radial-gradient(1px 1px at 66% 22%, oklch(1 0 0 / 50%), transparent 60%),
+    radial-gradient(1px 1px at 79% 55%, oklch(1 0 0 / 35%), transparent 60%),
+    radial-gradient(1px 1px at 88% 12%, oklch(1 0 0 / 45%), transparent 60%),
+    radial-gradient(1px 1px at 93% 84%, oklch(1 0 0 / 30%), transparent 60%),
+    radial-gradient(1px 1px at 6% 88%, oklch(1 0 0 / 40%), transparent 60%),
+    radial-gradient(1px 1px at 34% 90%, oklch(1 0 0 / 25%), transparent 60%),
+    radial-gradient(1.5px 1.5px at 72% 40%, oklch(1 0 0 / 35%), transparent 60%),
+    radial-gradient(1px 1px at 48% 8%, oklch(1 0 0 / 40%), transparent 60%);
+  background-size:
+    100% 100%,
+    640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px,
+    640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px, 640px 640px;
 }
 
 @layer base {
