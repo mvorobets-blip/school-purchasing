@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { ThemeToggle } from "@/components/portal/theme-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -100,14 +101,18 @@ export function AppSidebar({ user, signOut }: { user: SidebarUser; signOut: () =
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:flex-col">
-          <Link href="/" className="flex min-w-0 flex-1 items-center gap-2 font-semibold">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+        <div className="flex items-center gap-1 py-1 group-data-[collapsible=icon]:flex-col">
+          <Link href="/" className="flex min-w-0 flex-1 items-center gap-1.5 font-semibold">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
               <ShoppingBasket className="size-4" aria-hidden="true" />
             </span>
             <span className="truncate group-data-[collapsible=icon]:hidden">School Purchasing</span>
           </Link>
-          <SidebarTrigger aria-label="Toggle menu" />
+          {/* Тема й згортання панелі — дві кнопки icon-sm поруч, щоб назва застосунку вміщалась. */}
+          <div className="flex shrink-0 items-center group-data-[collapsible=icon]:flex-col">
+            <ThemeToggle />
+            <SidebarTrigger aria-label="Toggle menu" />
+          </div>
         </div>
       </SidebarHeader>
 
