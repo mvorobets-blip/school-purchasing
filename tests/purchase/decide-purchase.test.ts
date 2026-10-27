@@ -70,6 +70,12 @@ describe("дія decidePurchase", () => {
     expect(rpcCalls).toHaveLength(0);
   });
 
+  it("причина рівно з 500 символів іде в базу без змін", async () => {
+    const reason = "я".repeat(500);
+    await expect(decidePurchase(REQUEST, "reject", idle, form(reason))).rejects.toThrow("REDIRECT /approvals?ok=REJECTED");
+    expect(rpcCalls).toEqual([["decide_purchase", { p_request_id: REQUEST, p_decision: "reject", p_reason: reason }]]);
+  });
+
   it("відмову check-обмеження довжини причини в базі показано тим самим повідомленням", async () => {
     rpcResult.error = {
       code: "23514",
