@@ -4,7 +4,8 @@
 
 Реалізуємо другий зріз WS7 за специфікацією `openspec/specs/purchase-form/spec.md`,
 `openspec/specs/approval-decision/spec.md`, `openspec/specs/ui-language/spec.md` і змінену вимогу
-`openspec/specs/employee-deactivation/spec.md` — знімок вимог PM 2026-10-25 (шапка `docs/conformance.md`).
+`openspec/specs/employee-deactivation/spec.md` — знімок вимог PM 2026-10-25 (шапка `docs/conformance.md`). AC-APR-08 … 10 зі знімка 2026-10-27 — у плані
+`impl-purchase-approval-2`.
 Специфікацію не змінюємо (`skip_specs: true`): ця зміна — лише план.
 
 ## What Changes

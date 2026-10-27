@@ -80,10 +80,11 @@ CodeRabbit у PR «Оновлення вимог». PM відповів на в�
 
 # Зріз 2 (WS7) — форма закупівлі, рішення схвалювача, англійський інтерфейс
 
-Вимоги: ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-10-25 (після відповідей PM на ValiaBihun/2026-quitcode-dream-team#57–61)
+Вимоги: ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-10-25 (після відповідей PM на ValiaBihun/2026-quitcode-dream-team#57–61);
+останній — 2026-10-27 (AC-APR-08 … 10 після відповіді на ValiaBihun/2026-quitcode-dream-team#62)
 
 Вимоги зрізу: ValiaBihun/2026-quitcode-dream-team#47 (AC-FRM-01…15), ValiaBihun/2026-quitcode-dream-team#48
-(AC-APR-01…07), ValiaBihun/2026-quitcode-dream-team#49 (AC-LANG-01…06, 08); уточнення першого зрізу — AC-ORG-12
+(AC-APR-01…10), ValiaBihun/2026-quitcode-dream-team#49 (AC-LANG-01…06, 08); уточнення першого зрізу — AC-ORG-12
 (змінено), AC-ORG-13 (прибрано).
 
 ## Скан за таксономією (зріз 2)
@@ -126,4 +127,5 @@ CodeRabbit у PR «Оновлення вимог». PM відповів на в�
 
 - Скіл і незалежний `spec-review` знайшли суперечність, яку команда пропустила (Q5 → ValiaBihun/2026-quitcode-dream-team#61).
 - Ми рахували відповіді колег: не дублювали ValiaBihun/2026-quitcode-dream-team#50, ValiaBihun/2026-quitcode-dream-team#52, ValiaBihun/2026-quitcode-dream-team#53, ValiaBihun/2026-quitcode-dream-team#57–60, а додали в ValiaBihun/2026-quitcode-dream-team#52 новий випадок коментарем.
-- Писати специфікацію до відповідей PM, але не зливати її, виявилось вигідно: після відповідей змінились лише 5 AC.
+- Писати специфікацію до відповідей PM, але не зливати її, виявилось вигідно: після відповідей PM 24–25.10 у специфікації — 1 новий AC (AC-FRM-15), 4 змінені (AC-APR-07, AC-LANG-03, 05, 08)
+  і 1 прибраний (AC-LANG-07); 26.10 — ще 3 нові (AC-APR-08 … 10, окрема зміна `clarify-purchase-approval`).
