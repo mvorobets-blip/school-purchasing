@@ -20,14 +20,23 @@ function query(table: string) {
       : table === "purchase_requests"
         ? data.requests
         : [{ id: "d1", name: "Початкова школа" }];
+  // Як PostgREST: select(…, { head: true }) — лише кількість; .range(from, to) — зріз рядків; count — уся кількість.
+  let data_: Record<string, unknown>[] | null = rows;
   const builder = {
-    select: () => builder,
+    select: (_cols?: string, opts?: { head?: boolean }) => {
+      if (opts?.head) data_ = null;
+      return builder;
+    },
     eq: (col: string, val: unknown) => (filters.push(`${table}.eq(${col},${String(val)})`), builder),
     neq: (col: string, val: unknown) => (filters.push(`${table}.neq(${col},${String(val)})`), builder),
     in: (col: string, vals: unknown[]) => (filters.push(`${table}.in(${col},${vals.join("|")})`), builder),
     order: () => builder,
-    range: () => builder,
-    then: (resolve: (v: unknown) => void) => resolve({ data: rows, count: Array.isArray(rows) ? rows.length : null, error: null }),
+    range: (from: number, to: number) => {
+      filters.push(`${table}.range(${from},${to})`);
+      data_ = rows.slice(from, to + 1);
+      return builder;
+    },
+    then: (resolve: (v: unknown) => void) => resolve({ data: data_, count: rows.length, error: null }),
   };
   return builder;
 }
@@ -52,7 +61,8 @@ vi.mock("@/lib/supabase/server", () => ({
 
 const { default: ApprovalsPage } = await import("@/app/(portal)/approvals/page");
 
-const render = async () => renderToStaticMarkup(await ApprovalsPage({ searchParams: Promise.resolve({}) } as never));
+const render = async (params: Record<string, string> = {}) =>
+  renderToStaticMarkup(await ApprovalsPage({ searchParams: Promise.resolve(params) } as never));
 
 describe("сторінка «Awaiting decision»", () => {
   beforeEach(() => {
@@ -126,5 +136,31 @@ describe("сторінка «Awaiting decision»", () => {
       "department_members.eq(profile_id,u1)",
       "department_members.eq(is_approver,true)",
     ]);
+  });
+
+  const many = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `r${i + 1}`,
+      department_id: "d1",
+      purchase_type: "purchasing_department",
+      status: "pending",
+      created_at: "2026-10-26T10:00:00Z",
+    }));
+
+  it("сторінка 2 бере .range(50, 99) і показує «Showing 51–51 of 51» з «Previous»", async () => {
+    data.approverOf = [{ department_id: "d1" }];
+    data.requests = many(51);
+    const html = await render({ page: "2" });
+    expect(filters).toContain("purchase_requests.range(50,99)");
+    expect(html.match(/data-testid="decision-author"/g)).toHaveLength(1);
+    expect(html).toContain("Showing 51–51 of 51");
+    expect(html).toContain('href="/approvals?page=1"');
+  });
+
+  it("сторінка за межами — перенаправлення на останню, рядки не запитуються", async () => {
+    data.approverOf = [{ department_id: "d1" }];
+    data.requests = many(51);
+    await expect(render({ page: "9" })).rejects.toThrow("REDIRECT /approvals?page=2");
+    expect(filters.some((f) => f.includes(".range("))).toBe(false);
   });
 });
