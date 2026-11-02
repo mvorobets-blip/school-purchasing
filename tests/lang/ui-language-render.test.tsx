@@ -5,7 +5,7 @@ import { type TestUser, withUser } from "../support/current-user";
 // Англійський інтерфейс у тому, що бачить людина (відгук PM на рев'ю WS7, #1): рендеримо сторінку входу з помилкою й
 // профіль з підписом ролі та перевіряємо видимий текст, а не константи. Підмінено лише клієнт Supabase: сесію й профіль поточного користувача віддає withUser.
 const CYRILLIC = /[А-Яа-яІіЇїЄєҐґ]/;
-const state: { user: Record<string, unknown> | null } = { user: null };
+const state: { user: TestUser | null } = { user: null };
 
 function query() {
   const builder = {
@@ -21,7 +21,7 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => withUser(state.user as TestUser | null, { from: query }) }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => withUser(state.user, { from: query }) }));
 
 const { default: LoginPage } = await import("@/app/login/page");
 const { default: ProfilePage } = await import("@/app/(portal)/profile/page");
