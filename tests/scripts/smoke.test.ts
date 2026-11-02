@@ -65,6 +65,13 @@ describe("smoke.mjs", () => {
     expect(code).toBe(1);
   });
 
+  it("збій, коли / віддає 201 з Location: /login — це не редирект", async () => {
+    const base = await serve({ "/": { status: 201, headers: { location: "/login" } }, "/login": LOGIN, "/api/health": HEALTHY });
+    const { code, out } = await smoke(base);
+    expect(out).toContain('"/": HTTP 201 — очікували 200 або редирект');
+    expect(code).toBe(1);
+  });
+
   it("підказує PUBLIC_PATHS, коли /api/health веде на /login", async () => {
     const base = await serve({
       "/": { status: 307, headers: { location: "/login" } },

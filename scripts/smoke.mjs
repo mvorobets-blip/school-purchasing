@@ -23,6 +23,8 @@ const get = async (path) => {
     return { status: 0, location: "", vercelError: "", text: String(e.cause?.code ?? e) };
   }
 };
+// Справжні редиректи: Location з іншим статусом (напр. 201) — не редирект.
+const REDIRECT_STATUSES = [301, 302, 303, 307, 308];
 // Без входу застосунок з "/" веде на /login того самого сайту (src/lib/supabase/proxy.ts); інший редирект — збій.
 const isSameSiteLogin = (location) => {
   try {
@@ -43,7 +45,7 @@ async function main() {
   else if (root.status >= 400) {
     const hint = root.vercelError === "MIDDLEWARE_INVOCATION_FAILED" ? " — у Vercel бракує NEXT_PUBLIC_SUPABASE_*?" : "";
     fail.push(`"/": HTTP ${root.status} ${root.vercelError}${hint}`.trim());
-  } else if (root.status !== 200 && !root.location) {
+  } else if (root.status !== 200 && (!REDIRECT_STATUSES.includes(root.status) || !root.location)) {
     fail.push(`"/": HTTP ${root.status} — очікували 200 або редирект на ${base}/login`);
   } else if (root.status !== 200 && !isSameSiteLogin(root.location)) {
     fail.push(`"/": HTTP ${root.status}, редирект не на ${base}/login (${root.location})`);
