@@ -44,7 +44,7 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 ## Структура
 
 - `src/app/` — сторінки й server actions; `src/proxy.ts` — оновлення сесії (НЕ `middleware.ts`)
-- `src/lib/supabase/{client,server,proxy}.ts` — клієнти Supabase; `database.types.ts` — генерується
+- `src/lib/supabase/{server,proxy}.ts` — клієнти Supabase (лише сервер; браузерний `client.ts` шаблону прибрано — не використовувався, WS8); `database.types.ts` — генерується
 - `supabase/migrations/` — схема як код; `supabase/seed.sql` — ідемпотентний сид
 - `requirements/` — знімок вимог PM (лише через `/requirements-sync`): `product.md` і `<N>-<slug>.md`, у кожному
   першим рядком `> Джерело: …`
