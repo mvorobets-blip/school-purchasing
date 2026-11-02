@@ -41,7 +41,6 @@
     "ignore": [
       "scripts/lib/**",
       "scripts/uat/**",
-      "scripts/smoke.mjs",
       "scripts/zip-accounts.mjs",
       "scripts/mutation-check.mjs",
       "scripts/coverage-summary.mjs"
