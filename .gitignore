@@ -47,3 +47,13 @@ next-env.d.ts
 
 # Тестові акаунти PM (паролі) — лише локально; у git — тільки зашифрований accounts.zip
 accounts.txt
+# WS8: інструменти якості — кеш і копії мутантів fallow, пісочниця й звіти Stryker
+/.fallow/
+/.stryker-tmp/
+/reports/
+# WS8: Playwright (e2e/UAT) — звіти, відео, траси й кадри лише локально та в артефактах CI;
+# playwright/.auth — живі cookie сесій тестових ролей, ніколи не комітимо
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.auth/
