@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { messageFor } from "@/lib/org/messages";
+import { withUser } from "../support/current-user";
 
-// Сторінка заявки (server component) з підміненими getCurrentUser і Supabase. Хто бачить заявку, вирішує RLS
+// Сторінка заявки (server component) з підміненим клієнтом Supabase. Хто бачить заявку, вирішує RLS
 // (tests/db/purchase.test.ts); тут — що показує сторінка за кожної відповіді бази.
 const ID = "11111111-1111-4111-8111-111111111111";
 const db: { request: Record<string, unknown> | null; linesError: boolean; authorError: boolean } = {
@@ -38,17 +39,18 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({
-  getCurrentUser: async () => ({ id: "u1", role: "requester", isActive: true }),
-}));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    from: query,
-    rpc: async () =>
-      db.authorError
-        ? { data: null, error: { message: "boom" } }
-        : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null },
-  }),
+  createClient: async () =>
+    withUser(
+      { id: "u1", role: "requester", isActive: true },
+      {
+        from: query,
+        rpc: async () =>
+          db.authorError
+            ? { data: null, error: { message: "boom" } }
+            : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null },
+      },
+    ),
 }));
 
 const { default: RequestPage } = await import("@/app/(portal)/requests/[id]/page");

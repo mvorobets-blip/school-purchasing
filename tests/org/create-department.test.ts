@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type TestUser, withUser } from "../support/current-user";
 
 const insertResult = { error: null as null | { code: string } };
-const currentUser = { value: { id: "u1", role: "admin", isActive: true } as null | Record<string, unknown> };
+const currentUser = { value: { id: "u1", role: "admin", isActive: true } as TestUser | null };
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
-vi.mock("@/lib/org/current-user", () => ({ getCurrentUser: async () => currentUser.value }));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ from: () => ({ insert: async () => insertResult }) }),
+  createClient: async () => withUser(currentUser.value, { from: () => ({ insert: async () => insertResult }) }),
 }));
 
 const { createDepartment } = await import("@/app/(portal)/admin/departments/actions");

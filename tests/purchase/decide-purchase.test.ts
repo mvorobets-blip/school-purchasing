@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withUser } from "../support/current-user";
 
-// Дія decidePurchase з підміненими next/navigation, getCurrentUser і supabase.rpc: шлях від дії до повідомлення
+// Дія decidePurchase з підміненими next/navigation і клієнтом Supabase (сесія, профіль, rpc): шлях від дії до повідомлення
 // (права в базі перевіряє tests/db/approval.test.ts).
 const rpcResult = { error: null as null | { code?: string; message?: string } };
 const rpcCalls: unknown[] = [];
@@ -11,14 +12,17 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({ getCurrentUser: async () => ({ id: "u1", role: "approver", isActive: true }) }));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    rpc: async (...args: unknown[]) => {
-      rpcCalls.push(args);
-      return rpcResult;
-    },
-  }),
+  createClient: async () =>
+    withUser(
+      { id: "u1", role: "approver", isActive: true },
+      {
+        rpc: async (...args: unknown[]) => {
+          rpcCalls.push(args);
+          return rpcResult;
+        },
+      },
+    ),
 }));
 
 const { decidePurchase } = await import("@/app/(portal)/approvals/actions");

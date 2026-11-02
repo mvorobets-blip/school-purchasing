@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { messageFor } from "@/lib/org/messages";
+import { withUser } from "../support/current-user";
 
-// Сторінка «Awaiting decision» (server component) з підміненими getCurrentUser і Supabase: що бачить людина без
+// Сторінка «Awaiting decision» (server component) з підміненим клієнтом Supabase: що бачить людина без
 // відділів для схвалення і схвалювач. Хто що бачить у базі, перевіряє tests/db/approval.test.ts (RLS, функції).
 const data: { approverOf: { department_id: string }[]; requests: Record<string, unknown>[] } = {
   approverOf: [],
@@ -46,17 +47,18 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({
-  getCurrentUser: async () => ({ id: "u1", role: "requester", isActive: true }),
-}));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    from: query,
-    rpc: async () =>
-      authorError
-        ? { data: null, error: { message: "boom" } }
-        : { data: [{ request_id: "r1", author_name: "Андрій Демо-Перший" }], error: null },
-  }),
+  createClient: async () =>
+    withUser(
+      { id: "u1", role: "requester", isActive: true },
+      {
+        from: query,
+        rpc: async () =>
+          authorError
+            ? { data: null, error: { message: "boom" } }
+            : { data: [{ request_id: "r1", author_name: "Андрій Демо-Перший" }], error: null },
+      },
+    ),
 }));
 
 const { default: ApprovalsPage } = await import("@/app/(portal)/approvals/page");
