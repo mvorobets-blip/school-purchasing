@@ -59,11 +59,14 @@ describe("getCurrentUser", () => {
   });
 
   it("читає з profiles усі колонки, з яких складає користувача, і лише профіль сесії", async () => {
+    // Інша сесія, ніж у beforeEach: фільтр має братися із сесії, а не бути жорстко заданим.
+    state.sub = "u2";
+    state.profile = { id: "u2", email: "member2@example.test", full_name: null, role: "requester", is_active: true };
     await getCurrentUser();
     expect(asked.table).toBe("profiles");
     expect(asked.columns?.split(",").map((c) => c.trim())).toEqual(
       expect.arrayContaining(["id", "email", "full_name", "role", "is_active"]),
     );
-    expect(asked.filter).toEqual(["id", "u1"]);
+    expect(asked.filter).toEqual(["id", "u2"]);
   });
 });
