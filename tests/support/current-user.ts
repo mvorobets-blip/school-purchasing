@@ -5,7 +5,8 @@
 export type TestUser = { id: string; role: string; isActive: boolean; fullName?: string | null; email?: string | null };
 
 type Client = { from?: (table: string) => unknown } & Record<string, unknown>;
-type Selectable = { select: (columns: string) => { eq: (column: string, value: unknown) => unknown } };
+type Builder = Record<PropertyKey, unknown>;
+type Selectable = { select: (columns: string) => Builder };
 
 /** Клієнт Supabase для тесту: сесія user (null — гість, без сесії) поверх from/rpc самого тесту. */
 export function withUser(user: TestUser | null, client: Client = {}) {
@@ -20,15 +21,26 @@ export function withUser(user: TestUser | null, client: Client = {}) {
     auth: { getClaims: async () => ({ data: user ? { claims: { sub: user.id } } : null, error: null }) },
     from: (table: string) => {
       if (table !== "profiles") return client.from?.(table);
-      // Профіль поточного користувача — лише запит profiles з .eq("id", <id сесії>). Інший фільтр (чи чужий профіль,
-      // напр. автора заявки) іде в from тесту: тести AC-APR-10 це бачать, а хибний фільтр у getCurrentUser — падає.
+      // Профіль поточного користувача — лише запит profiles з .eq("id", <id сесії>). Будь-який інший запит до profiles
+      // (await без фільтра, .in, .order, інший .eq — напр. профіль автора заявки) одразу йде в from тесту: тести
+      // AC-APR-10 бачать його в своєму списку таблиць, а хибний фільтр у getCurrentUser — падає.
       return {
-        select: (columns: string) => ({
-          eq: (column: string, value: unknown) =>
-            user && column === "id" && value === user.id
-              ? ownProfile
-              : (client.from?.(table) as Selectable).select(columns).eq(column, value),
-        }),
+        select: (columns: string) => {
+          let real: Builder | undefined;
+          const delegate = () => (real ??= (client.from?.(table) as Selectable).select(columns));
+          return new Proxy({} as Builder, {
+            get: (_target, prop) => {
+              if (prop === "eq") {
+                return (column: string, value: unknown) =>
+                  user && column === "id" && value === user.id
+                    ? ownProfile
+                    : (delegate().eq as (c: string, v: unknown) => unknown)(column, value);
+              }
+              const value = delegate()[prop];
+              return typeof value === "function" ? value.bind(delegate()) : value;
+            },
+          });
+        },
       };
     },
   };
