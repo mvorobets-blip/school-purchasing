@@ -41,8 +41,10 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
 
-  const isPublic = PUBLIC_PATHS.some((path) =>
-    request.nextUrl.pathname.startsWith(path),
+  // Точний шлях або його підсегмент: «/loginfoo» чи «/api/health-admin» публічними не стають.
+  const { pathname } = request.nextUrl;
+  const isPublic = PUBLIC_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
   if (!claims && !isPublic) {

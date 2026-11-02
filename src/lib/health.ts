@@ -8,13 +8,17 @@ const PGRST_DB_DOWN = /^PGRST00[0-3]$/;
 /** Supabase відповідає 540, коли безкоштовний проєкт призупинено (Dashboard → Resume project). */
 const SUPABASE_PAUSED = 540;
 
+/** Postgres відповів, але нездоровий: 08 з'єднання, 53 ресурси, 57 втручання оператора, 58 система, XX внутрішня помилка. */
+const SQLSTATE_UNHEALTHY = /^(08|53|57|58|XX)/;
+
 export type DbProbe = { status: number; error: { code?: string; message?: string } | null };
 export type DbHealth = { db: "ok" | "down"; reason: string };
 
 export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   if (status === SUPABASE_PAUSED) return { db: "down", reason: "paused" };
   const code = error?.code ?? "";
-  if (!error || SQLSTATE.test(code) || (code.startsWith("PGRST") && !PGRST_DB_DOWN.test(code))) {
+  const sqlstateAlive = SQLSTATE.test(code) && !SQLSTATE_UNHEALTHY.test(code);
+  if (!error || sqlstateAlive || (code.startsWith("PGRST") && !PGRST_DB_DOWN.test(code))) {
     return { db: "ok", reason: "" };
   }
   if (/api key/i.test(error.message ?? "")) return { db: "down", reason: "invalid-api-key" };

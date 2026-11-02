@@ -23,6 +23,15 @@ describe("classifyDbProbe (/api/health)", () => {
     });
   });
 
+  it("рахує базу нездоровою для SQLSTATE з'єднання, ресурсів і зупинки (08, 53, 57)", () => {
+    expect(classifyDbProbe({ status: 500, error: { code: "53300", message: "too many connections" } })).toEqual({
+      db: "down",
+      reason: "status-500-53300",
+    });
+    expect(classifyDbProbe({ status: 503, error: { code: "57P03", message: "cannot connect now" } }).db).toBe("down");
+    expect(classifyDbProbe({ status: 500, error: { code: "08006", message: "connection failure" } }).db).toBe("down");
+  });
+
   it("повідомляє код, коли PostgREST не дістає до бази або мережі немає", () => {
     expect(classifyDbProbe({ status: 503, error: { code: "PGRST002", message: "schema cache" } })).toEqual({
       db: "down",
