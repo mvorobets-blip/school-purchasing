@@ -7,14 +7,17 @@ const state: { sub: string | null; profile: Record<string, unknown> | null; erro
   profile: null,
   error: null,
 };
+// Що саме запитав getCurrentUser: таблиця, колонки й фільтр (тести сторінок цього не бачать — tests/support/current-user.ts).
+const asked: { table?: string; columns?: string; filter?: [string, unknown] } = {};
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getClaims: async () => ({ data: state.sub ? { claims: { sub: state.sub } } : null }) },
-    from: () => {
+    from: (table: string) => {
+      asked.table = table;
       const builder = {
-        select: () => builder,
-        eq: () => builder,
+        select: (columns: string) => ((asked.columns = columns), builder),
+        eq: (column: string, value: unknown) => ((asked.filter = [column, value]), builder),
         maybeSingle: async () => ({ data: state.profile, error: state.error }),
       };
       return builder;
@@ -49,5 +52,14 @@ describe("getCurrentUser", () => {
 
   it("активний профіль — роль і ім'я з profiles", async () => {
     expect(await getCurrentUser()).toMatchObject({ id: "u1", role: "requester", fullName: "PM Demo", isActive: true });
+  });
+
+  it("читає з profiles усі колонки, з яких складає користувача, і лише профіль сесії", async () => {
+    await getCurrentUser();
+    expect(asked.table).toBe("profiles");
+    expect(asked.columns?.split(",").map((c) => c.trim())).toEqual(
+      expect.arrayContaining(["id", "email", "full_name", "role", "is_active"]),
+    );
+    expect(asked.filter).toEqual(["id", "u1"]);
   });
 });
