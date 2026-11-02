@@ -23,6 +23,15 @@ const get = async (path) => {
     return { status: 0, location: "", vercelError: "", text: String(e.cause?.code ?? e) };
   }
 };
+// Без входу застосунок з "/" веде на /login того самого сайту (src/lib/supabase/proxy.ts); інший редирект — збій.
+const isSameSiteLogin = (location) => {
+  try {
+    const target = new URL(location, base);
+    return target.origin === new URL(base).origin && target.pathname === "/login";
+  } catch {
+    return false;
+  }
+};
 const vercelWall = (r) =>
   /vercel\.com\/(sso|login)|_vercel_sso/.test(r.location) || ((r.status === 401 || r.status === 403) && /vercel/i.test(r.text));
 
@@ -34,6 +43,8 @@ async function main() {
   else if (root.status >= 400) {
     const hint = root.vercelError === "MIDDLEWARE_INVOCATION_FAILED" ? " — у Vercel бракує NEXT_PUBLIC_SUPABASE_*?" : "";
     fail.push(`"/": HTTP ${root.status} ${root.vercelError}${hint}`.trim());
+  } else if (root.status !== 200 && !isSameSiteLogin(root.location)) {
+    fail.push(`"/": HTTP ${root.status}, редирект не на ${base}/login (${root.location || "без Location"})`);
   }
 
   const login = await get("/login");
