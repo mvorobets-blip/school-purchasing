@@ -32,6 +32,10 @@ describe("getCurrentUser", () => {
     state.sub = "u1";
     state.profile = { id: "u1", email: "pm@example.test", full_name: "PM Demo", role: "requester", is_active: true };
     state.error = null;
+    // Кожен тест бачить лише власний запит, а не залишок попереднього.
+    delete asked.table;
+    delete asked.columns;
+    delete asked.filter;
   });
 
   it("гість без сесії — null", async () => {

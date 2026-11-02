@@ -1,6 +1,9 @@
 // Користувач поточного запиту для тестів сторінок і дій з моком клієнта Supabase (@/lib/supabase/server).
 // Власний модуль @/lib/org/current-user не мокаємо (правило WS8 в eslint.config.mjs): справжній getCurrentUser
 // читає сесію через auth.getClaims() і профіль з profiles — ці два виклики й відповідає withUser().
+// Обмеження: (1) будь-який запит profiles з .eq("id", <id сесії>) вважається запитом getCurrentUser — читання профілю
+// автора, що збігається з поточним користувачем (власна заявка), тест через from не побачить; (2) select(columns, opts)
+// передає в from тесту лише колонки, без другого аргументу ({ count, head }).
 
 export type TestUser = { id: string; role: string; isActive: boolean; fullName?: string | null; email?: string | null };
 
