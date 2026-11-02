@@ -1,4 +1,4 @@
-> Джерело: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/47 · оновлено 2026-10-25T19:14:09Z
+> Джерело: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/47 · оновлено 2026-10-27T21:00:53Z
 
 # Вимога: працівник подає закупівлю через форму з урахуванням своїх прав
 

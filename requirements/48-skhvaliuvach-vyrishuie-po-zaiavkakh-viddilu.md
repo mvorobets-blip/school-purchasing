@@ -1,4 +1,4 @@
-> Джерело: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/48 · оновлено 2026-10-26T14:13:08Z
+> Джерело: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/48 · оновлено 2026-10-27T21:00:55Z
 
 # Вимога: схвалювач вирішує лише по заявках свого відділу
 
