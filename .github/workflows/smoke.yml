@@ -57,5 +57,14 @@ jobs:
             echo "::error title=smoke::Немає змінної репо PROD_URL — Settings → Secrets and variables → Actions → Variables → PROD_URL = https://<проєкт>.vercel.app"
             exit 1
           fi
+      - name: Ручний запуск — лише з main
+        # EXPECT_SHA ручного запуску — github.sha гілки запуску; прод порівнюємо лише з main.
+        if: github.event_name == 'workflow_dispatch' && github.ref_name != github.event.repository.default_branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          RUN_BRANCH: ${{ github.ref_name }}
+        run: |
+          echo "::error title=smoke::Запустіть smoke з гілки $DEFAULT_BRANCH: прод порівнюємо з її комітом, а не з $RUN_BRANCH"
+          exit 1
       - name: Прод = main, сторінка входу відкривається, база відповідає
         run: node scripts/smoke.mjs "$PROD_URL" "$EXPECT_SHA"

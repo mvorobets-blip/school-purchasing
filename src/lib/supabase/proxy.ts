@@ -8,6 +8,11 @@ import type { Database } from "./database.types";
 // Сторінки, доступні без входу.
 const PUBLIC_PATHS = ["/login", "/auth", "/api/health"];
 
+// Точний шлях або його підсегмент: «/loginfoo» чи «/api/health-admin» публічними не стають.
+export function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -41,13 +46,7 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
 
-  // Точний шлях або його підсегмент: «/loginfoo» чи «/api/health-admin» публічними не стають.
-  const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
-
-  if (!claims && !isPublic) {
+  if (!claims && !isPublicPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

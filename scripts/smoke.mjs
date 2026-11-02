@@ -43,8 +43,10 @@ async function main() {
   else if (root.status >= 400) {
     const hint = root.vercelError === "MIDDLEWARE_INVOCATION_FAILED" ? " — у Vercel бракує NEXT_PUBLIC_SUPABASE_*?" : "";
     fail.push(`"/": HTTP ${root.status} ${root.vercelError}${hint}`.trim());
+  } else if (root.status !== 200 && !root.location) {
+    fail.push(`"/": HTTP ${root.status} — очікували 200 або редирект на ${base}/login`);
   } else if (root.status !== 200 && !isSameSiteLogin(root.location)) {
-    fail.push(`"/": HTTP ${root.status}, редирект не на ${base}/login (${root.location || "без Location"})`);
+    fail.push(`"/": HTTP ${root.status}, редирект не на ${base}/login (${root.location})`);
   }
 
   const login = await get("/login");
@@ -56,7 +58,9 @@ async function main() {
   for (let attempt = 1; attempt <= (expectSha ? 6 : 1) && login.status === 200; attempt++) {
     const r = await get("/api/health");
     try {
-      health = { status: r.status, ...JSON.parse(r.text) };
+      const body = JSON.parse(r.text);
+      // Статус — завжди HTTP-відповіді, а не поле тіла; не-об'єкт у тілі не розгортаємо.
+      health = { ...(body && typeof body === "object" && !Array.isArray(body) ? body : {}), status: r.status };
     } catch {
       health = { status: r.status, location: r.location };
     }
