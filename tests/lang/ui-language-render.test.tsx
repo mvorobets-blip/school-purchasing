@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { type TestUser, withUser } from "../support/current-user";
 
 // Англійський інтерфейс у тому, що бачить людина (відгук PM на рев'ю WS7, #1): рендеримо сторінку входу з помилкою й
-// профіль з підписом ролі та перевіряємо видимий текст, а не константи. getCurrentUser і Supabase підмінено.
+// профіль з підписом ролі та перевіряємо видимий текст, а не константи. Підмінено лише клієнт Supabase: сесію й профіль поточного користувача віддає withUser.
 const CYRILLIC = /[А-Яа-яІіЇїЄєҐґ]/;
 const state: { user: Record<string, unknown> | null } = { user: null };
 
@@ -20,8 +21,7 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({ getCurrentUser: async () => state.user }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ from: query }) }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => withUser(state.user as TestUser | null, { from: query }) }));
 
 const { default: LoginPage } = await import("@/app/login/page");
 const { default: ProfilePage } = await import("@/app/(portal)/profile/page");

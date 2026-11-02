@@ -1,10 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { messageFor } from "@/lib/org/messages";
+import { type TestUser, withUser } from "../support/current-user";
 
-// Сторінка «New purchase» (server component) з підміненими getCurrentUser і Supabase: гість, працівник без відділів
+// Сторінка «New purchase» (server component) з підміненим клієнтом Supabase: гість (без сесії), працівник без відділів
 // і працівник з відділом. Які відділи й типи доступні, перевіряють tests/purchase/form.test.ts і tests/db/purchase.test.ts.
-const state: { user: Record<string, unknown> | null; memberships: { department_id: string }[] } = {
+const state: { user: TestUser | null; memberships: { department_id: string }[] } = {
   user: null,
   memberships: [],
 };
@@ -31,8 +32,7 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({ getCurrentUser: async () => state.user }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ from: query }) }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => withUser(state.user, { from: query }) }));
 
 const { default: NewPurchasePage } = await import("@/app/(portal)/requests/new/page");
 

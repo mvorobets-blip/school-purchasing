@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { messageFor } from "@/lib/org/messages";
+import { withUser } from "../support/current-user";
 
-// Сторінка «Мої заявки» (server component) з підміненими getCurrentUser і Supabase: що бачить працівник
+// Сторінка «Мої заявки» (server component) з підміненим клієнтом Supabase: що бачить працівник
 // за порожнього й непорожнього списку. Права на рядки перевіряє tests/db/purchase.test.ts (RLS).
 const data: { requests: Record<string, unknown>[] } = { requests: [] };
 const filters: string[] = [];
@@ -33,10 +34,9 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({
-  getCurrentUser: async () => ({ id: "u1", role: "requester", isActive: true }),
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => withUser({ id: "u1", role: "requester", isActive: true }, { from: query }),
 }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ from: query }) }));
 
 const { default: MyRequestsPage } = await import("@/app/(portal)/requests/page");
 

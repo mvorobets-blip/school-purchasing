@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type TestUser, withUser } from "../support/current-user";
 
-// Дія submitPurchase з підміненими next/navigation, getCurrentUser і supabase.rpc: перевіряємо шлях від дії до
-// повідомлення (права в базі перевіряє tests/db/purchase.test.ts).
+// Дія submitPurchase з підміненими next/navigation і клієнтом Supabase (сесія, профіль, rpc): перевіряємо шлях від
+// дії до повідомлення (права в базі перевіряє tests/db/purchase.test.ts).
 const rpcResult = { error: null as null | { code?: string; message?: string } };
 const rpcCalls: unknown[] = [];
-const currentUser = { value: { id: "u1", role: "requester", isActive: true } as null | Record<string, unknown> };
+const currentUser = { value: { id: "u1", role: "requester", isActive: true } as TestUser | null };
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -12,14 +13,14 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT ${url}`);
   },
 }));
-vi.mock("@/lib/org/current-user", () => ({ getCurrentUser: async () => currentUser.value }));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    rpc: async (...args: unknown[]) => {
-      rpcCalls.push(args);
-      return rpcResult;
-    },
-  }),
+  createClient: async () =>
+    withUser(currentUser.value, {
+      rpc: async (...args: unknown[]) => {
+        rpcCalls.push(args);
+        return rpcResult;
+      },
+    }),
 }));
 
 const { submitPurchase } = await import("@/app/(portal)/requests/actions");
