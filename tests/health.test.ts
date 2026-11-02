@@ -32,6 +32,14 @@ describe("classifyDbProbe (/api/health)", () => {
     expect(classifyDbProbe({ status: 500, error: { code: "08006", message: "connection failure" } }).db).toBe("down");
   });
 
+  it("рахує базу нездоровою, коли таблиці чи колонки запиту перевірки немає (42P01, 42703)", () => {
+    expect(classifyDbProbe({ status: 404, error: { code: "42P01", message: 'relation "public.profiles" does not exist' } })).toEqual({
+      db: "down",
+      reason: "status-404-42P01",
+    });
+    expect(classifyDbProbe({ status: 400, error: { code: "42703", message: "column profiles.id does not exist" } }).db).toBe("down");
+  });
+
   it("повідомляє код, коли PostgREST не дістає до бази або мережі немає", () => {
     expect(classifyDbProbe({ status: 503, error: { code: "PGRST002", message: "schema cache" } })).toEqual({
       db: "down",

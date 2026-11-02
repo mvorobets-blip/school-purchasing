@@ -10,6 +10,8 @@ const SUPABASE_PAUSED = 540;
 
 /** Postgres відповів, але нездоровий: 08 з'єднання, 53 ресурси, 57 втручання оператора, 58 система, XX внутрішня помилка. */
 const SQLSTATE_UNHEALTHY = /^(08|53|57|58|XX)/;
+/** Схема не та, що чекає запит перевірки: 42P01 немає таблиці, 42703 немає колонки — застосунок теж зламаний. */
+const SQLSTATE_SCHEMA_BROKEN = /^(42P01|42703)$/;
 
 export type DbProbe = { status: number; error: { code?: string; message?: string } | null };
 export type DbHealth = { db: "ok" | "down"; reason: string };
@@ -17,7 +19,7 @@ export type DbHealth = { db: "ok" | "down"; reason: string };
 export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   if (status === SUPABASE_PAUSED) return { db: "down", reason: "paused" };
   const code = error?.code ?? "";
-  const sqlstateAlive = SQLSTATE.test(code) && !SQLSTATE_UNHEALTHY.test(code);
+  const sqlstateAlive = SQLSTATE.test(code) && !SQLSTATE_UNHEALTHY.test(code) && !SQLSTATE_SCHEMA_BROKEN.test(code);
   // Без помилки — лише за 2xx: 5xx з порожнім тілом теж дає error === null.
   const successStatus = status >= 200 && status < 300;
   if ((!error && successStatus) || sqlstateAlive || (code.startsWith("PGRST") && !PGRST_DB_DOWN.test(code))) {
