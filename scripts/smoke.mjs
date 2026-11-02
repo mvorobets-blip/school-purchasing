@@ -10,9 +10,16 @@ const [rawBase = process.env.PROD_URL ?? "", expectSha = ""] = process.argv.slic
 // client_payload.url від Vercel може прийти хостом без схеми — додаємо https://.
 const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : "").replace(/\/+$/, "");
 
+const TIMEOUT_MS = 20_000;
+
 const get = async (path) => {
   try {
-    const r = await fetch(base + path, { redirect: "manual", headers: { "user-agent": "smoke/1.0 (D0)" } });
+    // 20 с на запит: інакше завислий запит з'їсть timeout-minutes job-а до рядків ::error::.
+    const r = await fetch(base + path, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { "user-agent": "smoke/1.0 (D0)" },
+    });
     return {
       status: r.status,
       location: r.headers.get("location") ?? "",

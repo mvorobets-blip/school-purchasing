@@ -38,6 +38,8 @@ describe("classifyDbProbe (/api/health)", () => {
       reason: "status-503-PGRST002",
     });
     expect(classifyDbProbe({ status: 0, error: { message: "fetch failed" } })).toEqual({ db: "down", reason: "status-0" });
+    // 5xx з порожнім тілом: supabase-js віддає error === null.
+    expect(classifyDbProbe({ status: 500, error: null })).toEqual({ db: "down", reason: "status-500" });
     expect(classifyDbProbe({ status: 500, error: { code: "PGRSTX00", message: "connection library error" } })).toEqual({
       db: "down",
       reason: "status-500-PGRSTX00",

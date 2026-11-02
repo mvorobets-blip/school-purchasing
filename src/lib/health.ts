@@ -18,10 +18,12 @@ export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   if (status === SUPABASE_PAUSED) return { db: "down", reason: "paused" };
   const code = error?.code ?? "";
   const sqlstateAlive = SQLSTATE.test(code) && !SQLSTATE_UNHEALTHY.test(code);
-  if (!error || sqlstateAlive || (code.startsWith("PGRST") && !PGRST_DB_DOWN.test(code))) {
+  // Без помилки — лише за 2xx: 5xx з порожнім тілом теж дає error === null.
+  const successStatus = status >= 200 && status < 300;
+  if ((!error && successStatus) || sqlstateAlive || (code.startsWith("PGRST") && !PGRST_DB_DOWN.test(code))) {
     return { db: "ok", reason: "" };
   }
-  if (/api key/i.test(error.message ?? "")) return { db: "down", reason: "invalid-api-key" };
+  if (/api key/i.test(error?.message ?? "")) return { db: "down", reason: "invalid-api-key" };
   // 0 — мережа (Supabase недоступний або хибний URL), 5xx, PGRST000–003.
   return { db: "down", reason: `status-${status}${code ? `-${code}` : ""}` };
 }
