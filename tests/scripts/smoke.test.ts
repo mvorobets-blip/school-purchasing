@@ -83,6 +83,17 @@ describe("smoke.mjs", () => {
     expect(code).toBe(1);
   });
 
+  it("збій, коли /api/health віддає 503, навіть із db: ok у тілі", async () => {
+    const base = await serve({
+      "/": { status: 307, headers: { location: "/login" } },
+      "/login": LOGIN,
+      "/api/health": { status: 503, body: JSON.stringify({ ok: true, sha: "abc1234", db: "ok", reason: "" }) },
+    });
+    const { code, out } = await smoke(base);
+    expect(out).toContain('"/api/health": HTTP 503, db=ok');
+    expect(code).toBe(1);
+  });
+
   it("бере HTTP-статус відповіді, а не поле status з тіла /api/health", async () => {
     const base = await serve({
       "/": { status: 307, headers: { location: "/login" } },

@@ -80,7 +80,7 @@ async function main() {
     fail.push(`"/api/health": Supabase призупинено — Dashboard → Resume project (безкоштовний проєкт засинає після тижня без активності)`);
   } else if (health.reason === "invalid-api-key") {
     fail.push(`"/api/health": ключ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY у Vercel не приймається — звірте змінні Production і зробіть Redeploy`);
-  } else if (health.db !== "ok") {
+  } else if (health.status !== 200 || health.db !== "ok") {
     fail.push(
       `"/api/health": HTTP ${health.status}, db=${health.db ?? "?"}${health.reason ? ` (${health.reason})` : ""} — Supabase недоступний чи NEXT_PUBLIC_SUPABASE_URL у Vercel не той?`,
     );
