@@ -18,7 +18,11 @@
     "check:design": "node scripts/check-design-tokens.mjs",
     "check:boundary": "node scripts/check-server-boundary.mjs",
     "check:auth": "node scripts/check-no-get-session.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "gates": "npm run lint && npm run typecheck && fallow audit --base origin/main",
+    "test:coverage": "vitest run --config vitest.coverage.config.mts --coverage",
+    "coverage:summary": "node scripts/coverage-summary.mjs",
+    "rls:smoke": "node --env-file=.env.local tests/manual/rls-smoke.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -39,8 +43,12 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "5.0.3",
+    "@vitest/eslint-plugin": "1.6.27",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "eslint-plugin-playwright": "2.12.1",
+    "fallow": "3.35.0",
     "shadcn": "4.22.1",
     "supabase": "2.120.0",
     "tailwindcss": "^4",

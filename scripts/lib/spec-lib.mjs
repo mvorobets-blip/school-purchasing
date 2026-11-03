@@ -7,7 +7,6 @@ import path from "node:path";
 // AC ID: AC-<AREA>-<NN>, AREA = 2–12 великих латинських літер, NN = рівно дві цифри.
 export const AC_ID = "AC-[A-Z]{2,12}-\\d{2}";
 export const AC_ID_AT_START = new RegExp(`^${AC_ID}(?![\\w-])`);
-export const AC_ID_GLOBAL = new RegExp(`(?<![\\w-])${AC_ID}(?![\\w-])`, "g");
 
 export const root = () => process.cwd();
 
