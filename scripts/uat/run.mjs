@@ -68,10 +68,8 @@ const pw = spawnSync(
 );
 const playwrightMs = Date.now() - Date.parse(startedAt);
 
-if (!existsSync(RESULTS)) {
-  console.error(`Playwright не записав ${rel(RESULTS)} (код ${pw.status ?? "?"}): тести не запускались — перевірте вивід вище.`);
-}
-const cases = existsSync(RESULTS) ? pack() : [];
+const hasResults = existsSync(RESULTS);
+const cases = hasResults ? pack() : [];
 mkdirSync(WORK, { recursive: true });
 writeFileSync(
   path.join(WORK, "run.json"),
@@ -93,7 +91,11 @@ writeFileSync(
 );
 // process.exitCode, а не process.exit(): на Windows exit() після fetch падає з assertion libuv.
 if (!cases.length) {
-  console.error("Жодного AC-тесту в результатах Playwright — звіту не буде.");
+  console.error(
+    hasResults
+      ? "Жодного AC-тесту в результатах Playwright — звіту не буде."
+      : `Playwright не записав ${rel(RESULTS)} (код ${pw.status ?? "?"}): тести не запускались — перевірте вивід вище. Звіту не буде.`,
+  );
   process.exitCode = 1;
 } else {
   if (!skipReview) await review();

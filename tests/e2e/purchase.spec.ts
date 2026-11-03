@@ -16,6 +16,7 @@ const FILL_ALL = "Fill in all line fields";
 const AWAITING = "Awaiting approval";
 // «Початкова школа» з вимоги — назва відділу на проді (синтетичні дані, створює адміністратор).
 const DEPARTMENT = "Primary School";
+const ITEM = "Папір А4";
 
 test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
@@ -30,10 +31,23 @@ async function asRole(browser: Browser, storageState: string): Promise<Page> {
 async function pendingRequestOf(page: Page): Promise<string> {
   await page.goto("/requests");
   const row = page.getByTestId("request-row").filter({ hasText: DEPARTMENT }).filter({ hasText: AWAITING }).first();
-  await expect(row, `у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08)`).toBeVisible();
+  // Акаунти спільні з PM: якщо PM вирішила останню таку заявку, падає «Дано» — це брак даних на проді, а не вада застосунку.
+  await expect(
+    row,
+    `ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08) — подайте її під pm-requester@example.test і повторіть прогін`,
+  ).toBeVisible();
   const href = await row.getByRole("link").first().getAttribute("href");
   expect(href).toMatch(/^\/requests\/[0-9a-f-]{36}$/);
   return href!;
+}
+
+/** Адреси заявок на першій сторінці «My requests» працівника (список відсортовано від нових). */
+async function requestLinks(page: Page): Promise<string[]> {
+  await page.goto("/requests");
+  return page
+    .getByTestId("request-row")
+    .getByRole("link")
+    .evaluateAll((links) => links.map((a) => a.getAttribute("href") ?? ""));
 }
 
 test.describe("працівник 2/3 (member2@example.test)", () => {
@@ -127,19 +141,18 @@ test.describe("працівник 1 (pm-requester@example.test)", () => {
       // «Закупівлю не подано» перевіряємо на окремій сторінці того самого працівника: кадр «Тоді» знімається з page,
       // тож page лишається на формі з повідомленням (перший прогін 03.11 знімав «My requests» — NEEDS-HUMAN, R3).
       const own = await asRole(browser, REQUESTER);
-      let before = 0;
+      let before: string[] = [];
       try {
         await given(
           "працівник 1 обрав відділ «Початкова школа», тип «Відділ закупівель» і додав рядок лише з назвою «Папір А4», без мети, кількості й ціни",
           async () => {
-            await own.goto("/requests");
-            before = await own.getByTestId("request-row").count();
+            before = await requestLinks(own);
             await page.goto("/requests/new");
             await page.getByTestId("purchase-department").click();
             await page.getByRole("option", { name: DEPARTMENT }).click();
             await page.getByTestId("purchase-type").click();
             await page.getByRole("option", { name: "Purchasing department" }).click();
-            await page.getByLabel("Item").fill("Папір А4");
+            await page.getByLabel("Item").fill(ITEM);
           },
         );
 
@@ -153,15 +166,19 @@ test.describe("працівник 1 (pm-requester@example.test)", () => {
             clause: "він бачить повідомлення «Заповніть усі поля рядка», а закупівлю не подано.",
             visible: [`повідомлення «${FILL_ALL}» над формою`, "форма лишається відкритою з назвою «Папір А4»"],
             hidden: [
-              "закупівлю не подано: лишаємось на сторінці «New purchase», а кількість заявок у «My requests» (окрема вкладка того самого працівника) не змінилась",
+              "закупівлю не подано: лишаємось на сторінці «New purchase», а серед нових заявок у «My requests» (окрема вкладка того самого працівника) немає жодної з «Папір А4»",
             ],
           },
           async () => {
             await expect(page.getByRole("main").getByRole("alert")).toHaveText(FILL_ALL);
-            await expect(page.getByLabel("Item")).toHaveValue("Папір А4");
+            await expect(page.getByLabel("Item")).toHaveValue(ITEM);
             await expect(page).toHaveURL((url) => url.pathname === "/requests/new");
-            await own.goto("/requests");
-            await expect(own.getByTestId("request-row")).toHaveCount(before);
+            // Акаунт спільний з PM: нова заявка за час прогону може бути її. Тож не рахуємо рядки, а відкриваємо кожну
+            // нову (список — від нових, перша сторінка) і перевіряємо, що це не наша з «Папір А4».
+            for (const href of (await requestLinks(own)).filter((h) => !before.includes(h))) {
+              await own.goto(href);
+              await expect(own.getByRole("main")).not.toContainText(ITEM);
+            }
           },
         );
       } finally {

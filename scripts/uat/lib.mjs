@@ -63,8 +63,15 @@ export const norm = (s) =>
     .replace(/^[«"“„']+|[»"”']+$/g, "")
     .trim();
 
+// Кириличні літери, що на кадрі не відрізнити від латинських (агент читає «Папір А4» з кирилицею як «Папір A4»,
+// прогони 03.11 — R4 без вади). Регістр не змінюємо: правило 4 рецензента діє й далі. Свідомий виняток із «файли курсу
+// без змін» (/code-review PR #44).
+const LOOKALIKE = { А: "A", В: "B", Е: "E", І: "I", К: "K", М: "M", Н: "H", О: "O", Р: "P", С: "C", Т: "T", Х: "X",
+  а: "a", е: "e", і: "i", о: "o", р: "p", с: "c", у: "y", х: "x" };
+const fold = (s) => s.replace(/[АВЕІКМНОРСТХаеіорсух]/g, (ch) => LOOKALIKE[ch]);
+
 /** Цитата є в aria-знімку сторінки? (Знімок — YAML; рядки з «:» Playwright бере в лапки — їх знімаємо.) */
 export function quoteInAria(quote, aria) {
   const flat = norm(aria.replace(/^(\s*)- [a-z]+: "(.*)"$/gm, "$1$2").replace(/\\"/g, '"'));
-  return flat.includes(norm(quote));
+  return fold(flat).includes(fold(norm(quote)));
 }
