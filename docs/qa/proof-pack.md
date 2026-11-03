@@ -10,7 +10,7 @@
 
 - Прод-URL: https://therapy-scheduling-ten.vercel.app
 - Вимоги: https://github.com/ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-02
-- `/api/health` на момент UAT: <!-- sha і db, напр. «sha 1a2b3c4, db ok, 01.11.2026» -->
+- `/api/health` на момент UAT: sha `152825c`, db ok, env production, 03.11.2026
 
 ## 3 AC
 
@@ -84,13 +84,16 @@
 
 | AC | Специфікація | Тест (твердження) | Агент | Вердикт | Кадр |
 |---|---|---|---|---|---|
-| AC-…-NN | <!-- …/blob/<sha>/tests/e2e/….spec.ts --> | <!-- passed / failed --> | <!-- Haiku: PASS / FAIL / NEEDS-HUMAN (+ Sonnet, якщо була суперечка) --> | <!-- PASS / FAIL / NEEDS-HUMAN і правило (R1–R6) --> | <!-- …/blob/<sha>/docs/qa/uat/<дата>/frames/AC-…-then-1.png --> |
+| AC-FRM-08 | [tests/e2e/purchase.spec.ts:42](https://github.com/mvorobets-blip/school-purchasing/blob/6035e9e/tests/e2e/purchase.spec.ts#L42) | passed | Haiku: NEEDS-HUMAN → Sonnet: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-08-then-1.png` |
+| AC-FRM-14 | [tests/e2e/purchase.spec.ts:86](https://github.com/mvorobets-blip/school-purchasing/blob/6035e9e/tests/e2e/purchase.spec.ts#L86) | passed | Haiku: NEEDS-HUMAN → Sonnet: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-14-then-1.png` |
+| AC-FRM-15 | [tests/e2e/purchase.spec.ts:117](https://github.com/mvorobets-blip/school-purchasing/blob/6035e9e/tests/e2e/purchase.spec.ts#L117) | passed | Haiku: FAIL → Sonnet: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-15-then-1.png` |
 
-- Звіт: <!-- …/blob/<sha>/docs/qa/uat/<YYYY-MM-DD>/report.md -->
-- Відео: <!-- вкладення в описі PR …/pull/N -->
-- Рецензент: <!-- моделі зі звіту (claude-haiku-5-5; суперечки — claude-sonnet-5-5) і вартість прогону -->
-- Негативний контроль: <!-- NC-… (npm run uat:nc): що навмисно хибне, вердикт (FAIL / NEEDS-HUMAN), …/pull/N -->
-- Дані: <!-- «лише читання» або «@writes: uat-<запуск>@example.test, рядок «Прибирання» зі звіту» -->
+- Звіт: `docs/qa/uat/2026-11-03/report.md` (+ `manifest.json`, `frames/`) — прогін 03.11.2026, 13:47 (Київ), прод https://therapy-scheduling-ten.vercel.app, `/api/health` — коміт `152825c`; код тестів — `task/uat` @ `6035e9e` (позначка «+ незакомічені зміни» у звіті — лише незакомічені на момент прогону тека попереднього звіту `docs/qa/uat/`, рядок `/api/health` у цьому proof pack і локальний `fallow-baseline.txt`; код тестів і матриця — у коміті).
+- Відео: вкладення в описі PR UAT (3 файли `video.webm`); трас і HTML-звіту в git немає.
+- Рецензент: `claude-haiku-5-5`, суперечки — `claude-sonnet-5-5`; промпт і схема — з `materials/uat` без змін; вартість розбору $0.0968 (за цінами API, у межах підписки).
+- Історія прогонів 03.11 (вердикти руками не правили): 12:58 — AC-FRM-15 NEEDS-HUMAN (R3): специфікація знімала кадр «Тоді» після переходу на «My requests» — вада тесту, виправлено (перевірка «не подано» — в окремій вкладці); 13:22 — AC-FRM-15 NEEDS-HUMAN (R4): агент процитував «Папір A4» латинською «A», а на сторінці кирилична «А»; 13:27 (після коміту матриці) — PASS 3; 13:47 (фінальний, після виправлень за незалежною перевіркою: заявка FRM-08 — лише у відділі «Primary School», як у «Дано»; повідомлення шукаємо за роллю `alert` у `main`) — PASS 3.
+- Негативний контроль (`npm run uat:nc` на `6035e9e`, 13:45; `tests/e2e/negative-controls.spec.ts`, AC-FRM-14): NC-1 — у твердженні навмисно інший текст («You have no requests yet») → **FAIL** (R1; Haiku сказав PASS — на екрані справжній текст, — але впала перевірка агент не перекриває); NC-2 — у «вимозі» (анотація `ac-text`) інший текст і кнопка, тест і застосунок без змін → **NEEDS-HUMAN** (R3; Haiku NEEDS-HUMAN → Sonnet FAIL). Рядки звіту — в описі PR.
+- Дані: лише читання — жоден тест нічого не подає; «Прибирання»: синтетичних `uat-*@example.test` видалено 0, лишилось 0. Акаунти — `pm-requester@example.test` (працівник 1), `member2@example.test` (працівник 2/3).
 
 ### Приймання PM
 
