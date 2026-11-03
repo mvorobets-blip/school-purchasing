@@ -1,9 +1,9 @@
 {
   "kind": "uat",
-  "generatedAt": "2026-11-03T11:48:33.456Z",
+  "generatedAt": "2026-11-03T12:50:01.442Z",
   "baseURL": "https://therapy-scheduling-ten.vercel.app",
   "deployedSha": "152825cf6352761066d290eb08b5640928088d0a",
-  "testsCommit": "6035e9e6243147b7cd71aa07aa6fc2c026b04220",
+  "testsCommit": "8ce39e14d866be8e9e3061c279686b7eddeef68e",
   "reviewer": {
     "model": "claude-haiku-5-5",
     "disputes": "claude-sonnet-5-5"
@@ -21,11 +21,11 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі по центру картка із замком і заголовком «Not enough permissions», поясненням і кнопкою «Back to my requests». Рядків закупівлі, суми чи автора не видно. Користувач — member2@example.test."
+        "notes": "На кадрі видно лише картку з написом «Not enough permissions», поясненням і кнопкою «Back to my requests». Рядків закупівлі, суми чи автора на сторінці немає. Користувач — member2@example.test."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
-        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-haiku-5-5": "FAIL",
         "claude-sonnet-5-5": "PASS"
       },
       "escalated": true,
@@ -42,9 +42,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 5697,
-      "reviewCostUsd": 0.03301,
-      "reviewWallMs": 22014
+      "playwrightMs": 6049,
+      "reviewCostUsd": 0.03293,
+      "reviewWallMs": 15541
     },
     {
       "id": "AC-FRM-14",
@@ -57,7 +57,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі сторінка з заголовком «My requests» і порожнім станом з написом «You have not submitted any requests yet». Таблиці чи рядків заявок не видно. Частину «Не з кадрів» не оцінював."
+        "notes": "На кадрі сторінка /requests із заголовком «My requests» і порожнім станом з написом «You have not submitted any requests yet». Таблиці чи рядків заявок не видно. У нижньому лівому куті показано користувача «Maria Demo - second», це не суперечить критерію."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -82,9 +82,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 2950,
-      "reviewCostUsd": 0.03243,
-      "reviewWallMs": 25588
+      "playwrightMs": 2523,
+      "reviewCostUsd": 0.0325,
+      "reviewWallMs": 21744
     },
     {
       "id": "AC-FRM-15",
@@ -97,7 +97,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі сторінка «New purchase» із червоним повідомленням «Fill in all line fields» над формою. Поле Item містить «Папір А4», а поля Purpose, Quantity і Price порожні та підсвічені червоним."
+        "notes": "На кадрі сторінка «New purchase» з червоним повідомленням «Fill in all line fields» над формою. Відділ «Primary School», тип «Purchasing department», у полі Item «Папір A4», а поля Purpose, Quantity і Price порожні та підсвічені червоним. Дослівний текст критерію українською («Заповніть усі поля рядка»), а інтерфейс англомовний. Я порівнював з англійським написом із переліку видимих частин в ac.md."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -115,21 +115,21 @@
           "onPage": true
         },
         {
-          "quote": "Папір А4",
-          "onPage": true
+          "quote": "Папір A4",
+          "onPage": false
         }
       ],
-      "verdict": "PASS",
-      "factoryGate": "PASS",
-      "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 9977,
-      "reviewCostUsd": 0.03133,
-      "reviewWallMs": 14182
+      "verdict": "NEEDS-HUMAN",
+      "factoryGate": "NOT-EARNED",
+      "rule": "R4: цитати агента немає на сторінці (aria) — не підтверджено",
+      "playwrightMs": 11478,
+      "reviewCostUsd": 0.0361,
+      "reviewWallMs": 23810
     }
   ],
   "negativeControls": [],
   "cleanup": {
-    "at": "2026-11-03T11:48:06.955Z",
+    "at": "2026-11-03T12:49:36.123Z",
     "deleted": [],
     "remaining": [],
     "leftoverRequests": 0
