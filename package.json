@@ -22,7 +22,11 @@
     "gates": "npm run lint && npm run typecheck && fallow audit --base origin/main",
     "test:coverage": "vitest run --config vitest.coverage.config.mts --coverage",
     "coverage:summary": "node scripts/coverage-summary.mjs",
-    "rls:smoke": "node --env-file=.env.local tests/manual/rls-smoke.mjs"
+    "rls:smoke": "node --env-file=.env.local tests/manual/rls-smoke.mjs",
+    "test:e2e": "playwright test",
+    "uat": "node scripts/uat/run.mjs",
+    "uat:nc": "node scripts/uat/run.mjs --negative-controls",
+    "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -39,6 +43,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
     "@fission-ai/openspec": "1.14.1",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24",
     "@types/react": "^19",
