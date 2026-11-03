@@ -68,7 +68,7 @@ function loginProblem(login) {
 function parseHealth(r) {
   try {
     const body = JSON.parse(r.text);
-    return { ...(body && typeof body === "object" && !Array.isArray(body) ? body : {}), status: r.status, location: r.location };
+    return { ...(body && typeof body === "object" && !Array.isArray(body) ? body : {}), status: r.status, ...(r.location ? { location: r.location } : {}) };
   } catch {
     return { status: r.status, location: r.location };
   }
