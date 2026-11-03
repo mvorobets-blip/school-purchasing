@@ -1,9 +1,9 @@
 {
   "kind": "uat",
-  "generatedAt": "2026-11-03T12:50:01.442Z",
+  "generatedAt": "2026-11-03T13:16:08.726Z",
   "baseURL": "https://therapy-scheduling-ten.vercel.app",
   "deployedSha": "152825cf6352761066d290eb08b5640928088d0a",
-  "testsCommit": "8ce39e14d866be8e9e3061c279686b7eddeef68e",
+  "testsCommit": "a8e3a60859e15e120dd45090a11bc012b4a12b49",
   "reviewer": {
     "model": "claude-haiku-5-5",
     "disputes": "claude-sonnet-5-5"
@@ -21,7 +21,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі видно лише картку з написом «Not enough permissions», поясненням і кнопкою «Back to my requests». Рядків закупівлі, суми чи автора на сторінці немає. Користувач — member2@example.test."
+        "notes": "На кадрі видно картку з заголовком «Not enough permissions» і поясненням та кнопкою «Back to my requests». Рядків закупівлі, суми чи автора на екрані немає; користувач — Maria Demo - second."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -42,9 +42,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 6049,
-      "reviewCostUsd": 0.03293,
-      "reviewWallMs": 15541
+      "playwrightMs": 5872,
+      "reviewCostUsd": 0.03288,
+      "reviewWallMs": 16568
     },
     {
       "id": "AC-FRM-14",
@@ -57,7 +57,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі сторінка /requests із заголовком «My requests» і порожнім станом з написом «You have not submitted any requests yet». Таблиці чи рядків заявок не видно. У нижньому лівому куті показано користувача «Maria Demo - second», це не суперечить критерію."
+        "notes": "На кадрі сторінка з заголовком «My requests» і порожнім станом з написом «You have not submitted any requests yet». Таблиці чи рядків заявок не видно. У бічній панелі вказано користувача «Maria Demo - second» (member2@example.test); відповідність «працівнику 3» з кадру не перевірити."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -82,9 +82,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 2523,
-      "reviewCostUsd": 0.0325,
-      "reviewWallMs": 21744
+      "playwrightMs": 2743,
+      "reviewCostUsd": 0.03324,
+      "reviewWallMs": 20694
     },
     {
       "id": "AC-FRM-15",
@@ -97,7 +97,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі сторінка «New purchase» з червоним повідомленням «Fill in all line fields» над формою. Відділ «Primary School», тип «Purchasing department», у полі Item «Папір A4», а поля Purpose, Quantity і Price порожні та підсвічені червоним. Дослівний текст критерію українською («Заповніть усі поля рядка»), а інтерфейс англомовний. Я порівнював з англійським написом із переліку видимих частин в ac.md."
+        "notes": "На кадрі над формою «New purchase» червоний напис «Fill in all line fields». Поле Item містить «Папір А4», поля Purpose, Quantity і Price порожні та підсвічені червоним; відділ Primary School, тип Purchasing department."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -116,20 +116,20 @@
         },
         {
           "quote": "Папір A4",
-          "onPage": false
+          "onPage": true
         }
       ],
-      "verdict": "NEEDS-HUMAN",
-      "factoryGate": "NOT-EARNED",
-      "rule": "R4: цитати агента немає на сторінці (aria) — не підтверджено",
-      "playwrightMs": 11478,
-      "reviewCostUsd": 0.0361,
-      "reviewWallMs": 23810
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 10622,
+      "reviewCostUsd": 0.03212,
+      "reviewWallMs": 17509
     }
   ],
   "negativeControls": [],
   "cleanup": {
-    "at": "2026-11-03T12:49:36.123Z",
+    "at": "2026-11-03T13:15:46.274Z",
     "deleted": [],
     "remaining": [],
     "leftoverRequests": 0
