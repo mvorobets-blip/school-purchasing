@@ -45,41 +45,44 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
     async ({ page, browser }) => {
       const author = await asRole(browser, REQUESTER);
       let href = "";
+      // Окремий контекст закриваємо й тоді, коли крок упав.
+      try {
+        await given(
+          "працівник 1 подав закупівлю у відділ «Початкова школа», а працівник 2 — заявник того ж відділу, не автор і не схвалювач",
+          async () => {
+            href = await pendingRequestOf(author);
+          },
+        );
 
-      await given(
-        "працівник 1 подав закупівлю у відділ «Початкова школа», а працівник 2 — заявник того ж відділу, не автор і не схвалювач",
-        async () => {
-          href = await pendingRequestOf(author);
-        },
-      );
+        await when("працівник 2 відкриває закупівлю працівника 1 за прямим посиланням", async () => {
+          await page.goto(href);
+        });
 
-      await when("працівник 2 відкриває закупівлю працівника 1 за прямим посиланням", async () => {
-        await page.goto(href);
-      });
-
-      await thenStep(
-        page,
-        {
-          clause:
-            "він бачить повідомлення «Недостатньо прав», даних закупівлі йому не показано, а закупівля працівника 1 лишається зі статусом «Очікує схвалення».",
-          visible: [`повідомлення «${FORBIDDEN}»`, "немає рядків закупівлі, суми чи автора — лише картка відмови"],
-          hidden: [
-            "на сторінці немає даних закупівлі: ні автора (data-testid=\"request-author\"), ні таблиці рядків",
-            "закупівля працівника 1 лишається зі статусом «Awaiting approval» (перевірено в «My requests» працівника 1 після спроби)",
-          ],
-        },
-        async () => {
-          const card = page.getByRole("main").getByRole("alert");
-          await expect(card).toBeVisible();
-          await expect(card.getByText(FORBIDDEN, { exact: true })).toBeVisible();
-          await expect(page.getByTestId("request-author")).toHaveCount(0);
-          await expect(page.getByRole("main").getByRole("table")).toHaveCount(0);
-          await author.goto("/requests");
-          const row = author.getByTestId("request-row").filter({ has: author.locator(`a[href="${href}"]`) });
-          await expect(row).toContainText(AWAITING);
-        },
-      );
-      await author.context().close();
+        await thenStep(
+          page,
+          {
+            clause:
+              "він бачить повідомлення «Недостатньо прав», даних закупівлі йому не показано, а закупівля працівника 1 лишається зі статусом «Очікує схвалення».",
+            visible: [`повідомлення «${FORBIDDEN}»`, "немає рядків закупівлі, суми чи автора — лише картка відмови"],
+            hidden: [
+              "на сторінці немає даних закупівлі: ні автора (data-testid=\"request-author\"), ні таблиці рядків",
+              "закупівля працівника 1 лишається зі статусом «Awaiting approval» (перевірено в «My requests» працівника 1 після спроби)",
+            ],
+          },
+          async () => {
+            const card = page.getByRole("main").getByRole("alert");
+            await expect(card).toBeVisible();
+            await expect(card.getByText(FORBIDDEN, { exact: true })).toBeVisible();
+            await expect(page.getByTestId("request-author")).toHaveCount(0);
+            await expect(page.getByRole("main").getByRole("table")).toHaveCount(0);
+            await author.goto("/requests");
+            const row = author.getByTestId("request-row").filter({ has: author.locator(`a[href="${href}"]`) });
+            await expect(row).toContainText(AWAITING);
+          },
+        );
+      } finally {
+        await author.context().close();
+      }
     },
   );
 
@@ -122,43 +125,45 @@ test.describe("працівник 1 (pm-requester@example.test)", () => {
       // тож page лишається на формі з повідомленням (перший прогін 03.11 знімав «My requests» — NEEDS-HUMAN, R3).
       const own = await asRole(browser, REQUESTER);
       let before = 0;
+      try {
+        await given(
+          "працівник 1 обрав відділ «Початкова школа», тип «Відділ закупівель» і додав рядок лише з назвою «Папір А4», без мети, кількості й ціни",
+          async () => {
+            await own.goto("/requests");
+            before = await own.getByTestId("request-row").count();
+            await page.goto("/requests/new");
+            await page.getByTestId("purchase-department").click();
+            await page.getByRole("option", { name: DEPARTMENT }).click();
+            await page.getByTestId("purchase-type").click();
+            await page.getByRole("option", { name: "Purchasing department" }).click();
+            await page.getByLabel("Item").fill("Папір А4");
+          },
+        );
 
-      await given(
-        "працівник 1 обрав відділ «Початкова школа», тип «Відділ закупівель» і додав рядок лише з назвою «Папір А4», без мети, кількості й ціни",
-        async () => {
-          await own.goto("/requests");
-          before = await own.getByTestId("request-row").count();
-          await page.goto("/requests/new");
-          await page.getByTestId("purchase-department").click();
-          await page.getByRole("option", { name: "Primary School" }).click();
-          await page.getByTestId("purchase-type").click();
-          await page.getByRole("option", { name: "Purchasing department" }).click();
-          await page.getByLabel("Item").fill("Папір А4");
-        },
-      );
+        await when("він намагається подати закупівлю", async () => {
+          await page.getByRole("button", { name: "Submit" }).click();
+        });
 
-      await when("він намагається подати закупівлю", async () => {
-        await page.getByRole("button", { name: "Submit" }).click();
-      });
-
-      await thenStep(
-        page,
-        {
-          clause: "він бачить повідомлення «Заповніть усі поля рядка», а закупівлю не подано.",
-          visible: [`повідомлення «${FILL_ALL}» над формою`, "форма лишається відкритою з назвою «Папір А4»"],
-          hidden: [
-            "закупівлю не подано: лишаємось на сторінці «New purchase», а кількість заявок у «My requests» (окрема вкладка того самого працівника) не змінилась",
-          ],
-        },
-        async () => {
-          await expect(page.getByRole("main").getByRole("alert")).toHaveText(FILL_ALL);
-          await expect(page.getByLabel("Item")).toHaveValue("Папір А4");
-          await expect(page).toHaveURL((url) => url.pathname === "/requests/new");
-          await own.goto("/requests");
-          await expect(own.getByTestId("request-row")).toHaveCount(before);
-        },
-      );
-      await own.context().close();
+        await thenStep(
+          page,
+          {
+            clause: "він бачить повідомлення «Заповніть усі поля рядка», а закупівлю не подано.",
+            visible: [`повідомлення «${FILL_ALL}» над формою`, "форма лишається відкритою з назвою «Папір А4»"],
+            hidden: [
+              "закупівлю не подано: лишаємось на сторінці «New purchase», а кількість заявок у «My requests» (окрема вкладка того самого працівника) не змінилась",
+            ],
+          },
+          async () => {
+            await expect(page.getByRole("main").getByRole("alert")).toHaveText(FILL_ALL);
+            await expect(page.getByLabel("Item")).toHaveValue("Папір А4");
+            await expect(page).toHaveURL((url) => url.pathname === "/requests/new");
+            await own.goto("/requests");
+            await expect(own.getByTestId("request-row")).toHaveCount(before);
+          },
+        );
+      } finally {
+        await own.context().close();
+      }
     },
   );
 });
