@@ -91,7 +91,8 @@ async function reviewCase(caseDir, { model, escalate }) {
     const second = await runClaude(caseDir, SONNET);
     save(second);
     console.log(`${line(second)} (суперечка → Sonnet)`);
-  } else {
+  } else if (model !== SONNET) {
+    // Старий вердикт Sonnet — лише коли Sonnet не є першою моделлю (інакше видалили б щойно збережений).
     rmSync(path.join(caseDir, `review.${SONNET}.json`), { force: true });
   }
 }

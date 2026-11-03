@@ -5,13 +5,13 @@
 // Кроки: playwright test → pack.mjs → review.mjs (claude -p) → combine.mjs → report.mjs.
 // Звіт пишеться завжди, навіть якщо тести червоні: FAIL — теж результат для PM. Код виходу 1, якщо є FAIL.
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pack } from "./pack.mjs";
 import { review } from "./review.mjs";
 import { combine } from "./combine.mjs";
 import { report } from "./report.mjs";
-import { ROOT, WORK, rel } from "./lib.mjs";
+import { RESULTS, ROOT, WORK, rel } from "./lib.mjs";
 
 const argv = process.argv.slice(2);
 const take = (name) => {
@@ -55,6 +55,10 @@ else delete env.UAT_BASE_URL;
 
 // Журнал прибирання — лише цього прогону: інакше «видалено» у звіті підсумовує адреси з попередніх прогонів.
 rmSync(path.join(ROOT, "test-results", "uat-cleanup.jsonl"), { force: true });
+// Підсумок прибирання й звіт Playwright — теж лише цього прогону: без ключа teardown не перезаписує uat-cleanup.json,
+// а Playwright, що впав до тестів (напр., невідомий параметр), не перезаписує results.json (рев'ю CodeRabbit, PR #44).
+rmSync(path.join(ROOT, "test-results", "uat-cleanup.json"), { force: true });
+rmSync(RESULTS, { force: true });
 console.log(`UAT: ${url ?? "локальна збірка (npm run build && npm run start)"}${negativeControls ? " — негативні контролі" : ""}`);
 const cli = path.join(ROOT, "node_modules", "@playwright", "test", "cli.js");
 const pw = spawnSync(
@@ -64,7 +68,10 @@ const pw = spawnSync(
 );
 const playwrightMs = Date.now() - Date.parse(startedAt);
 
-const cases = pack();
+if (!existsSync(RESULTS)) {
+  console.error(`Playwright не записав ${rel(RESULTS)} (код ${pw.status ?? "?"}): тести не запускались — перевірте вивід вище.`);
+}
+const cases = existsSync(RESULTS) ? pack() : [];
 mkdirSync(WORK, { recursive: true });
 writeFileSync(
   path.join(WORK, "run.json"),
@@ -94,6 +101,8 @@ if (!cases.length) {
   console.log(`\nЗвіт: ${rel(outDir)}/report.md`);
   for (const r of rows) console.log(`  ${r.caseId}: ${r.verdict} — ${r.ruleText}`);
   const real = rows.filter((r) => !r.negativeControl);
+  // Упало не AC (напр., прибирання uat-*) — теж код 1; негативні контролі падають навмисно.
+  if (!negativeControls && pw.status !== 0) process.exitCode = 1;
   if (real.some((r) => r.verdict === "FAIL")) process.exitCode = 1;
   if (real.some((r) => r.verdict === "NEEDS-HUMAN")) console.log("Є NEEDS-HUMAN: рішення — за PM (див. звіт).");
 }

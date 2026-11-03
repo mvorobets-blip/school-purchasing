@@ -56,9 +56,13 @@ test(
     await when("він відкриває сторінку «Мої заявки»", async () => {
       await page.goto("/requests");
     });
-    await thenStep(page, { clause: CLAUSE, visible: [`повідомлення «${NO_REQUESTS}»`, "списку заявок немає"] }, async () => {
-      await expect(page.getByTestId("no-requests")).toHaveText(NO_REQUESTS);
-      await expect(page.getByTestId("my-requests")).toHaveCount(0);
-    });
+    await thenStep(
+      page,
+      { clause: CLAUSE, visible: [`повідомлення «${NO_REQUESTS}»`, "кнопку «Create your first request»", "списку заявок немає"] },
+      async () => {
+        await expect(page.getByTestId("no-requests")).toHaveText(NO_REQUESTS);
+        await expect(page.getByTestId("my-requests")).toHaveCount(0);
+      },
+    );
   },
 );

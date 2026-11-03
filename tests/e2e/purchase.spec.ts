@@ -65,7 +65,7 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
               "він бачить повідомлення «Недостатньо прав», даних закупівлі йому не показано, а закупівля працівника 1 лишається зі статусом «Очікує схвалення».",
             visible: [`повідомлення «${FORBIDDEN}»`, "немає рядків закупівлі, суми чи автора — лише картка відмови"],
             hidden: [
-              "на сторінці немає даних закупівлі: ні автора (data-testid=\"request-author\"), ні таблиці рядків",
+              "на сторінці немає даних закупівлі: ні автора (data-testid=\"request-author\"), ні таблиці рядків, ні назви відділу",
               "закупівля працівника 1 лишається зі статусом «Awaiting approval» (перевірено в «My requests» працівника 1 після спроби)",
             ],
           },
@@ -75,6 +75,7 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
             await expect(card.getByText(FORBIDDEN, { exact: true })).toBeVisible();
             await expect(page.getByTestId("request-author")).toHaveCount(0);
             await expect(page.getByRole("main").getByRole("table")).toHaveCount(0);
+            await expect(page.getByRole("main")).not.toContainText(DEPARTMENT);
             await author.goto("/requests");
             const row = author.getByTestId("request-row").filter({ has: author.locator(`a[href="${href}"]`) });
             await expect(row).toContainText(AWAITING);
@@ -90,6 +91,8 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
     "AC-FRM-14: працівник без жодної поданої заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-14" } },
     async ({ page }) => {
+      // Передумова — стан акаунта на проді: member2@example.test не подає заявок (домовлено з PM, перевірено вручну 03.11).
+      // Незалежного read-only запиту з обліковими даними UAT немає (секретного ключа UAT не має), тож тест її не доводить.
       await given("працівник 3 без жодної поданої заявки", async () => {});
 
       await when("він відкриває сторінку «Мої заявки»", async () => {
