@@ -104,4 +104,27 @@ describe("smoke.mjs", () => {
     expect(out).toContain('"/api/health": HTTP 503, db=down (status-0)');
     expect(code).toBe(1);
   });
+
+  it("показує адресу редиректу /api/health, навіть коли тіло — JSON", async () => {
+    const base = await serve({
+      "/": { status: 307, headers: { location: "/login" } },
+      "/login": LOGIN,
+      "/api/health": { status: 307, headers: { location: "/login" }, body: JSON.stringify({ redirect: true }) },
+    });
+    const { code, out } = await smoke(base);
+    expect(out).toContain('"/api/health": 307 → /login — додайте "/api/health" у PUBLIC_PATHS');
+    expect(code).toBe(1);
+  });
+
+  it("коли вхід не відкрився, усе одно питає /api/health — причина бази видна в лозі", async () => {
+    const base = await serve({
+      "/": { status: 307, headers: { location: "/login" } },
+      "/login": { status: 500 },
+      "/api/health": { status: 503, body: JSON.stringify({ ok: false, sha: "abc1234", db: "down", reason: "paused" }) },
+    });
+    const { code, out } = await smoke(base, "abc1234");
+    expect(out).toContain('"/login": HTTP 500');
+    expect(out).toContain('"/api/health": Supabase призупинено');
+    expect(code).toBe(1);
+  });
 });

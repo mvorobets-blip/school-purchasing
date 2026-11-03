@@ -16,7 +16,15 @@ const LAYERS = [
 const layerIndex = (file) => LAYERS.findIndex((l) => l.test.test(file));
 const pct = (m) => (m.total === 0 ? "—" : `${Math.floor(m.pct)} %`);
 
-const summary = JSON.parse(readFileSync(process.argv[2] ?? "coverage/coverage-summary.json", "utf8"));
+// Звіту може не бути: у quality.yml крок іде з if: always(), зокрема після збою npm ci чи тестів.
+const reportPath = process.argv[2] ?? "coverage/coverage-summary.json";
+let summary;
+try {
+  summary = JSON.parse(readFileSync(reportPath, "utf8"));
+} catch (e) {
+  console.error(`coverage:summary: не вдалося прочитати звіт ${reportPath} (${e.code ?? e.message}) — спершу npm run test:coverage`);
+  process.exit(1);
+}
 const rows = Object.entries(summary)
   .filter(([file]) => file !== "total")
   .map(([file, m]) => ({ file: path.relative(process.cwd(), file).replaceAll("\\", "/"), layer: layerIndex(file), m }))

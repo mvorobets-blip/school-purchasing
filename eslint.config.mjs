@@ -9,11 +9,16 @@ import vitest from "@vitest/eslint-plugin";
 import playwright from "eslint-plugin-playwright";
 
 // AC ID, як його читає ac:coverage (scripts/lib/spec-lib.mjs): лише на початку назви тесту.
-const AC = String.raw`AC-[A-Z]+-\d+`;
+// Той самий шаблон, що AC_ID у spec-lib.mjs: інакше «AC-X-1 …» пройде лінтер, а ac:coverage його не зарахує.
+const AC = String.raw`AC-[A-Z]{2,12}-\d{2}(?![\w-])`;
 // Власні модулі, які не мокаємо: src/lib/** (крім адаптерів src/lib/supabase/**) і src/app/** — через аліас
 // (@/lib/…, @/app/…) або відносним шляхом (../../src/lib/…). У регулярному виразі esquery не може бути «/», тому
 // роздільник — «.».
 const OWN_MODULE = String.raw`/^(@|.*src).(lib.(?!supabase([^A-Za-z0-9_-]|$))[A-Za-z0-9_-]|app([^A-Za-z0-9_-]|$))/`;
+// Ненормалізований шлях після аліасу чи src (сегменти «.», «..» або «//»): regex вище перевіряє рядок як є, а Vite
+// мокає модуль за реальним шляхом — тож «@/lib/supabase/../x» чи «@/lib/./x» обійшли б заборону.
+const UNNORMALIZED = String.raw`/^(@|.*src)[^A-Za-z0-9_.-].*([^A-Za-z0-9_.-]\.{1,2}([^A-Za-z0-9_.-]|$)|[^A-Za-z0-9_.@-]{2})/`;
+const NO_UNNORMALIZED_MOCK = "Шлях у vi.mock — без сегментів «.», «..» і «//» після @/ чи src/: напишіть його нормалізованим.";
 const NO_OWN_MOCK =
   "Не мокайте власні модулі (src/lib/**, src/app/**) — тестуйте справжній код: SQL/RLS на PGlite, " +
   "введення-виведення — через передані залежності. Мок клієнта Supabase (@/lib/supabase/*) дозволено.";
@@ -54,6 +59,14 @@ const eslintConfig = defineConfig([
           // vi.mock(import("@/lib/…")) — та сама заборона для форми з import().
           selector: `CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock)$/][arguments.0.source.value=${OWN_MODULE}]`,
           message: NO_OWN_MOCK,
+        },
+        {
+          selector: `CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock)$/][arguments.0.value=${UNNORMALIZED}]`,
+          message: NO_UNNORMALIZED_MOCK,
+        },
+        {
+          selector: `CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock)$/][arguments.0.source.value=${UNNORMALIZED}]`,
+          message: NO_UNNORMALIZED_MOCK,
         },
       ],
     },

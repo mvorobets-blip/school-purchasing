@@ -68,26 +68,27 @@ function loginProblem(login) {
 function parseHealth(r) {
   try {
     const body = JSON.parse(r.text);
-    return { ...(body && typeof body === "object" && !Array.isArray(body) ? body : {}), status: r.status };
+    return { ...(body && typeof body === "object" && !Array.isArray(body) ? body : {}), status: r.status, location: r.location };
   } catch {
     return { status: r.status, location: r.location };
   }
 }
 
-// З expected-sha — до 6 спроб × 20 с, доки прод-домен не перемкнеться на новий деплой.
-async function fetchHealth() {
+// З expected-sha — до 6 спроб × 20 с, доки прод-домен не перемкнеться на новий деплой; якщо вхід не відкрився —
+// один запит лише для діагностики (reason, db, sha у лозі), без очікування.
+async function fetchHealth(canRetry) {
   let health = null;
-  for (let attempt = 1; attempt <= (expectSha ? 6 : 1); attempt++) {
+  const attempts = expectSha && canRetry ? 6 : 1;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
     health = parseHealth(await get("/api/health"));
     // sha=local — Vercel не віддає VERCEL_GIT_COMMIT_SHA: чекати марно.
     if (!expectSha || health.sha === expectSha || health.sha === "local") break;
-    if (attempt < 6) await new Promise((res) => setTimeout(res, 20_000));
+    if (attempt < attempts) await new Promise((res) => setTimeout(res, 20_000));
   }
   return health;
 }
 
 function healthProblem(health) {
-  if (!health) return null; // прод не відкрився — причина вже в іншому збої
   if (health.status === 404) return `"/api/health": 404 — додайте src/app/api/health/route.ts`;
   if (health.status >= 300 && health.status < 400) {
     return `"/api/health": ${health.status} → ${health.location} — додайте "/api/health" у PUBLIC_PATHS (src/lib/supabase/proxy.ts)`;
@@ -115,7 +116,7 @@ function shaProblem(health) {
 async function main() {
   const root = await get("/");
   const login = await get("/login");
-  const health = login.status === 200 ? await fetchHealth() : null;
+  const health = await fetchHealth(login.status === 200);
   const fail = [rootProblem(root), loginProblem(login), healthProblem(health), shaProblem(health)].filter(Boolean);
 
   console.log(JSON.stringify({ base, root: root.status, login: login.status, health }));
