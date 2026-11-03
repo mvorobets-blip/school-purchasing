@@ -14,6 +14,8 @@ const FORBIDDEN = "Not enough permissions";
 const NO_REQUESTS = "You have not submitted any requests yet";
 const FILL_ALL = "Fill in all line fields";
 const AWAITING = "Awaiting approval";
+// «Початкова школа» з вимоги — назва відділу на проді (синтетичні дані, створює адміністратор).
+const DEPARTMENT = "Primary School";
 
 test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
@@ -23,11 +25,12 @@ async function asRole(browser: Browser, storageState: string): Promise<Page> {
   return context.newPage();
 }
 
-/** Адреса заявки працівника 1 зі статусом «Очікує схвалення» — з його «My requests», а не жорстко в коді. */
+/** Адреса заявки працівника 1 у відділі «Початкова школа» зі статусом «Очікує схвалення» — з його «My requests»,
+ * а не жорстко в коді. Відділ — як у «Дано» AC-FRM-08 (заявка в іншому відділі довела б слабшу умову). */
 async function pendingRequestOf(page: Page): Promise<string> {
   await page.goto("/requests");
-  const row = page.getByTestId("request-row").filter({ hasText: AWAITING }).first();
-  await expect(row, "у працівника 1 має бути заявка «Awaiting approval» (Дано AC-FRM-08)").toBeVisible();
+  const row = page.getByTestId("request-row").filter({ hasText: DEPARTMENT }).filter({ hasText: AWAITING }).first();
+  await expect(row, `у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08)`).toBeVisible();
   const href = await row.getByRole("link").first().getAttribute("href");
   expect(href).toMatch(/^\/requests\/[0-9a-f-]{36}$/);
   return href!;
@@ -66,7 +69,7 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
           ],
         },
         async () => {
-          const card = page.getByRole("main").getByTestId("forbidden");
+          const card = page.getByRole("main").getByRole("alert");
           await expect(card).toBeVisible();
           await expect(card.getByText(FORBIDDEN, { exact: true })).toBeVisible();
           await expect(page.getByTestId("request-author")).toHaveCount(0);
@@ -148,7 +151,7 @@ test.describe("працівник 1 (pm-requester@example.test)", () => {
           ],
         },
         async () => {
-          await expect(page.getByRole("main").getByTestId("purchase-message")).toHaveText(FILL_ALL);
+          await expect(page.getByRole("main").getByRole("alert")).toHaveText(FILL_ALL);
           await expect(page.getByLabel("Item")).toHaveValue("Папір А4");
           await expect(page).toHaveURL((url) => url.pathname === "/requests/new");
           await own.goto("/requests");
