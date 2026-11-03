@@ -10,7 +10,7 @@
 
 - Прод-URL: https://therapy-scheduling-ten.vercel.app
 - Вимоги: https://github.com/ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-02
-- `/api/health` на момент UAT: <!-- sha і db, напр. «sha 1a2b3c4, db ok, 01.11.2026» -->
+- `/api/health` на момент UAT: sha `152825c`, db ok, env production, 03.11.2026
 
 ## 3 AC
 
@@ -84,13 +84,17 @@
 
 | AC | Специфікація | Тест (твердження) | Агент | Вердикт | Кадр |
 |---|---|---|---|---|---|
-| AC-…-NN | <!-- …/blob/<sha>/tests/e2e/….spec.ts --> | <!-- passed / failed --> | <!-- Haiku: PASS / FAIL / NEEDS-HUMAN (+ Sonnet, якщо була суперечка) --> | <!-- PASS / FAIL / NEEDS-HUMAN і правило (R1–R6) --> | <!-- …/blob/<sha>/docs/qa/uat/<дата>/frames/AC-…-then-1.png --> |
+| AC-FRM-08 | [tests/e2e/purchase.spec.ts:56](https://github.com/mvorobets-blip/school-purchasing/blob/a8e3a60/tests/e2e/purchase.spec.ts#L56) | passed | Haiku: FAIL → Sonnet: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-08-then-1.png` |
+| AC-FRM-14 | [tests/e2e/purchase.spec.ts:104](https://github.com/mvorobets-blip/school-purchasing/blob/a8e3a60/tests/e2e/purchase.spec.ts#L104) | passed | Haiku: NEEDS-HUMAN → Sonnet: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-14-then-1.png` |
+| AC-FRM-15 | [tests/e2e/purchase.spec.ts:137](https://github.com/mvorobets-blip/school-purchasing/blob/a8e3a60/tests/e2e/purchase.spec.ts#L137) | passed | Haiku: FAIL → Sonnet: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-15-then-1.png` |
 
-- Звіт: <!-- …/blob/<sha>/docs/qa/uat/<YYYY-MM-DD>/report.md -->
-- Відео: <!-- вкладення в описі PR …/pull/N -->
-- Рецензент: <!-- моделі зі звіту (claude-haiku-5-5; суперечки — claude-sonnet-5-5) і вартість прогону -->
-- Негативний контроль: <!-- NC-… (npm run uat:nc): що навмисно хибне, вердикт (FAIL / NEEDS-HUMAN), …/pull/N -->
-- Дані: <!-- «лише читання» або «@writes: uat-<запуск>@example.test, рядок «Прибирання» зі звіту» -->
+- Звіт: `docs/qa/uat/2026-11-03/report.md` (+ `manifest.json`, `frames/`) — прогін 03.11.2026, 15:15 (Київ), прод https://therapy-scheduling-ten.vercel.app, `/api/health` — коміт `152825c`; код тестів — `task/uat` @ `a8e3a60` (позначка «+ незакомічені зміни» у звіті — лише незакомічені на момент прогону тека попереднього звіту `docs/qa/uat/` і локальний `fallow-baseline.txt`; код тестів і матриця — у коміті).
+- Свідомий виняток із «файли курсу без змін» — `scripts/uat/lib.mjs`, `quoteInAria`: при звірці цитати з aria-знімком 20 кириличних літер, що на кадрі не відрізнити від латинських (А, В, Е, І, К, М, Н, О, Р, С, Т, Х і малі), вважаються однаковими з латинськими; регістр, як і раніше, має значення. Причина — прогони 13:22, 14:19 і 14:49: Sonnet цитував «Папір A4» латинською «A», а на сторінці й у вимозі PM — кирилична «А» (U+0410), і AC-FRM-15 ставав NEEDS-HUMAN (R4) без вади. Негативні контролі після зміни ловлять те саме (NC-2 — NEEDS-HUMAN).
+- Відео: вкладення в описі PR UAT (3 файли `video.webm` прогону 15:15 і 2 — NC прогону 15:08); трас і HTML-звіту в git немає.
+- Рецензент: `claude-haiku-5-5`, суперечки — `claude-sonnet-5-5`; промпт і схема — з `materials/uat` без змін; вартість розбору $0.0982 (за цінами API, у межах підписки).
+- Історія прогонів 03.11 (вердикти руками не правили): 12:58 — AC-FRM-15 NEEDS-HUMAN (R3): специфікація знімала кадр «Тоді» після переходу на «My requests» — вада тесту, виправлено (перевірка «не подано» — в окремій вкладці); 13:22 — AC-FRM-15 NEEDS-HUMAN (R4): агент процитував «Папір A4» латинською «A»; 13:27 (після коміту матриці) — PASS 3; 13:47 (на `6035e9e`, після виправлень за незалежною перевіркою: заявка FRM-08 — лише у відділі «Primary School», як у «Дано»; повідомлення шукаємо за роллю `alert` у `main`) — PASS 3; 14:19 (на `8ce39e1`, після виправлень за рев'ю CodeRabbit PR #44: у FRM-08 — ще й немає назви відділу; свіжі `results.json` і `uat-cleanup.json`; код виходу) — PASS 2, AC-FRM-15 NEEDS-HUMAN (R4, та сама латинська «A»); 14:49 (повтор без змін коду) — так само: PASS 2, AC-FRM-15 NEEDS-HUMAN (R4); 15:15 (фінальний, на `a8e3a60`, після виправлень за `/code-review high 44`: схожі кириличні й латинські літери в цитатах; «не подано» в FRM-15 — нові заявки за час прогону відкриваємо й перевіряємо, що в них немає «Папір А4», а не рахуємо рядки, бо акаунт спільний з PM; зрозуміле повідомлення, якщо PM вирішила заявку з «Дано» FRM-08; запити без відповіді — окремим списком `pending`) — PASS 3.
+- Негативний контроль (`npm run uat:nc` на `a8e3a60`, 15:08; `tests/e2e/negative-controls.spec.ts`, AC-FRM-14): NC-1 — у твердженні навмисно інший текст («You have no requests yet») → **FAIL** (R1; Haiku FAIL; на прогонах 13:45 і 14:15 Haiku казав PASS і NEEDS-HUMAN, але впалу перевірку агент не перекриває); NC-2 — у «вимозі» (анотація `ac-text`) інший текст і кнопка «Create your first request», тест і застосунок без змін → **NEEDS-HUMAN** (R3; Haiku FAIL, Sonnet FAIL). Розбір $0.0358. Рядки звіту — в описі PR.
+- Дані: лише читання — жоден тест нічого не подає; «Прибирання»: синтетичних `uat-*@example.test` видалено 0, лишилось 0. Акаунти — `pm-requester@example.test` (працівник 1), `member2@example.test` (працівник 2/3).
 
 ### Приймання PM
 
