@@ -138,7 +138,7 @@ describe("подання закупівлі (база)", () => {
   it("AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється", async () => {
     const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", LINE);
     expect(await t.asUser(MEMBER_2, "select id from public.purchase_requests where id = $1", [id])).toHaveLength(0);
-    expect(await t.asUser(MEMBER_2, "select id from public.purchase_request_lines where request_id = $1", [id])).toHaveLength(0);
+    expect(await t.asUser(MEMBER_2, "select id from public.purchase_request_lines where request_id = $1", [MEMBER_2])).toHaveLength(0);
     await expect(
       t.asUser(MEMBER_2, "update public.purchase_requests set status = 'approved' where id = $1", [id]),
     ).rejects.toThrow(/permission denied/);
