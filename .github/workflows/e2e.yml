@@ -6,9 +6,12 @@
 name: e2e
 
 on:
+  # Зміни лише документації, вимог чи специфікації застосунку не змінюють — e2e на них не запускаємо.
   pull_request:
+    paths-ignore: ["docs/**", "requirements/**", "openspec/**", "**/*.md"]
   push:
     branches: [main]
+    paths-ignore: ["docs/**", "requirements/**", "openspec/**", "**/*.md"]
   workflow_dispatch:
 
 permissions:
@@ -26,6 +29,8 @@ jobs:
       CI: "true"
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false # токен не потрібен наступним крокам (npm ci запускає скрипти пакетів), як у quality.yml
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -42,9 +47,10 @@ jobs:
         run: |
           supabase status -o json > "$RUNNER_TEMP/supabase-status.json"
           echo "Змінні supabase status (лише назви): $(jq -r 'keys | join(", ")' "$RUNNER_TEMP/supabase-status.json")"
-          api_url=$(jq -r '.API_URL' "$RUNNER_TEMP/supabase-status.json")
-          publishable=$(jq -r '.PUBLISHABLE_KEY // .ANON_KEY' "$RUNNER_TEMP/supabase-status.json")
-          secret=$(jq -r '.SECRET_KEY // .SERVICE_ROLE_KEY' "$RUNNER_TEMP/supabase-status.json")
+          # jq -e: немає ключа (інша версія CLI) — крок падає тут, а не «null» у .env.local і незрозуміла помилка далі.
+          api_url=$(jq -er '.API_URL' "$RUNNER_TEMP/supabase-status.json")
+          publishable=$(jq -er '.PUBLISHABLE_KEY // .ANON_KEY' "$RUNNER_TEMP/supabase-status.json")
+          secret=$(jq -er '.SECRET_KEY // .SERVICE_ROLE_KEY' "$RUNNER_TEMP/supabase-status.json")
           random_value=$(openssl rand -hex 16)
           echo "::add-mask::$random_value"
           {
@@ -58,7 +64,7 @@ jobs:
       # Наші специфікації — для проду з даними (відділи, членства, заявка member1); seed.sql їх не має, бо користувачі
       # з'являються лише після users:demo. Скрипт працює лише з localhost — прод-базу не чіпає.
       - name: Дані для специфікацій (відділи, членства, заявка)
-        run: node --env-file=.env.local scripts/e2e-fixtures.mjs
+        run: npm run e2e:fixtures
       - run: npm run build
       - name: Chromium для Playwright
         run: npx playwright install --with-deps --only-shell chromium
@@ -66,7 +72,8 @@ jobs:
         run: npx playwright test
       - name: Жодного пропущеного тесту
         # Пропущений тест (наприклад, test.skip(умова) у тілі) не перевіряє AC, а ac:coverage його рахує.
-        if: ${{ !cancelled() }}
+        # Лише якщо Playwright дійшов до звіту: інакше справжню помилку (збірка, дані) затулив би MODULE_NOT_FOUND.
+        if: ${{ !cancelled() && hashFiles('test-results/results.json') != '' }}
         run: |
           node -e '
             const s = require("./test-results/results.json").stats;
@@ -78,7 +85,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: e2e-${{ github.run_id }}
+          name: e2e-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             test-results/
             !test-results/**/*.aria.yml
