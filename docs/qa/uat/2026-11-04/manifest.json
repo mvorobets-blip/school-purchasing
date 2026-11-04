@@ -1,9 +1,9 @@
 {
   "kind": "uat",
-  "generatedAt": "2026-11-04T09:32:56.544Z",
+  "generatedAt": "2026-11-04T11:23:43.940Z",
   "baseURL": "https://therapy-scheduling-ten.vercel.app",
-  "deployedSha": "62a87ee1d91cb902425d1b5b3317d2b0fb5b7c9e",
-  "testsCommit": "8aa25c50ee4e505404c8c98168838d9a474f8ddf",
+  "deployedSha": "60024f58095f3de89540e1a49fdfb786c389100b",
+  "testsCommit": "018df393fce418fddba9740a6ad075fed0ab4238",
   "reviewer": {
     "model": "claude-haiku-5-5",
     "disputes": "claude-sonnet-5-5"
@@ -21,7 +21,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі по центру єдина картка відмови із заголовком «Not enough permissions» і поясненням та кнопкою «Back to my requests». Рядків закупівлі, суми чи автора не видно. Частини «Не з кадрів» не оцінювались."
+        "notes": "На кадрі видно лише картку з іконкою замка, заголовком «Not enough permissions», поясненням і кнопкою «Back to my requests». Рядків закупівлі, суми чи автора на сторінці немає."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -42,9 +42,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 7489,
-      "reviewCostUsd": 0.03249,
-      "reviewWallMs": 15285
+      "playwrightMs": 7273,
+      "reviewCostUsd": 0.03257,
+      "reviewWallMs": 15334
     },
     {
       "id": "AC-FRM-14",
@@ -57,7 +57,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі сторінка /requests із заголовком «My requests» і порожнім станом з написом «You have not submitted any requests yet». Таблиці чи рядків заявок не видно, але цю частину за правилами не оцінюю."
+        "notes": "На кадрі сторінка /requests із заголовком «My requests» і порожнім станом «You have not submitted any requests yet»; таблиці чи рядків заявок не видно. У нижньому лівому куті показано «Maria Demo - second» (member2@example.test); чи це «працівник 3», з кадру не визначити, але це не входить до перелічених частин «Тоді»."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -78,9 +78,9 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 4658,
-      "reviewCostUsd": 0.03101,
-      "reviewWallMs": 18157
+      "playwrightMs": 3348,
+      "reviewCostUsd": 0.03335,
+      "reviewWallMs": 20192
     },
     {
       "id": "AC-FRM-15",
@@ -93,7 +93,7 @@
       "vision": {
         "met": true,
         "readable": true,
-        "notes": "На кадрі над формою «New purchase» червоне повідомлення «Fill in all line fields». Форма відкрита, в полі Item стоїть «Папір А4», а поля Purpose, Quantity і Price порожні та підсвічені червоним. Кирилична «А» і латинська «A» на кадрі виглядають однаково, тому ці літери я не розрізняв."
+        "notes": "На кадрі над формою червоним написано «Fill in all line fields». Форма «New purchase» лишається відкритою, у полі Item стоїть «Папір А4», а поля Purpose, Quantity і Price порожні та підсвічені червоним."
       },
       "agentModel": "claude-sonnet-5-5",
       "agentVerdicts": {
@@ -118,14 +118,14 @@
       "verdict": "PASS",
       "factoryGate": "PASS",
       "rule": "R6: перевірки, агент і цитати збігаються",
-      "playwrightMs": 11156,
-      "reviewCostUsd": 0.03416,
-      "reviewWallMs": 20682
+      "playwrightMs": 10354,
+      "reviewCostUsd": 0.03141,
+      "reviewWallMs": 14495
     }
   ],
   "negativeControls": [],
   "cleanup": {
-    "at": "2026-11-04T09:32:34.874Z",
+    "at": "2026-11-04T11:23:22.116Z",
     "deleted": [],
     "remaining": [],
     "leftoverRequests": 0
