@@ -4,12 +4,15 @@
 // твердження перевіряють дослівний переклад PM з цієї таблиці: «Недостатньо прав» → «Not enough permissions»,
 // «Ви ще не подали жодної заявки» → «You have not submitted any requests yet», «Заповніть усі поля рядка» →
 // «Fill in all line fields», «Очікує схвалення» → «Awaiting approval».
-// Акаунти (auth.setup.ts): requester — працівник 1, pm-requester@example.test; requester2 — працівник 2/3,
-// member2@example.test (той самий відділ «Primary School», не автор, не схвалювач, без поданих заявок). Акаунти спільні з
-// PM, тож ці умови «Дано» тест перевіряє сам (крок given) — і, якщо їх порушено, падає в «Дано», а не в «Тоді».
+// Акаунти (auth.setup.ts, як у прийманні PM): author — member1@example.test, автор заявки «Primary School» (працівник 1
+// в AC-FRM-08); requester — pm-requester@example.test, заявник «Primary School», не автор і не схвалювач (працівник 2 в
+// AC-FRM-08, працівник 1 в AC-FRM-15); requester2 — member2@example.test, без поданих заявок (працівник 3 в AC-FRM-14).
+// Акаунти спільні з PM, тож умови «Дано» тест перевіряє сам (крок given) і, якщо їх порушено, падає в «Дано», а не в
+// «Тоді». (До 04.11 працівником 2 був member2 — заявник іншого відділу; перевірка «Дано» це показала.)
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
+const AUTHOR = "playwright/.auth/author.json";
 const REQUESTER = "playwright/.auth/requester.json";
 const REQUESTER2 = "playwright/.auth/requester2.json";
 const FORBIDDEN = "Not enough permissions";
@@ -52,14 +55,14 @@ async function requestLinks(page: Page): Promise<string[]> {
     .evaluateAll((links) => links.map((a) => a.getAttribute("href") ?? ""));
 }
 
-test.describe("працівник 2/3 (member2@example.test)", () => {
-  test.use({ storageState: REQUESTER2 });
+test.describe("працівник 2 (pm-requester@example.test)", () => {
+  test.use({ storageState: REQUESTER });
 
   test(
     "AC-FRM-08: заявник того ж відділу відкриває чужу закупівлю за прямим посиланням — «Not enough permissions», даних не показано, статус не змінився",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-08" } },
     async ({ page, browser }) => {
-      const author = await asRole(browser, REQUESTER);
+      const author = await asRole(browser, AUTHOR);
       let href = "";
       // Окремий контекст закриваємо й тоді, коли крок упав.
       try {
@@ -72,13 +75,13 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
             await page.getByTestId("purchase-department").click();
             await expect(
               page.getByRole("option", { name: DEPARTMENT }),
-              `ПЕРЕДУМОВА НА ПРОДІ: member2@example.test має бути заявником відділу «${DEPARTMENT}»`,
+              `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test має бути заявником відділу «${DEPARTMENT}»`,
             ).toBeVisible();
             await page.keyboard.press("Escape");
             // Не схвалювач жодного відділу: пункту «Awaiting decision» у бічній панелі немає.
             await expect(
               page.getByRole("link", { name: /Awaiting decision/ }),
-              "ПЕРЕДУМОВА НА ПРОДІ: member2@example.test не має бути схвалювачем",
+              "ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test не має бути схвалювачем",
             ).toHaveCount(0);
           },
         );
@@ -115,20 +118,24 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
       }
     },
   );
+});
+
+test.describe("працівник 3 (member2@example.test)", () => {
+  test.use({ storageState: REQUESTER2 });
 
   test(
     "AC-FRM-14: працівник без жодної поданої заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-14" } },
     async ({ page }) => {
-      // Передумову перевіряємо незалежно від «My requests»: на головній лічильники власних заявок за статусами — нулі.
+      // Передумову перевіряємо на іншій сторінці, ніж «Тоді»: головна сама рахує власні заявки (src/app/(portal)/page.tsx);
+      // без жодної — порожній стан замість карток-лічильників.
       await given("працівник 3 без жодної поданої заявки", async () => {
         await page.goto("/");
-        for (const stat of ["stat-pending", "stat-approved", "stat-rejected"]) {
-          await expect(
-            page.getByTestId(stat),
-            "ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у member2@example.test не має бути поданих заявок",
-          ).toHaveText("0");
-        }
+        await expect(
+          page.getByRole("main").getByTestId("no-requests"),
+          "ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у member2@example.test не має бути поданих заявок",
+        ).toHaveText(NO_REQUESTS);
+        await expect(page.getByTestId("stat-pending")).toHaveCount(0);
       });
 
       await when("він відкриває сторінку «Мої заявки»", async () => {
