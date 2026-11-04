@@ -1,13 +1,18 @@
-// UAT за 3 AC WS8 (вимога PM ValiaBihun/2026-quitcode-dream-team#47) на проді. Лише читання: жоден тест нічого не подає.
+// UAT за 3 AC WS8 (вимога PM ValiaBihun/2026-quitcode-dream-team#47) на проді. Записів не створює: AC-FRM-08 і
+// AC-FRM-14 лише читають, AC-FRM-15 пробує подати неповний рядок і отримує відмову (закупівлю не подано).
 // «Тоді» в clause — дослівно з #47. Інтерфейс англійською за вимогою #49 (AC-LANG-03 і таблиця текстів PM), тож
 // твердження перевіряють дослівний переклад PM з цієї таблиці: «Недостатньо прав» → «Not enough permissions»,
 // «Ви ще не подали жодної заявки» → «You have not submitted any requests yet», «Заповніть усі поля рядка» →
 // «Fill in all line fields», «Очікує схвалення» → «Awaiting approval».
-// Акаунти (auth.setup.ts): requester — працівник 1, pm-requester@example.test; requester2 — працівник 2/3,
-// member2@example.test (той самий відділ «Primary School», не автор, не схвалювач, без поданих заявок).
+// Акаунти (auth.setup.ts, як у прийманні PM): author — member1@example.test, автор заявки «Primary School» (працівник 1
+// в AC-FRM-08); requester — pm-requester@example.test, заявник «Primary School», не автор і не схвалювач (працівник 2 в
+// AC-FRM-08, працівник 1 в AC-FRM-15); requester2 — member2@example.test, без поданих заявок (працівник 3 в AC-FRM-14).
+// Акаунти спільні з PM, тож умови «Дано» тест перевіряє сам (крок given) і, якщо їх порушено, падає в «Дано», а не в
+// «Тоді». (До 04.11 працівником 2 був member2 — заявник іншого відділу; перевірка «Дано» це показала.)
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
+const AUTHOR = "playwright/.auth/author.json";
 const REQUESTER = "playwright/.auth/requester.json";
 const REQUESTER2 = "playwright/.auth/requester2.json";
 const FORBIDDEN = "Not enough permissions";
@@ -34,7 +39,7 @@ async function pendingRequestOf(page: Page): Promise<string> {
   // Акаунти спільні з PM: якщо PM вирішила останню таку заявку, падає «Дано» — це брак даних на проді, а не вада застосунку.
   await expect(
     row,
-    `ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08) — подайте її під pm-requester@example.test і повторіть прогін`,
+    `ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08) — подайте її під member1@example.test і повторіть прогін`,
   ).toBeVisible();
   const href = await row.getByRole("link").first().getAttribute("href");
   expect(href).toMatch(/^\/requests\/[0-9a-f-]{36}$/);
@@ -50,14 +55,14 @@ async function requestLinks(page: Page): Promise<string[]> {
     .evaluateAll((links) => links.map((a) => a.getAttribute("href") ?? ""));
 }
 
-test.describe("працівник 2/3 (member2@example.test)", () => {
-  test.use({ storageState: REQUESTER2 });
+test.describe("працівник 2 (pm-requester@example.test)", () => {
+  test.use({ storageState: REQUESTER });
 
   test(
     "AC-FRM-08: заявник того ж відділу відкриває чужу закупівлю за прямим посиланням — «Not enough permissions», даних не показано, статус не змінився",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-08" } },
     async ({ page, browser }) => {
-      const author = await asRole(browser, REQUESTER);
+      const author = await asRole(browser, AUTHOR);
       let href = "";
       // Окремий контекст закриваємо й тоді, коли крок упав.
       try {
@@ -65,6 +70,23 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
           "працівник 1 подав закупівлю у відділ «Початкова школа», а працівник 2 — заявник того ж відділу, не автор і не схвалювач",
           async () => {
             href = await pendingRequestOf(author);
+            // Працівник 2 — заявник «Початкової школи», не схвалювач цього відділу: у «My profile» — таблиця відділів
+            // з роллю в кожному («Requester» / «Requester and approver»). Схвалювачем іншого відділу бути може — AC про цей.
+            await page.goto("/profile");
+            // Рядок — за точною назвою в клітинці відділу (не підрядок рядка: «Primary School Library» не підійде);
+            // роль — точний текст другої клітинки, а не «немає слова approver».
+            const membership = page
+              .getByTestId("profile-departments")
+              .getByRole("row")
+              .filter({ has: page.getByRole("cell", { name: DEPARTMENT, exact: true }) });
+            await expect(
+              membership,
+              `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test має бути заявником відділу «${DEPARTMENT}»`,
+            ).toHaveCount(1);
+            await expect(
+              membership.getByRole("cell").nth(1),
+              `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test — лише заявник відділу «${DEPARTMENT}», не схвалювач`,
+            ).toHaveText("Requester");
           },
         );
 
@@ -100,14 +122,25 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
       }
     },
   );
+});
+
+test.describe("працівник 3 (member2@example.test)", () => {
+  test.use({ storageState: REQUESTER2 });
 
   test(
     "AC-FRM-14: працівник без жодної поданої заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-14" } },
     async ({ page }) => {
-      // Передумова — стан акаунта на проді: member2@example.test не подає заявок (домовлено з PM, перевірено вручну 03.11).
-      // Незалежного read-only запиту з обліковими даними UAT немає (секретного ключа UAT не має), тож тест її не доводить.
-      await given("працівник 3 без жодної поданої заявки", async () => {});
+      // Передумову перевіряємо на іншій сторінці, ніж «Тоді»: головна сама рахує власні заявки (src/app/(portal)/page.tsx);
+      // без жодної — порожній стан замість карток-лічильників. Це той самий доступ до даних (RLS, author_id), лише інший
+      // запит і сторінка: повністю незалежну перевірку дав би лише секретний ключ, якого UAT не має.
+      await given("працівник 3 без жодної поданої заявки", async () => {
+        await page.goto("/");
+        await expect(
+          page.getByRole("main").getByTestId("no-requests"),
+          "ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: member2@example.test — звичайний заявник (не схвалювач, не адміністратор, є відділ) без поданих заявок; інакше головна показує інший стан",
+        ).toHaveText(NO_REQUESTS);
+      });
 
       await when("він відкриває сторінку «Мої заявки»", async () => {
         await page.goto("/requests");
@@ -117,8 +150,9 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
         page,
         {
           clause: "він бачить повідомлення «Ви ще не подали жодної заявки», а списку заявок немає.",
-          visible: ["заголовок «My requests»", `повідомлення «${NO_REQUESTS}»`, "списку (таблиці) заявок немає"],
-          hidden: ["немає жодного рядка заявки (data-testid=\"request-row\") і таблиці «my-requests»"],
+          visible: ["заголовок «My requests»", `повідомлення «${NO_REQUESTS}»`],
+          // «Списку немає» — відсутність: кадр її не цитує (агент казав NEEDS-HUMAN), тож доводить перевірка.
+          hidden: ["списку заявок немає: жодного рядка заявки (data-testid=\"request-row\") і таблиці «my-requests»"],
         },
         async () => {
           await expect(page.getByRole("heading", { level: 1, name: "My requests" })).toBeVisible();

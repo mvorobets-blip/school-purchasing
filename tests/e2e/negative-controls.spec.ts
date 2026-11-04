@@ -6,7 +6,7 @@
 //   NC-1 — у тесті навмисно інший текст «Тоді» → перевірка падає → FAIL (R1), хоч би що сказав агент;
 //   NC-2 — текст «Тоді» у «вимозі» змінено (анотація ac-text), а тест і застосунок — ні → перевірки зелені, агент
 //          звіряє кадр із НОВИМ текстом і не погоджується → NEEDS-HUMAN (R3).
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
 test.use({ storageState: "playwright/.auth/requester2.json" });
@@ -14,6 +14,15 @@ test.use({ storageState: "playwright/.auth/requester2.json" });
 const CLAUSE = "він бачить повідомлення «Ви ще не подали жодної заявки», а списку заявок немає.";
 const NO_REQUESTS = "You have not submitted any requests yet";
 const WRONG_MESSAGE = "You have no requests yet";
+
+// Те саме, що в AC-FRM-14 (tests/e2e/purchase.spec.ts): «Дано» перевіряє тест, «списку немає» — у hidden. NC від
+// справжнього тесту відрізняються рівно одним навмисним місцем (NC-1 — текст у твердженні, NC-2 — ac-text).
+const HIDDEN = ["списку заявок немає: жодного рядка заявки (data-testid=\"request-row\") і таблиці «my-requests»"];
+const givenNoRequests = (page: Page) =>
+  given("працівник 3 без жодної поданої заявки", async () => {
+    await page.goto("/");
+    await expect(page.getByRole("main").getByTestId("no-requests")).toHaveText(NO_REQUESTS);
+  });
 
 test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
@@ -27,13 +36,17 @@ test(
     ],
   },
   async ({ page }) => {
-    await given("працівник 3 без жодної поданої заявки", async () => {});
+    await givenNoRequests(page);
     await when("він відкриває сторінку «Мої заявки»", async () => {
       await page.goto("/requests");
     });
-    await thenStep(page, { clause: CLAUSE, visible: [`повідомлення «${NO_REQUESTS}»`, "списку заявок немає"] }, async () => {
-      await expect(page.getByTestId("no-requests")).toHaveText(WRONG_MESSAGE, { timeout: 5_000 });
-    });
+    await thenStep(
+      page,
+      { clause: CLAUSE, visible: ["заголовок «My requests»", `повідомлення «${NO_REQUESTS}»`], hidden: HIDDEN },
+      async () => {
+        await expect(page.getByTestId("no-requests")).toHaveText(WRONG_MESSAGE, { timeout: 5_000 });
+      },
+    );
   },
 );
 
@@ -52,13 +65,17 @@ test(
     ],
   },
   async ({ page }) => {
-    await given("працівник 3 без жодної поданої заявки", async () => {});
+    await givenNoRequests(page);
     await when("він відкриває сторінку «Мої заявки»", async () => {
       await page.goto("/requests");
     });
     await thenStep(
       page,
-      { clause: CLAUSE, visible: [`повідомлення «${NO_REQUESTS}»`, "кнопку «Create your first request»", "списку заявок немає"] },
+      {
+        clause: CLAUSE,
+        visible: ["заголовок «My requests»", `повідомлення «${NO_REQUESTS}»`, "кнопку «Create your first request»"],
+        hidden: HIDDEN,
+      },
       async () => {
         await expect(page.getByTestId("no-requests")).toHaveText(NO_REQUESTS);
         await expect(page.getByTestId("my-requests")).toHaveCount(0);

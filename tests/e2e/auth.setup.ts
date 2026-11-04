@@ -7,12 +7,14 @@
 //   UAT_PASSWORD_<РОЛЬ>          — необов'язково: окремий пароль для ролі, напр. UAT_PASSWORD_ADMIN.
 //
 // Джерело: демо-репо курсу, tests/e2e/auth.setup.ts (тег ws8-03-uat). ROLES — наші акаунти на проді (D0.5, accounts.zip)
-// для 3 AC WS8: requester — працівник 1 (автор заявки, AC-FRM-08; AC-FRM-15); requester2 — працівник 2/3 того самого
-// відділу, не схвалювач і без поданих заявок (AC-FRM-08, AC-FRM-14). Обидва з supabase/demo-users.json.
+// для 3 AC WS8 (як у прийманні PM 03.11): author — працівник 1, автор заявки «Primary School» (AC-FRM-08);
+// requester — заявник «Primary School», не автор і не схвалювач (працівник 2 в AC-FRM-08; працівник 1 в AC-FRM-15);
+// requester2 — працівник 3 без поданих заявок (AC-FRM-14). Усі з supabase/demo-users.json.
 import { expect, test as setup } from "@playwright/test";
 import { signIn } from "./support/uat";
 
 const ROLES = {
+  author: "member1@example.test",
   requester: "pm-requester@example.test",
   requester2: "member2@example.test",
 } as const;

@@ -1,0 +1,133 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-04T11:23:43.940Z",
+  "baseURL": "https://therapy-scheduling-ten.vercel.app",
+  "deployedSha": "60024f58095f3de89540e1a49fdfb786c389100b",
+  "testsCommit": "018df393fce418fddba9740a6ad075fed0ab4238",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-FRM-08",
+      "proof": "AC-FRM-08",
+      "title": "AC-FRM-08: заявник того ж відділу відкриває чужу закупівлю за прямим посиланням — «Not enough permissions», даних не показано, статус не змінився",
+      "screenshot": "docs/qa/uat/2026-11-04/frames/AC-FRM-08-then-1.png",
+      "video": "test-results/artifacts/purchase-працівник-2-pm-re-75e54-показано-статус-не-змінився-chromium/video.webm",
+      "trace": "test-results/artifacts/purchase-працівник-2-pm-re-75e54-показано-статус-не-змінився-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі видно лише картку з іконкою замка, заголовком «Not enough permissions», поясненням і кнопкою «Back to my requests». Рядків закупівлі, суми чи автора на сторінці немає."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "FAIL",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Not enough permissions",
+          "onPage": true
+        },
+        {
+          "quote": "You can open your own requests and requests of departments you approve.",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 7273,
+      "reviewCostUsd": 0.03257,
+      "reviewWallMs": 15334
+    },
+    {
+      "id": "AC-FRM-14",
+      "proof": "AC-FRM-14",
+      "title": "AC-FRM-14: працівник без жодної поданої заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
+      "screenshot": "docs/qa/uat/2026-11-04/frames/AC-FRM-14-then-1.png",
+      "video": "test-results/artifacts/purchase-працівник-3-membe-b1424--requests-yet»-списку-немає-chromium/video.webm",
+      "trace": "test-results/artifacts/purchase-працівник-3-membe-b1424--requests-yet»-списку-немає-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінка /requests із заголовком «My requests» і порожнім станом «You have not submitted any requests yet»; таблиці чи рядків заявок не видно. У нижньому лівому куті показано «Maria Demo - second» (member2@example.test); чи це «працівник 3», з кадру не визначити, але це не входить до перелічених частин «Тоді»."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "My requests",
+          "onPage": true
+        },
+        {
+          "quote": "You have not submitted any requests yet",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 3348,
+      "reviewCostUsd": 0.03335,
+      "reviewWallMs": 20192
+    },
+    {
+      "id": "AC-FRM-15",
+      "proof": "AC-FRM-15",
+      "title": "AC-FRM-15: рядок лише з назвою «Папір А4» — «Fill in all line fields», закупівлю не подано",
+      "screenshot": "docs/qa/uat/2026-11-04/frames/AC-FRM-15-then-1.png",
+      "video": "test-results/artifacts/purchase-працівник-1-pm-re-000b0-fields»-закупівлю-не-подано-chromium/video.webm",
+      "trace": "test-results/artifacts/purchase-працівник-1-pm-re-000b0-fields»-закупівлю-не-подано-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі над формою червоним написано «Fill in all line fields». Форма «New purchase» лишається відкритою, у полі Item стоїть «Папір А4», а поля Purpose, Quantity і Price порожні та підсвічені червоним."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "FAIL",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Fill in all line fields",
+          "onPage": true
+        },
+        {
+          "quote": "New purchase",
+          "onPage": true
+        },
+        {
+          "quote": "Папір А4",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 10354,
+      "reviewCostUsd": 0.03141,
+      "reviewWallMs": 14495
+    }
+  ],
+  "negativeControls": [],
+  "cleanup": {
+    "at": "2026-11-04T11:23:22.116Z",
+    "deleted": [],
+    "remaining": [],
+    "leftoverRequests": 0
+  }
+}
