@@ -10,7 +10,7 @@
 
 - Прод-URL: https://therapy-scheduling-ten.vercel.app
 - Вимоги: https://github.com/ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-02
-- `/api/health` на момент UAT: sha `152825c`, db ok, env production, 03.11.2026
+- `/api/health` на момент фінального UAT (04.11.2026, 13:22): sha `60024f5`, db ok, env production; на момент UAT 03.11 — `152825c`; актуальний — https://therapy-scheduling-ten.vercel.app/api/health
 
 ## 3 AC
 
@@ -207,16 +207,21 @@ Stryker 10.1.1, `npm run mutation:ts -- --mutate src/lib/purchase/form.ts` (ко
 
 ## D. Eval рецензента
 
-- PR з вадами (не злитий): <!-- …/pull/N -->
-- Ключ і таблиця: <!-- …/pull/N#issuecomment-M -->
+- PR з вадами (не злитий, закритий): https://github.com/mvorobets-blip/school-purchasing/pull/47 — гілка `task/refactor-purchase-helpers`, нейтральні назва, коміти й опис; ключ лежав поза репо до завершення обох рев'ю.
+- Ключ і таблиця: https://github.com/mvorobets-blip/school-purchasing/pull/47#issuecomment-6628253643
+- Рецензенти: CodeRabbit (профіль ASSERTIVE, `.coderabbit.yaml`, рев'ю на `21f8f96`) і `/code-review high 47` (без інтерактиву за gates-guide, `--setting-sources project`; модель **`claude-opus-5-5`**, 48 с, $0.48).
 
 | # | Вада (ключ) | CodeRabbit | `/code-review high` |
 |---|---|---|---|
-| 1 | <!-- категорія і файл:рядок --> | <!-- знайшов / пропустив + цитата --> | <!-- знайшов / пропустив + цитата --> |
-| 2 | … | … | … |
-| 3 | … | … | … |
-| П | приманка: <!-- що --> | <!-- хибна тривога? цитата --> | <!-- хибна тривога? цитата --> |
+| 1 | права в даних: `private.is_approver_of` — `security definer` **без** `set search_path = ''` ([`…_purchase_helpers.sql:17–29`](https://github.com/mvorobets-blip/school-purchasing/blob/21f8f96/supabase/migrations/20261104085250_purchase_helpers.sql#L17-L29), лише в PR #47) | **знайшов** (Minor): «Restore `set search_path = ''` on `private.is_approver_of`… the PR removes an existing hardening setting» | **знайшов**: «recreates private.is_approver_of as a security definer function but drops `set search_path = ''`» |
+| 2 | тести: AC-FRM-08 — перевірка рядків з `[MEMBER_2]` замість `[id]`, завжди порожньо ([`tests/db/purchase.test.ts:141`](https://github.com/mvorobets-blip/school-purchasing/blob/21f8f96/tests/db/purchase.test.ts#L141), PR #47) | **знайшов** (Minor): «параметр `request_id` тепер дорівнює `MEMBER_2`, а не `id` заявки… тест не покриває витік рядків» | **знайшов**: «binds MEMBER_2 (a profile UUID) as request_id… always returns 0 rows and no longer checks anything» |
+| 3 | авторизація в дії: `createDepartment` — перевірка ролі **після** `insert` у `departments` ([`actions.ts:23`, `:31–32`](https://github.com/mvorobets-blip/school-purchasing/blob/21f8f96/src/app/(portal)/admin/departments/actions.ts#L23-L32), PR #47) | **частково** (Minor): помітив як порядок повідомлень і применшив — «Дані не під загрозою: RLS-політика `departments_insert_admin` відхиляє вставку» | **знайшов**: «runs the authorization check… after the insert into departments, so the write happens before the action confirms the caller is an admin» |
+| П | приманка: `private.is_active_user()` перевизначено без змін — `security definer` із `set search_path = ''`, правильні `revoke`/`grant` ([`…_purchase_helpers.sql:4–15`](https://github.com/mvorobets-blip/school-purchasing/blob/21f8f96/supabase/migrations/20261104085250_purchase_helpers.sql#L4-L15)) | хибної тривоги немає (коментаря немає) | хибної тривоги немає; лише слушне «the migration is a no-op» для цієї частини |
 
-- Інші знахідки: <!-- слушна / шум, по рядку на кожну -->
-- Правило, що закриває пропуск: <!-- рядок в AGENTS.md чи path instruction, …/commit/<sha> -->
-- Повторний прогін: <!-- хто, результат, цитата, …/pull/N#issuecomment-M -->
+- Інші знахідки: `/code-review` — тест AC-ORG-09 перевіряє лише повідомлення, а не «запису не було» (`tests/org/create-department.test.ts:38`) — **слушна**, виправлено на `main` у PR #52 (`expect(insert).not.toHaveBeenCalled()`; на ваді 3 тест червоний); не-адміністратор бачить помилку назви замість «Not enough permissions» (`actions.ts:18–19`) — **шум за нашим правилом**: «розбір і перевірка полів форми можуть іти раніше». CodeRabbit — інших немає. Ворота: першу версію вади 2 («видалене твердження») спіймав `fallow audit` (`weakened-tests (assertion-drop) [error]`) — її замінили, бо вада для eval має пройти CI.
+- Правило, що закриває пропуск: `AGENTS.md` — «Перевірка прав після запису — помилка рівня «must fix», навіть якщо RLS відхилить запис: RLS — другий рубіж, а не причина послабити перший; рецензент не применшує її до «порядку повідомлень»»; `.coderabbit.yaml`, `path_instructions` для `src/**` — «перевірка після запису — «must fix» (Critical), навіть якщо RLS відхилить запис» — https://github.com/mvorobets-blip/school-purchasing/pull/50 (злито як https://github.com/mvorobets-blip/school-purchasing/commit/60024f5). Перед злиттям — `/code-review high 50`: уточнено винятки (вхід/вихід, права з даних у функції бази), https://github.com/mvorobets-blip/school-purchasing/pull/50#issuecomment-6628312066.
+- Повторний прогін (після `git merge main`, `09c5c2a`): https://github.com/mvorobets-blip/school-purchasing/pull/47#issuecomment-6629867295. CodeRabbit (`full review`) — ваду 3 тепер названо **«регресією безпеки даних»**: «`supabase.from("departments").insert({ name })` виконується на рядках 22–23 до `getCurrentUser()` і `canAccessSettings()`» (pre-merge check, Warning; нових inline немає — треди на тих самих рядках уже відкриті). `/code-review` — знайшов і послався на правило: «AGENTS.md lists this exact case as must-fix». **Висновок — пропуск закрито частково:** CodeRabbit більше не применшує запис до перевірки «через RLS» і називає його регресією безпеки даних, але вага — Warning у pre-merge checks, а не «Critical», якого вимагає `path_instructions`; повторного inline-коментаря на рядку з відкритим тредом він не створює.
+
+## Бонус
+
+- UAT у CI (`.github/workflows/e2e.yml`, той самий Playwright на одноразовому Supabase в раннері, дані — `npm run e2e:fixtures`, лише localhost): https://github.com/mvorobets-blip/school-purchasing/pull/51 (продовження https://github.com/mvorobets-blip/school-purchasing/pull/49). Зелений прогін `workflow_dispatch` на `main` (`b19a894`): https://github.com/mvorobets-blip/school-purchasing/actions/runs/41822262360 — 7 тестів (3 входи, AC-FRM-08/14/15, прибирання), артефакт `e2e-41822262360-1`.
