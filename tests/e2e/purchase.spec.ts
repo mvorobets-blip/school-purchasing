@@ -70,19 +70,18 @@ test.describe("працівник 2 (pm-requester@example.test)", () => {
           "працівник 1 подав закупівлю у відділ «Початкова школа», а працівник 2 — заявник того ж відділу, не автор і не схвалювач",
           async () => {
             href = await pendingRequestOf(author);
-            // Працівник 2 — заявник «Початкової школи»: у формі подання є лише відділи, де він заявник (AC-FRM-01).
-            await page.goto("/requests/new");
-            await page.getByTestId("purchase-department").click();
+            // Працівник 2 — заявник «Початкової школи», не схвалювач цього відділу: у «My profile» — таблиця відділів
+            // з роллю в кожному («Requester» / «Requester and approver»). Схвалювачем іншого відділу бути може — AC про цей.
+            await page.goto("/profile");
+            const membership = page.getByTestId("profile-departments").getByRole("row").filter({ hasText: DEPARTMENT });
             await expect(
-              page.getByRole("option", { name: DEPARTMENT }),
+              membership,
               `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test має бути заявником відділу «${DEPARTMENT}»`,
-            ).toBeVisible();
-            await page.keyboard.press("Escape");
-            // Не схвалювач жодного відділу: пункту «Awaiting decision» у бічній панелі немає.
+            ).toHaveCount(1);
             await expect(
-              page.getByRole("link", { name: /Awaiting decision/ }),
-              "ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test не має бути схвалювачем",
-            ).toHaveCount(0);
+              membership,
+              `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test не має бути схвалювачем відділу «${DEPARTMENT}»`,
+            ).not.toContainText("approver");
           },
         );
 
