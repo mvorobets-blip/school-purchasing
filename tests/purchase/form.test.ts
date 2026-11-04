@@ -75,6 +75,18 @@ describe("рядки з форми", () => {
   it("частково заповнений рядок лишається — його відхилить база", () => {
     expect(parseLines(fd({ "name.1": "Папір А4", "purpose.1": "", "quantity.1": "", "price.1": "" }))).toHaveLength(1);
   });
+
+  it("AC-FRM-15: рядок лише з назвою «Папір А4» без полів мети, кількості й ціни — лишається, порожні мета, кількість і ціна", () => {
+    const lines = parseLines(fd({ "name.1": "Папір А4" }));
+    expect(lines).toEqual([{ name: "Папір А4", purpose: "", quantity: "", price: "" }]);
+    expect(lines.map(emptyLineFields)).toEqual([["purpose", "quantity", "price"]]);
+  });
+
+  it("AC-FRM-15: рядок лише з назвою «Папір А4» і пробілами в меті, кількості й ціні — ці поля порожні", () => {
+    const lines = parseLines(fd({ "name.1": "Папір А4", "purpose.1": "  ", "quantity.1": " ", "price.1": "\t" }));
+    expect(lines).toEqual([{ name: "Папір А4", purpose: "", quantity: "", price: "" }]);
+    expect(lines.map(emptyLineFields)).toEqual([["purpose", "quantity", "price"]]);
+  });
 });
 
 describe("поведінка форми закупівлі", () => {

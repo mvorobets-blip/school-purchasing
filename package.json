@@ -26,7 +26,9 @@
     "test:e2e": "playwright test",
     "uat": "node scripts/uat/run.mjs",
     "uat:nc": "node scripts/uat/run.mjs --negative-controls",
-    "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs"
+    "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs",
+    "mutation:ts": "stryker run",
+    "mutation:sql": "node scripts/mutation-check.mjs --kind sql"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
@@ -44,6 +46,8 @@
     "@electric-sql/pglite": "0.5.8",
     "@fission-ai/openspec": "1.14.1",
     "@playwright/test": "1.64.1",
+    "@stryker-mutator/core": "10.1.1",
+    "@stryker-mutator/vitest-runner": "10.1.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24",
     "@types/react": "^19",

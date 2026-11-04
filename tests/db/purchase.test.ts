@@ -121,6 +121,29 @@ describe("подання закупівлі (база)", () => {
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
+  it("AC-FRM-15: рядок, де не заповнено одне з полів — назву, мету, кількість чи ціну (зокрема лише пробіли), не подано, нової заявки немає", async () => {
+    // Кожен рядок: одне поле відсутнє, порожнє чи з самих пробілів, решта три — заповнені коректно.
+    // «Лише пробіли» = «не заповнено» — наше прочитання вимоги (spec.md:84), а не слова PM.
+    const { name, purpose, quantity, price } = LINE[0];
+    const incompleteLines = [
+      { purpose, quantity, price },
+      { name: "", purpose, quantity, price },
+      { name: "   ", purpose, quantity, price },
+      { name, quantity, price },
+      { name, purpose: "", quantity, price },
+      { name, purpose: "   ", quantity, price },
+      { name, purpose, price },
+      { name, purpose, quantity: "", price },
+      { name, purpose, quantity },
+      { name, purpose, quantity, price: "" },
+    ];
+    for (const line of incompleteLines) {
+      const before = await pendingCountOf(MEMBER_1);
+      await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", [line])).rejects.toThrow(/INVALID_LINE/);
+      expect(await pendingCountOf(MEMBER_1)).toBe(before);
+    }
+  });
+
   it("AC-FRM-07: подана закупівля має статус «Очікує схвалення»", async () => {
     const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", LINE);
     const [row] = await t.asService<{ status: string; author_id: string }>(
