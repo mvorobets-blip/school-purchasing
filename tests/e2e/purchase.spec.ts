@@ -39,7 +39,7 @@ async function pendingRequestOf(page: Page): Promise<string> {
   // Акаунти спільні з PM: якщо PM вирішила останню таку заявку, падає «Дано» — це брак даних на проді, а не вада застосунку.
   await expect(
     row,
-    `ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08) — подайте її під pm-requester@example.test і повторіть прогін`,
+    `ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у працівника 1 має бути заявка «${AWAITING}» у відділі «${DEPARTMENT}» (Дано AC-FRM-08) — подайте її під member1@example.test і повторіть прогін`,
   ).toBeVisible();
   const href = await row.getByRole("link").first().getAttribute("href");
   expect(href).toMatch(/^\/requests\/[0-9a-f-]{36}$/);
@@ -73,15 +73,20 @@ test.describe("працівник 2 (pm-requester@example.test)", () => {
             // Працівник 2 — заявник «Початкової школи», не схвалювач цього відділу: у «My profile» — таблиця відділів
             // з роллю в кожному («Requester» / «Requester and approver»). Схвалювачем іншого відділу бути може — AC про цей.
             await page.goto("/profile");
-            const membership = page.getByTestId("profile-departments").getByRole("row").filter({ hasText: DEPARTMENT });
+            // Рядок — за точною назвою в клітинці відділу (не підрядок рядка: «Primary School Library» не підійде);
+            // роль — точний текст другої клітинки, а не «немає слова approver».
+            const membership = page
+              .getByTestId("profile-departments")
+              .getByRole("row")
+              .filter({ has: page.getByRole("cell", { name: DEPARTMENT, exact: true }) });
             await expect(
               membership,
               `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test має бути заявником відділу «${DEPARTMENT}»`,
             ).toHaveCount(1);
             await expect(
-              membership,
-              `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test не має бути схвалювачем відділу «${DEPARTMENT}»`,
-            ).not.toContainText("approver");
+              membership.getByRole("cell").nth(1),
+              `ПЕРЕДУМОВА НА ПРОДІ: pm-requester@example.test — лише заявник відділу «${DEPARTMENT}», не схвалювач`,
+            ).toHaveText("Requester");
           },
         );
 
@@ -127,14 +132,14 @@ test.describe("працівник 3 (member2@example.test)", () => {
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-14" } },
     async ({ page }) => {
       // Передумову перевіряємо на іншій сторінці, ніж «Тоді»: головна сама рахує власні заявки (src/app/(portal)/page.tsx);
-      // без жодної — порожній стан замість карток-лічильників.
+      // без жодної — порожній стан замість карток-лічильників. Це той самий доступ до даних (RLS, author_id), лише інший
+      // запит і сторінка: повністю незалежну перевірку дав би лише секретний ключ, якого UAT не має.
       await given("працівник 3 без жодної поданої заявки", async () => {
         await page.goto("/");
         await expect(
           page.getByRole("main").getByTestId("no-requests"),
-          "ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у member2@example.test не має бути поданих заявок",
+          "ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: member2@example.test — звичайний заявник (не схвалювач, не адміністратор, є відділ) без поданих заявок; інакше головна показує інший стан",
         ).toHaveText(NO_REQUESTS);
-        await expect(page.getByTestId("stat-pending")).toHaveCount(0);
       });
 
       await when("він відкриває сторінку «Мої заявки»", async () => {
