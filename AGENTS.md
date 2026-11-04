@@ -135,6 +135,9 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
   репозиторію `koldovsky/2026-quitcode-06-leave-portal-demo`): `security invoker`, або `security definer` лише в
   схемі `private` з `set search_path = ''`.
 - Авторизація на сервері — `supabase.auth.getClaims()`, ніколи `getSession()` (ADR 0003; CI: `npm run check:auth`).
+- У Server Actions і Route Handlers перевірка прав (`getCurrentUser()` і роль з `profiles`) — перша дія, до будь-якого
+  запису чи `rpc`. Перевірка після запису — помилка рівня «must fix», навіть якщо RLS відхилить запис: RLS — другий
+  рубіж, а не причина послабити перший; рецензент не применшує її до «порядку повідомлень».
 
 ## Дизайн-система
 - Правила вигляду — DESIGN.md. Кольори — лише семантичні утиліти з токенів (bg-primary, text-muted-foreground,
