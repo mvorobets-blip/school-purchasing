@@ -26,9 +26,9 @@
 
 ## A. Ворота
 
-- PR воріт: <!-- …/pull/N -->
-- Зелений `quality` на `main`: <!-- …/actions/runs/N -->
-- Обов'язкові перевірки в `solo-main` з <!-- дата -->: <!-- назви jobs -->
+- PR воріт: https://github.com/mvorobets-blip/school-purchasing/pull/43 (перед ним — виправлення знахідок тестових правил лінтера, https://github.com/mvorobets-blip/school-purchasing/pull/42)
+- Зелений `quality` на `main`: https://github.com/mvorobets-blip/school-purchasing/actions/runs/41613511963 (коміт `152825c`: «Ворота: fallow audit», «Покриття: доменна підлога», «Порада: вразливі залежності» — success)
+- Обов'язкові перевірки в `solo-main` з 03.11.2026: «Ворота: fallow audit», «Покриття: доменна підлога» («Порада: вразливі залежності» — не обов'язкова, як вимагає курс)
 
 Розбір першого повного прогону `fallow` (той самий — в описі PR воріт):
 
@@ -59,26 +59,111 @@
 
 ### Рівень для кожного AC
 
+Посилання в цій таблиці закріплено на `152825c` — стан тестів **до** кроків 4.3–4.4 (тоді AC-FRM-08 —
+`purchase.test.ts:138`). Нижче (покриття, мутації) номери рядків — поточні, після нових тестів: AC-FRM-08 — `:161`,
+AC-FRM-15 — `:116` і `:124`.
+
 | AC | Де живе правило | Рівень | Чому | Тест |
 |---|---|---|---|---|
-| AC-…-NN | <!-- політика / функція бази / TS-модуль / сторінка --> | <!-- unit / база (PGlite) / e2e --> | … | <!-- …/blob/<sha>/tests/…#L<N> --> |
+| AC-FRM-08 | **база:** політика RLS `purchase_requests_select_visible` ([міграція :82](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/supabase/migrations/20261025184732_purchase_requests.sql#L82)) — заявку бачать лише автор, схвалювач її відділу й адміністратор; без `grant update` для `authenticated`. **Сторінка:** `src/app/(portal)/requests/[id]/page.tsx` — порожня відповідь бази → «Not enough permissions» | **база (PGlite)** + SQL-мутант; **e2e/UAT** — текст на екрані | відмову «X не бачить чужого» тримає RLS: її доводить лише справжній SQL (`asUser` + `asService` «статус не змінився»); TS-копія чи мок лишаються зеленими без правила. Дослівний текст на екрані — UAT | [tests/db/purchase.test.ts:138](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/tests/db/purchase.test.ts#L138) — справжня база: `MEMBER_2` не бачить заявки й рядків, `update` — `permission denied`, статус `pending`. [tests/purchase/request-page.test.tsx:78](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/tests/purchase/request-page.test.tsx#L78) — **мок відповіді бази** (`request = null`): доводить лише реакцію сторінки на порожню відповідь, **відмову не доводить** — як доказ AC не зараховуємо |
+| AC-FRM-14 | **сторінка:** `src/app/(portal)/requests/page.tsx` — порожній стан `NO_REQUESTS` («You have not submitted any requests yet») і без таблиці, коли власних заявок 0 (фільтр `author_id` + RLS) | **e2e/UAT** (текст і стан екрана); тест сторінки — додатково | «Тоді» — дослівний текст і відсутність списку на екрані: доводить запис з проду. Правила в SQL чи TS-модулі тут немає — вибір рівня визначає сторінка | [tests/purchase/my-requests-page.test.tsx:116](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/tests/purchase/my-requests-page.test.tsx#L116) — рендер справжньої сторінки (`renderToStaticMarkup`) з моком клієнта Supabase: текст PM і `data-testid="no-requests"` є, таблиці `my-requests` немає. Специфікація UAT — крок 5 |
+| AC-FRM-15 | **правило двічі:** SQL `private.submit_purchase` — порожнє поле рядка → `INVALID_LINE` (жива версія функції — [міграція 20261027132703 :43–47](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/supabase/migrations/20261027132703_submit_purchase_rounded_price_limit.sql#L43)); **TS:** `parseLines` лишає частково заповнений рядок (не «губить» його), `emptyLineFields` позначає порожні поля ([src/lib/purchase/form.ts:37, :66](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/src/lib/purchase/form.ts#L37)); дія `submitPurchase` перекладає `INVALID_LINE` у «Fill in all line fields» | **обидва:** база (PGlite) + SQL-мутант; unit (TS) + Stryker; e2e/UAT — текст | кожен шар може втратити правило окремо: база — останній рубіж, TS — повідомлення й позначка полів | [tests/db/purchase.test.ts:116](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/tests/db/purchase.test.ts#L116) — справжня база: рядок лише з назвою → `INVALID_LINE`, нової заявки немає (на `152825c` перевіряв лише рядок «є назва, решти немає», тож мутанти, що прибирають перевірку одного поля, вижили — S5–S9 у «SQL-мутаціях» нижче; посилено тестом `tests/db/purchase.test.ts:124`, тепер усі 11 SQL-мутантів убито). [tests/purchase/form.test.ts:90](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/tests/purchase/form.test.ts#L90) — `emptyLineFields` (без AC ID). [tests/purchase/submit-purchase.test.ts:64](https://github.com/mvorobets-blip/school-purchasing/blob/152825cf6352761066d290eb08b5640928088d0a/tests/purchase/submit-purchase.test.ts#L64) — **мок `rpc`** з `INVALID_LINE`: доводить лише переклад відповіді в текст, **правило не доводить** — як доказ відмови не зараховуємо |
 
 ### Покриття
 
-| Файл за AC | Рядки | Гілки | Чим доведено, якщо 0 % |
-|---|---|---|---|
-| <!-- src/lib/<модуль>.ts --> | … % | … % | — |
-| <!-- src/app/<сторінка>/page.tsx --> | 0 % | 0 % | <!-- e2e: tests/e2e/….spec.ts --> |
+`npm run test:coverage` на гілці `task/test-quality`: код = `main` [`4b4cc2b`](https://github.com/mvorobets-blip/school-purchasing/commit/4b4cc2b), змінено лише `docs/qa/proof-pack.md`; цифри з `coverage/coverage-summary.json` (збігаються з `coverage/index.html`). Разом по
+репо: інструкції 51,79 % (419/809), гілки 46,73 % (329/704), функції 44,78 % (116/259), рядки 53,69 % (356/663).
+Після тестів кроків 4.3–4.4 (+17 тестів: 16 на `form.ts`, 1 тест бази — SQL Vitest-покриття не бачить): гілки 47,01 % (331/704), решта без змін — як і в демо, нові тести
+вбивають мутантів, а покриття рядків не зростає.
+
+| Файл за AC | AC | Інструкції | Рядки | Гілки | Функції | Чим доведено те, чого покриття не бачить |
+|---|---|---|---|---|---|---|
+| `src/lib/purchase/form.ts` | AC-FRM-15 | 100 % (50/50) | 100 % (40/40) | 95,65 % (44/46) → **100 % (46/46)** після тестів кроку 4.3 | 100 % (24/24) | unit-тести `tests/purchase/form.test.ts:75, :79, :85` (`parseLines` лишає рядок лише з назвою) і `:101` (`emptyLineFields`); що вони ловлять зміни правила — Stryker нижче («Доказ мутацією») |
+| `src/lib/org/messages.ts` | AC-FRM-08, 14, 15 | 100 % (2/2) | 100 % (2/2) | — (0/0) | 100 % (1/1) | константи текстів PM («Not enough permissions», «You have not submitted any requests yet», «Fill in all line fields»); що саме ці тексти видно на екрані — UAT (усі 3 AC — PASS) |
+| `src/components/portal/forbidden-card.tsx` | AC-FRM-08 | 100 % (1/1) | 100 % (1/1) | — (0/0) | 100 % (1/1) | картка відмови; вигляд і текст на екрані — UAT (AC-FRM-08, PASS) |
+| `src/app/(portal)/requests/new/page.tsx` | AC-FRM-15 | 83,33 % (10/12) | 81,81 % (9/11) | 88,88 % (8/9) | 66,66 % (2/3) | сторінка, що відкриває форму; форма з повідомленням на проді — UAT (AC-FRM-15, PASS) |
+| `src/app/(portal)/requests/actions.ts` (`submitPurchase`) | AC-FRM-15 | 92,59 % (25/27) | 94,73 % (18/19) | 81,81 % (18/22) | 100 % (2/2) | покрито тестом з **моком `rpc`**: рядки виконано, але правило `INVALID_LINE` тут не живе — його доводить тест бази `tests/db/purchase.test.ts:116` і SQL-мутанти (S4–S9, див. «SQL-мутації») |
+| `src/app/(portal)/requests/new/purchase-form.tsx` | AC-FRM-15 | 51,02 % (25/49) | 60 % (24/40) | 49,05 % (26/53) | 28,57 % (6/21) | дослівний текст «Fill in all line fields» над формою й форма з «Папір А4» — UAT `tests/e2e/purchase.spec.ts` (AC-FRM-15, PASS 03.11) |
+| `src/app/(portal)/requests/[id]/page.tsx` | AC-FRM-08 | 88 % (22/25) | 100 % (20/20) | 75 % (21/28) | 100 % (2/2) | покрито тестом сторінки з **моком відповіді бази** (`request = null`) — відмову не доводить; відмову доводить RLS-тест бази `tests/db/purchase.test.ts:161` і SQL-мутанти S1–S3, S10, S11 (див. «SQL-мутації»), текст на екрані — UAT (AC-FRM-08, PASS) |
+| `src/app/(portal)/requests/page.tsx` | AC-FRM-14 | 86,95 % (20/23) | 100 % (18/18) | 70 % (14/20) | 100 % (4/4) | тест сторінки з моком клієнта Supabase + UAT на проді (AC-FRM-14, PASS) |
+| `supabase/migrations/*.sql` (RLS `purchase_requests_select_visible`, `private.submit_purchase`) | AC-FRM-08, AC-FRM-15 | — | — | — | — | Vitest-покриття SQL не бачить: доводять тести бази `tests/db/purchase.test.ts:116, :124, :161` (PGlite, справжні міграції) і SQL-мутанти S1–S11 (11 з 11 убито, див. «SQL-мутації») |
+
+Файлів з 0 % серед перелічених немає. На шляху всіх трьох AC є ще `src/lib/supabase/server.ts` — 0 % (0/6 рядків):
+тести сторінок і дії підміняють клієнт Supabase моком, а справжній клієнт працює лише на проді — його доводить UAT. Високі цифри сторінок і дії — від тестів з моком бази: рядки виконано, але
+відмову за правами й `INVALID_LINE` вони не доводять (див. «Рівень для кожного AC»).
 
 ### Доказ мутацією
 
+Stryker запускали лише на AC-FRM-15 (`src/lib/purchase/form.ts`). На AC-FRM-08 і AC-FRM-14 — ні: їхні правила не в
+`src/lib` — RLS-політика `purchase_requests_select_visible` (FRM-08) і сторінка `src/app/(portal)/requests/page.tsx`
+(FRM-14); їх доводять тест бази з SQL-мутантом (крок 4.4) і UAT на проді.
+
+Stryker 10.1.1, `npm run mutation:ts -- --mutate src/lib/purchase/form.ts` (конфіги курсу `stryker.config.json`,
+`vitest.stryker.config.mts` без змін). Вижилі **на рядках AC-FRM-15** (`parseLines`, `emptyLineFields`); тест посилено
+окремою сесією агента промптом P03 — з тексту AC, спершу червоний на кожному мутанті, потім зелений:
+
 | Мутант (файл:рядок, що змінено) | AC під загрозою | До | Тест, посилений з тексту AC | Після |
 |---|---|---|---|---|
-| <!-- src/lib/…/x.ts:14 `<=` → `<` --> | AC-…-NN | вижив | <!-- …/blob/<sha>/tests/…#L<N>: межа «…» з AC --> | убитий |
+| `form.ts:47` мета `?? ""` → `?? "Stryker was here!"` | AC-FRM-15 | вижив | `tests/purchase/form.test.ts:79` — рядок «лише з назвою «Папір А4»», полів мети, кількості й ціни у формі немає → вони порожні, підсвітити треба саме мету, кількість і ціну | убитий |
+| `form.ts:48` кількість `?? ""` → `?? "Stryker was here!"` | AC-FRM-15 | вижив | те саме, `:79` | убитий |
+| `form.ts:49` ціна `?? ""` → `?? "Stryker was here!"` | AC-FRM-15 | вижив | те саме, `:79` | убитий |
+| `form.ts:47` мета без `.trim()` | AC-FRM-15 | вижив | `tests/purchase/form.test.ts:85` — той самий рядок, у меті, кількості й ціні лише пробіли → «без мети, кількості й ціни» | убитий |
+| `form.ts:48` кількість без `.trim()` | AC-FRM-15 | вижив | те саме, `:85` | убитий |
+| `form.ts:49` ціна без `.trim()` | AC-FRM-15 | вижив | те саме, `:85` | убитий |
 
-- Stryker: <!-- score до → після, посилання на PR з виводом -->
-- SQL-мутації (`npm run mutation:sql`): <!-- таблиця з npm run mutation:sql -- --markdown (KILLED / SURVIVED / ERROR) з PR або «немає PGlite-гарнесу» -->
-- Еквівалентні мутанти: <!-- який і чому (рядок міграції чи коду, що робить його еквівалентним) або «немає» -->
+Ці unit-тести доводять TS-частину AC-FRM-15: рядок лише з назвою не губиться, а мета, кількість і ціна — порожні й
+позначені. Самі «Тоді» — повідомлення «Fill in all line fields» і «закупівлю не подано» — доводять тест бази
+`tests/db/purchase.test.ts:116` (`INVALID_LINE`, нової заявки немає) і UAT на проді.
+
+Поза межами AC (понад вимоги кроку): ще 15 мутантів на рядках без AC — 14 вижилих і 1 без покриття — убито **регресійними тестами без AC ID**
+(`tests/purchase/form-regression.test.ts`, окрема сесія агента; кожен спершу червоний на своєму мутанті):
+- `form.ts:40` `\d+` → `\d` (рядок з номером 10+ губився) — `:39`; `:43–44` сортування (×3) — `:44`; `:46` назва без `.trim()` і `?? ""` — `:29`, `:34`;
+- `form.ts:67` `emptyLineFields` без `.trim()` (рядок лише з пробілів) — `:59`;
+- `form.ts:93` `hasTooLongLine`: `some` → `every`, `>` → `>=` (межа 200 символів Unicode) — `:67`, `:73`, `:79`;
+- `form.ts:96` `isTextLengthError` (×4: `?.`, `true`, `||`, код) — `:88`, `:92`, `:97`, `:102`;
+- `form.ts:107` кількість без `.trim()` — `:109`; `form.ts:110` `<` → `<=` `PRICE_LIMIT` — `:113`.
+
+- Stryker: **до** — 85,33 % (157 убито, 25 вижило, 2 без покриття з 184); **після** — **96,74 %** (178 убито, 6 вижило,
+  0 без покриття). На рядках AC-FRM-15 вижилих немає. Тести: 230 → 246 (крок 4.3) → 247 (+1 тест бази, крок 4.4). Вивід — в описі [PR #46](https://github.com/mvorobets-blip/school-purchasing/pull/46).
+- Вижили 6, і жоден не загрожує AC-FRM-15 (жодного Stryker не вимкнено):
+  - еквівалентні (4) — у розділі нижче;
+  - `form.ts:40` регулярний вираз без `^` або без `$` (2) — у `parseLines`, але AC-FRM-15 не загрожують: нерозрізнений
+    вхід (ключі, яких форма не надсилає), не еквівалентні. Сміттєвий ключ лише
+    додає номер рядка, а дані беруться з ключів `name.N`…; різниця — лише в порядку рядків, коли номери з нулями
+    попереду («1» і «01»). Форма таких ключів не надсилає (`purchase-form.tsx`: `name.${line.key}`, `key: number`), тож
+    тест закріпив би випадкову поведінку сортування, а не правило — свідомо без тесту.
+- SQL-мутації (`npm run mutation:sql`, скрипти курсу `scripts/mutation-check.mjs` і `scripts/mutants.mjs`; у
+  `mutation-check.mjs` за рев'ю CodeRabbit PR #46 — свідомі правки: прапорець без значення — помилка запуску (код 2),
+  тимчасовий каталог прибирається за будь-якого виходу, файл відновлюється лише якщо в ньому досі мутант; гарнес —
+  наш `tests/db/supabase-pglite.ts`, тож P1/P2 курсу й `profiles-db.test.ts` не брали). 11 мутантів на правила наших AC
+  (AC-FRM-14 правила в SQL не має — його доводить UAT). **До — 4 з 9 убито (44 %), після — 9 з 9 (100 %); за незалежною перевіркою додано S10, S11 — убиті одразу: разом 11 з 11.**
+
+  | Мутант | AC | Що зламано (міграція) | До | Після — який тест упав |
+  |---|---|---|---|---|
+  | S1 | AC-FRM-08 | `purchase_requests_select_visible` → `true` (бачать усі активні) — `20261025184732_purchase_requests.sql` | KILLED | `tests/db/purchase.test.ts:161` AC-FRM-08 (і AC-FRM-10) |
+  | S2 | AC-FRM-08 | `purchase_request_lines_select_visible`: `exists (…заявка видима…)` → `true` | KILLED | `:161` AC-FRM-08 |
+  | S3 | AC-FRM-08 | `grant select` → `grant select, update` на `purchase_requests` для `authenticated`. Без політики UPDATE RLS рядків не змінює (статус лишається), але правило «без `grant update`» порушено: тест чекає `permission denied` і падає, бо помилки немає | KILLED | `:161` AC-FRM-08 |
+  | S10 | AC-FRM-08 | `private.is_approver_of`: прибрано `and m.is_approver` — будь-який член відділу «схвалювач» («не схвалювач» з AC) | додано після перевірки | KILLED — `:161` AC-FRM-08 |
+  | S11 | AC-FRM-08 | `private.is_approver_of`: прибрано `m.department_id = p_department_id` — схвалювач іншого відділу бачить чужий | додано після перевірки | KILLED — `:161` AC-FRM-08 |
+  | S4 | AC-FRM-15 | `submit_purchase`: перевірку порожніх полів рядка прибрано — `20261027132703_…price_limit.sql` | KILLED | `:116` і `:124` AC-FRM-15 |
+  | S5 | AC-FRM-15 | без перевірки порожньої **назви** | SURVIVED | `:124` AC-FRM-15 (посилений) |
+  | S6 | AC-FRM-15 | без перевірки порожньої **мети** | SURVIVED | `:124` |
+  | S7 | AC-FRM-15 | без перевірки порожньої **кількості** | SURVIVED | `:124` |
+  | S8 | AC-FRM-15 | без перевірки порожньої **ціни** | SURVIVED | `:124` |
+  | S9 | AC-FRM-15 | мета з самих пробілів — «заповнена» (без `btrim`) | SURVIVED | `:124` |
+
+  S5–S9 вижили, бо тест `:116` мав лише рядок «лише з назвою»: решта порожніх полів однаково давала `INVALID_LINE`.
+  Посилено за P05 (посилення тесту — методом P03, окремою сесією агента) з вимоги специфікації «не заповнено назву, мету, кількість чи ціну»
+  (`openspec/specs/purchase-form/spec.md:84`): `:124` — для кожного поля рядок, де лише воно відсутнє, порожнє чи з
+  пробілів, а решта заповнені → `INVALID_LINE`, нової заявки немає. Відсутні кількість і ціна (а не `""`) потрібні для
+  S7/S8: `''::numeric` і без перевірки дає `INVALID_LINE`. Після кожного прогону `git status supabase/` порожній —
+  мутовану міграцію не комічено. Еквівалентних SQL-мутантів немає.
+- Еквівалентні мутанти (Stryker, `form.ts`):
+  - `:108` `line.price.trim()` → `line.price`: `Number(" 5 ") = 5`, `Number(" ") = 0` (допустима ціна) — результат той самий;
+  - `:110` `price !== ""` → `true` і → `price !== "Stryker was here!"`: `Number("") = 0` — допустима ціна, тож порожню
+    ціну не позначено ні з перевіркою, ні без неї;
+  - `:96` `error.message ?? ""` → `?? "Stryker was here!"`: запасний рядок лише звіряють з `/_length\b/`, а `_length` немає
+    в жодному з двох — `false` в обох випадках.
 
 ## C. UAT на проді
 
