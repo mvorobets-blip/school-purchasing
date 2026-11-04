@@ -28,7 +28,8 @@
     "uat:nc": "node scripts/uat/run.mjs --negative-controls",
     "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs",
     "mutation:ts": "stryker run",
-    "mutation:sql": "node scripts/mutation-check.mjs --kind sql"
+    "mutation:sql": "node scripts/mutation-check.mjs --kind sql",
+    "e2e:fixtures": "node --env-file=.env.local scripts/e2e-fixtures.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
