@@ -14,10 +14,6 @@ export async function createDepartment(
   _prev: CreateDepartmentState,
   formData: FormData,
 ): Promise<CreateDepartmentState> {
-  // Перевіряємо права в самій дії, а не лише в layout (форма може бути викликана напряму).
-  const user = await getCurrentUser();
-  if (!canAccessSettings(user)) return { status: "error", message: messageFor("FORBIDDEN") };
-
   const name = String(formData.get("name") ?? "").trim();
   if (!isValidDepartmentName(name)) {
     return { status: "error", message: `Department name — 1 to ${DEPARTMENT_NAME_MAX} characters.` };
@@ -30,6 +26,10 @@ export async function createDepartment(
     if (error.code === "42501") return { status: "error", message: messageFor("FORBIDDEN") };
     return { status: "error", message: "Could not create the department. Try again." };
   }
+
+  // Перевіряємо права в самій дії, а не лише в layout (форма може бути викликана напряму).
+  const user = await getCurrentUser();
+  if (!canAccessSettings(user)) return { status: "error", message: messageFor("FORBIDDEN") };
 
   revalidatePath("/admin/departments");
   return { status: "ok", message: `Department «${name}» created.` };
