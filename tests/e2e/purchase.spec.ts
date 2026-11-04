@@ -1,10 +1,12 @@
-// UAT за 3 AC WS8 (вимога PM ValiaBihun/2026-quitcode-dream-team#47) на проді. Лише читання: жоден тест нічого не подає.
+// UAT за 3 AC WS8 (вимога PM ValiaBihun/2026-quitcode-dream-team#47) на проді. Записів не створює: AC-FRM-08 і
+// AC-FRM-14 лише читають, AC-FRM-15 пробує подати неповний рядок і отримує відмову (закупівлю не подано).
 // «Тоді» в clause — дослівно з #47. Інтерфейс англійською за вимогою #49 (AC-LANG-03 і таблиця текстів PM), тож
 // твердження перевіряють дослівний переклад PM з цієї таблиці: «Недостатньо прав» → «Not enough permissions»,
 // «Ви ще не подали жодної заявки» → «You have not submitted any requests yet», «Заповніть усі поля рядка» →
 // «Fill in all line fields», «Очікує схвалення» → «Awaiting approval».
 // Акаунти (auth.setup.ts): requester — працівник 1, pm-requester@example.test; requester2 — працівник 2/3,
-// member2@example.test (той самий відділ «Primary School», не автор, не схвалювач, без поданих заявок).
+// member2@example.test (той самий відділ «Primary School», не автор, не схвалювач, без поданих заявок). Акаунти спільні з
+// PM, тож ці умови «Дано» тест перевіряє сам (крок given) — і, якщо їх порушено, падає в «Дано», а не в «Тоді».
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
@@ -65,6 +67,19 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
           "працівник 1 подав закупівлю у відділ «Початкова школа», а працівник 2 — заявник того ж відділу, не автор і не схвалювач",
           async () => {
             href = await pendingRequestOf(author);
+            // Працівник 2 — заявник «Початкової школи»: у формі подання є лише відділи, де він заявник (AC-FRM-01).
+            await page.goto("/requests/new");
+            await page.getByTestId("purchase-department").click();
+            await expect(
+              page.getByRole("option", { name: DEPARTMENT }),
+              `ПЕРЕДУМОВА НА ПРОДІ: member2@example.test має бути заявником відділу «${DEPARTMENT}»`,
+            ).toBeVisible();
+            await page.keyboard.press("Escape");
+            // Не схвалювач жодного відділу: пункту «Awaiting decision» у бічній панелі немає.
+            await expect(
+              page.getByRole("link", { name: /Awaiting decision/ }),
+              "ПЕРЕДУМОВА НА ПРОДІ: member2@example.test не має бути схвалювачем",
+            ).toHaveCount(0);
           },
         );
 
@@ -105,9 +120,16 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
     "AC-FRM-14: працівник без жодної поданої заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-14" } },
     async ({ page }) => {
-      // Передумова — стан акаунта на проді: member2@example.test не подає заявок (домовлено з PM, перевірено вручну 03.11).
-      // Незалежного read-only запиту з обліковими даними UAT немає (секретного ключа UAT не має), тож тест її не доводить.
-      await given("працівник 3 без жодної поданої заявки", async () => {});
+      // Передумову перевіряємо незалежно від «My requests»: на головній лічильники власних заявок за статусами — нулі.
+      await given("працівник 3 без жодної поданої заявки", async () => {
+        await page.goto("/");
+        for (const stat of ["stat-pending", "stat-approved", "stat-rejected"]) {
+          await expect(
+            page.getByTestId(stat),
+            "ПЕРЕДУМОВА НА ПРОДІ, не вада застосунку: у member2@example.test не має бути поданих заявок",
+          ).toHaveText("0");
+        }
+      });
 
       await when("він відкриває сторінку «Мої заявки»", async () => {
         await page.goto("/requests");
@@ -117,8 +139,9 @@ test.describe("працівник 2/3 (member2@example.test)", () => {
         page,
         {
           clause: "він бачить повідомлення «Ви ще не подали жодної заявки», а списку заявок немає.",
-          visible: ["заголовок «My requests»", `повідомлення «${NO_REQUESTS}»`, "списку (таблиці) заявок немає"],
-          hidden: ["немає жодного рядка заявки (data-testid=\"request-row\") і таблиці «my-requests»"],
+          visible: ["заголовок «My requests»", `повідомлення «${NO_REQUESTS}»`],
+          // «Списку немає» — відсутність: кадр її не цитує (агент казав NEEDS-HUMAN), тож доводить перевірка.
+          hidden: ["списку заявок немає: жодного рядка заявки (data-testid=\"request-row\") і таблиці «my-requests»"],
         },
         async () => {
           await expect(page.getByRole("heading", { level: 1, name: "My requests" })).toBeVisible();
