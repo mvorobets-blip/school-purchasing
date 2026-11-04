@@ -33,7 +33,7 @@ export const mutants = [
   },
   {
     id: "S3", kind: "sql", ac: "AC-FRM-08", file: PURCHASE, tests: [PURCHASE_DB],
-    what: "grant: authenticated може оновлювати заявки (статус змінюється в обхід private.decide_purchase)",
+    what: "grant: authenticated отримує UPDATE на заявки (без політики UPDATE RLS рядків не змінює, але «без grant update» порушено — тест чекає permission denied)",
     find: "grant select on table public.purchase_requests to authenticated;",
     replace: "grant select, update on table public.purchase_requests to authenticated;",
   },

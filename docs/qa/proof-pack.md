@@ -124,7 +124,7 @@ Stryker 10.1.1, `npm run mutation:ts -- --mutate src/lib/purchase/form.ts` (ко
 - `form.ts:107` кількість без `.trim()` — `:109`; `form.ts:110` `<` → `<=` `PRICE_LIMIT` — `:113`.
 
 - Stryker: **до** — 85,33 % (157 убито, 25 вижило, 2 без покриття з 184); **після** — **96,74 %** (178 убито, 6 вижило,
-  0 без покриття). На рядках AC-FRM-15 вижилих немає. Тести: 230 → 246 (крок 4.3) → 247 (+1 тест бази, крок 4.4). Вивід — в описі PR.
+  0 без покриття). На рядках AC-FRM-15 вижилих немає. Тести: 230 → 246 (крок 4.3) → 247 (+1 тест бази, крок 4.4). Вивід — в описі [PR #46](https://github.com/mvorobets-blip/school-purchasing/pull/46).
 - Вижили 6, і жоден не загрожує AC-FRM-15 (жодного Stryker не вимкнено):
   - еквівалентні (4) — у розділі нижче;
   - `form.ts:40` регулярний вираз без `^` або без `$` (2) — у `parseLines`, але AC-FRM-15 не загрожують: нерозрізнений
@@ -132,7 +132,9 @@ Stryker 10.1.1, `npm run mutation:ts -- --mutate src/lib/purchase/form.ts` (ко
     додає номер рядка, а дані беруться з ключів `name.N`…; різниця — лише в порядку рядків, коли номери з нулями
     попереду («1» і «01»). Форма таких ключів не надсилає (`purchase-form.tsx`: `name.${line.key}`, `key: number`), тож
     тест закріпив би випадкову поведінку сортування, а не правило — свідомо без тесту.
-- SQL-мутації (`npm run mutation:sql`, скрипти курсу `scripts/mutation-check.mjs` і `scripts/mutants.mjs`; гарнес —
+- SQL-мутації (`npm run mutation:sql`, скрипти курсу `scripts/mutation-check.mjs` і `scripts/mutants.mjs`; у
+  `mutation-check.mjs` за рев'ю CodeRabbit PR #46 — свідомі правки: прапорець без значення — помилка запуску (код 2),
+  тимчасовий каталог прибирається за будь-якого виходу, файл відновлюється лише якщо в ньому досі мутант; гарнес —
   наш `tests/db/supabase-pglite.ts`, тож P1/P2 курсу й `profiles-db.test.ts` не брали). 11 мутантів на правила наших AC
   (AC-FRM-14 правила в SQL не має — його доводить UAT). **До — 4 з 9 убито (44 %), після — 9 з 9 (100 %); за незалежною перевіркою додано S10, S11 — убиті одразу: разом 11 з 11.**
 
@@ -140,7 +142,7 @@ Stryker 10.1.1, `npm run mutation:ts -- --mutate src/lib/purchase/form.ts` (ко
   |---|---|---|---|---|
   | S1 | AC-FRM-08 | `purchase_requests_select_visible` → `true` (бачать усі активні) — `20261025184732_purchase_requests.sql` | KILLED | `tests/db/purchase.test.ts:161` AC-FRM-08 (і AC-FRM-10) |
   | S2 | AC-FRM-08 | `purchase_request_lines_select_visible`: `exists (…заявка видима…)` → `true` | KILLED | `:161` AC-FRM-08 |
-  | S3 | AC-FRM-08 | `grant select` → `grant select, update` на `purchase_requests` для `authenticated` | KILLED | `:161` AC-FRM-08 |
+  | S3 | AC-FRM-08 | `grant select` → `grant select, update` на `purchase_requests` для `authenticated`. Без політики UPDATE RLS рядків не змінює (статус лишається), але правило «без `grant update`» порушено: тест чекає `permission denied` і падає, бо помилки немає | KILLED | `:161` AC-FRM-08 |
   | S10 | AC-FRM-08 | `private.is_approver_of`: прибрано `and m.is_approver` — будь-який член відділу «схвалювач» («не схвалювач» з AC) | додано після перевірки | KILLED — `:161` AC-FRM-08 |
   | S11 | AC-FRM-08 | `private.is_approver_of`: прибрано `m.department_id = p_department_id` — схвалювач іншого відділу бачить чужий | додано після перевірки | KILLED — `:161` AC-FRM-08 |
   | S4 | AC-FRM-15 | `submit_purchase`: перевірку порожніх полів рядка прибрано — `20261027132703_…price_limit.sql` | KILLED | `:116` і `:124` AC-FRM-15 |

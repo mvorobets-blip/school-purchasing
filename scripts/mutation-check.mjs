@@ -13,7 +13,7 @@
 //
 // Використання:
 //   node scripts/mutation-check.mjs                  усі мутанти (npm run mutation:sql — лише kind: "sql")
-//   node scripts/mutation-check.mjs --only L2,L5     вибрані
+//   node scripts/mutation-check.mjs --only S1,S4     вибрані
 //   node scripts/mutation-check.mjs --kind ts        лише TS-мутанти
 //   … --json reports/sql-mutation.json              результати у файл; --markdown — таблиця для опису PR
 // Код виходу: 0 — кожен мутант KILLED або прийнятий (expect: "survive" з reason); 1 — є SURVIVED чи ERROR;
@@ -24,17 +24,23 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { mutants } from "./mutants.mjs";
 
-const args = process.argv.slice(2);
-const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
-const only = option("--only")?.split(",").map((s) => s.trim());
-const kind = option("--kind");
-const jsonOut = option("--json");
-const markdown = args.includes("--markdown");
-
 const fail = (message) => {
   console.error(`✗ ${message}`);
   process.exit(2);
 };
+
+const args = process.argv.slice(2);
+// Прапорець без значення (або одразу наступний прапорець) — помилка запуску, а не тихо «усі мутанти».
+const option = (name) => {
+  if (!args.includes(name)) return null;
+  const value = args[args.indexOf(name) + 1];
+  if (value === undefined || value.startsWith("--")) fail(`${name}: потрібне значення (напр. ${name} …)`);
+  return value;
+};
+const only = option("--only")?.split(",").map((s) => s.trim());
+const kind = option("--kind");
+const jsonOut = option("--json");
+const markdown = args.includes("--markdown");
 
 const selected = mutants.filter((m) => (!only || only.includes(m.id)) && (!kind || m.kind === kind));
 if (only) {
@@ -49,10 +55,20 @@ for (const m of selected) {
   for (const f of [m.file, ...m.tests]) if (!existsSync(f)) fail(`${m.id}: файлу ${f} немає`);
 }
 
-// Ctrl+C посеред мутанта: повертаємо оригінальні байти файлу.
+// Ctrl+C посеред мутанта: повертаємо оригінальні байти файлу — лише якщо у файлі досі наш мутант. Якщо файл змінили
+// під час прогону (редактор, інший процес), не перезаписуємо чужі зміни, а попереджаємо.
 const restoreQueue = new Map();
 const restoreAll = () => {
-  for (const [file, bytes] of restoreQueue) writeFileSync(file, bytes);
+  for (const [file, { original, mutated }] of restoreQueue) {
+    let current = null;
+    try {
+      current = readFileSync(file, "utf8");
+    } catch {
+      // файлу немає — повертаємо оригінал
+    }
+    if (current === null || current === mutated) writeFileSync(file, original);
+    else console.error(`! ${file} змінено під час прогону — не відновлюю, перевірте git diff`);
+  }
   restoreQueue.clear();
 };
 for (const sig of ["SIGINT", "SIGTERM"]) {
@@ -85,6 +101,8 @@ function applyOnce(text, find, replace) {
 const vitestBin = path.join("node_modules", "vitest", "vitest.mjs");
 if (!existsSync(vitestBin)) fail("немає node_modules/vitest — спершу npm ci");
 const tmp = mkdtempSync(path.join(tmpdir(), "mutation-check-"));
+// Тимчасовий каталог прибираємо за будь-якого виходу: fail(), Ctrl+C (process.exit у сигналі) чи звичайне завершення.
+process.on("exit", () => rmSync(tmp, { recursive: true, force: true }));
 
 function readReport(file) {
   try {
@@ -146,7 +164,7 @@ for (const m of selected) {
     fail(`${m.id}: ${e.message}`);
   }
   const t = Date.now();
-  restoreQueue.set(m.file, original);
+  restoreQueue.set(m.file, { original, mutated });
   let run;
   try {
     writeFileSync(m.file, mutated);
