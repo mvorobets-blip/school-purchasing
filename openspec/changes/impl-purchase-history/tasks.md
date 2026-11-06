@@ -9,16 +9,16 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 1. Номер заявки, суми, межі рядків — `task/request-number-sums`
 
-- [ ] 1.1 Міграція `<ts>_request_number_and_line_limits.sql`: номер, послідовність, backfill за датою подання;
+- [x] 1.1 Міграція `<ts>_request_number_and_line_limits.sql`: номер, послідовність, backfill за датою подання;
   `private.validate_purchase_lines`; `submit_purchase` з номером і межами (`design.md`, задача 1).
-- [ ] 1.2 Номер `PUR-n` у «My requests», «Awaiting decision», на сторінці заявки; `src/lib/purchase/money.ts` (центи);
+- [x] 1.2 Номер `PUR-n` у «My requests», «Awaiting decision», на сторінці заявки; `src/lib/purchase/money.ts` (центи);
   на сторінці — «Sum, USD» і «Total».
-- [ ] 1.3 Форма: кількість — ціле від 1 («Quantity: a whole number from 1»), ціна — від 0 («Price: a number from 0»);
+- [x] 1.3 Форма: кількість — ціле від 1 («Quantity: a whole number from 1»), ціна — від 0 («Price: a number from 0»);
   тест зрізу 2 «дробова кількість допустима» змінюється (свідома зміна поведінки — в описі PR).
-- [ ] 1.4 Тести: PGlite — AC-HIST-01 (порожня база: `PUR-1`, `PUR-2`), backfill за датою, номер не повторюється;
+- [x] 1.4 Тести: PGlite — AC-HIST-01 (порожня база: `PUR-1`, `PUR-2`), backfill за датою, номер не повторюється;
   unit — AC-HIST-02 (3×20.00, 2×15.50 → 60.00, 31.00, 91.00); регресійні без AC ID — межі кількості й ціни в базі й формі,
   сума понад `Number.MAX_SAFE_INTEGER` (найбільші допустимі кількість і ціна — точно до цента, BigInt).
-- [ ] 1.5 Мутанти: номер не з послідовності; кількість 1.5 пропущено → тести червоні.
+- [x] 1.5 Мутанти: номер не з послідовності; кількість 1.5 пропущено → тести червоні.
   Done when: AC-HIST-01, AC-HIST-02 «реалізовано»; `db-deploy` застосував міграцію.
 
 ## 2. Історія «Submitted» і доступ до неї — `task/request-history`

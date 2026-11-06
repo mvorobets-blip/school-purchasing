@@ -6,8 +6,15 @@ import { withUser } from "../support/current-user";
 // Сторінка заявки (server component) з підміненим клієнтом Supabase. Хто бачить заявку, вирішує RLS
 // (tests/db/purchase.test.ts); тут — що показує сторінка за кожної відповіді бази.
 const ID = "11111111-1111-4111-8111-111111111111";
-const db: { request: Record<string, unknown> | null; linesError: boolean; authorError: boolean } = {
+const ONE_LINE = [{ position: 1, name: "Папір А4", purpose: "Друк", quantity: 3, price: 20 }];
+const db: {
+  request: Record<string, unknown> | null;
+  lines: Record<string, unknown>[];
+  linesError: boolean;
+  authorError: boolean;
+} = {
   request: null,
+  lines: ONE_LINE,
   linesError: false,
   authorError: false,
 };
@@ -20,7 +27,7 @@ function query(table: string) {
     if (table === "purchase_request_lines") {
       return db.linesError
         ? { data: null, error: { message: "boom" } }
-        : { data: [{ position: 1, name: "Папір А4", purpose: "Друк", quantity: 3, price: 20 }], error: null };
+        : { data: db.lines, error: null };
     }
     return { data: { name: "Початкова школа" }, error: null };
   };
@@ -64,12 +71,14 @@ describe("сторінка заявки", () => {
   beforeEach(() => {
     db.request = {
       id: ID,
+      number: 7,
       department_id: "d1",
       purchase_type: "purchasing_department",
       status: "pending",
       reject_reason: null,
       created_at: "2026-10-26T10:00:00Z",
     };
+    db.lines = ONE_LINE;
     db.linesError = false;
     db.authorError = false;
     queried.length = 0;
@@ -137,5 +146,31 @@ describe("сторінка заявки", () => {
     expect(html).toContain('role="alert"');
     expect(html).not.toContain("<table");
     expect(html).not.toContain(messageFor("FORBIDDEN"));
+  });
+
+  it("AC-HIST-02: рядки 3 × 20.00 і 2 × 15.50 — під заголовком «Sum, USD» суми 60.00 і 31.00, «Total» 91.00", async () => {
+    db.lines = [
+      { position: 1, name: "Папір А4", purpose: "Друк", quantity: 3, price: 20 },
+      { position: 2, name: "Маркери", purpose: "Для дошки", quantity: 2, price: 15.5 },
+    ];
+    const html = await render();
+    expect(html).toMatch(/<th[^>]*>Sum, USD<\/th>/);
+    const cells = [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
+    expect(cells).toContain("60.00");
+    expect(cells).toContain("31.00");
+    expect(html.indexOf("60.00")).toBeLessThan(html.indexOf("31.00"));
+    expect(html).toMatch(/Total[\s\S]*?>91\.00</);
+  });
+
+  it("сторінка заявки показує її номер «PUR-7»", async () => {
+    const html = await render();
+    expect(html).toContain("PUR-7");
+  });
+
+  it("сума рядка без похибки рухомої коми: 3 × 0.10 — 0.30, «Total» 0.30", async () => {
+    db.lines = [{ position: 1, name: "Скріпки", purpose: "Офіс", quantity: 3, price: 0.1 }];
+    const html = await render();
+    expect(html).not.toContain("0.30000000000000004");
+    expect(html).toMatch(/Total[\s\S]*?>0\.30</);
   });
 });

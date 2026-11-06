@@ -92,14 +92,14 @@ describe("подання закупівлі (база)", () => {
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
-  it("ціна на межі numeric(12, 2): 9 999 999 999.99 приймається, а те, що округлюється до 10 000 000 000, — INVALID_LINE, не 22003", async () => {
+  it("ціна на межі numeric(12, 2): 9 999 999 999.99 приймається, а те, що округлюється до 10 000 000 000, — INVALID_PRICE, не 22003", async () => {
     const line = (price: string) => [{ name: "Папір А4", purpose: "Друк", quantity: 1, price }];
     const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", line("9999999999.99"));
     const [saved] = await t.asService<{ price: string }>("select price::text as price from public.purchase_request_lines where request_id = $1", [id]);
     expect(saved.price).toBe("9999999999.99");
     for (const price of ["9999999999.995", "9999999999.996", "9999999999.999", "10000000000"]) {
       const before = await pendingCountOf(MEMBER_1);
-      await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", line(price))).rejects.toThrow(/INVALID_LINE/);
+      await expect(submit(MEMBER_1, "Початкова школа", "purchasing_department", line(price))).rejects.toThrow(/INVALID_PRICE/);
       expect(await pendingCountOf(MEMBER_1)).toBe(before);
     }
   });
@@ -208,29 +208,31 @@ describe("подання закупівлі (база)", () => {
     expect(row).toEqual({ status: "pending", decided_by: null });
   });
 
-  it("рядок з неможливими числами (NaN, Infinity, від'ємні, нуль, не число) не подано", async () => {
+  // Зріз 3: межі кількості й ціни — припущення PM у вимозі 64; коди INVALID_QUANTITY / INVALID_PRICE замість INVALID_LINE.
+  it("рядок з неможливими числами (NaN, Infinity, від'ємні, нуль, дробові, не число) не подано", async () => {
     const before = await pendingCountOf(MEMBER_1);
     const bad = [
-      { quantity: "NaN", price: "20.00" },
-      { quantity: "3", price: "NaN" },
-      { quantity: "Infinity", price: "20.00" },
-      { quantity: "-5", price: "20.00" },
-      { quantity: "0", price: "20.00" },
-      { quantity: "3", price: "-1" },
-      { quantity: "abc", price: "20.00" },
-      { quantity: "3", price: "100000000000" },
+      { numbers: { quantity: "NaN", price: "20.00" }, code: /INVALID_QUANTITY/ },
+      { numbers: { quantity: "3", price: "NaN" }, code: /INVALID_PRICE/ },
+      { numbers: { quantity: "Infinity", price: "20.00" }, code: /INVALID_QUANTITY/ },
+      { numbers: { quantity: "-5", price: "20.00" }, code: /INVALID_QUANTITY/ },
+      { numbers: { quantity: "0", price: "20.00" }, code: /INVALID_QUANTITY/ },
+      { numbers: { quantity: "1.5", price: "20.00" }, code: /INVALID_QUANTITY/ },
+      { numbers: { quantity: "3", price: "-1" }, code: /INVALID_PRICE/ },
+      { numbers: { quantity: "abc", price: "20.00" }, code: /INVALID_QUANTITY/ },
+      { numbers: { quantity: "3", price: "100000000000" }, code: /INVALID_PRICE/ },
     ];
-    for (const numbers of bad) {
+    for (const { numbers, code } of bad) {
       await expect(
         submit(MEMBER_1, "Початкова школа", "purchasing_department", [{ name: "Папір А4", purpose: "Друк", ...numbers }]),
-      ).rejects.toThrow(/INVALID_LINE/);
+      ).rejects.toThrow(code);
     }
     expect(await pendingCountOf(MEMBER_1)).toBe(before);
   });
 
-  it("ціна 0 і дробова кількість допустимі (верхні межі — наступний зріз)", async () => {
+  it("ціна 0 і ціла кількість допустимі", async () => {
     const [{ id }] = await submit(MEMBER_1, "Початкова школа", "purchasing_department", [
-      { name: "Безкоштовні буклети", purpose: "Роздати", quantity: "1.5", price: "0" },
+      { name: "Безкоштовні буклети", purpose: "Роздати", quantity: "2", price: "0" },
     ]);
     expect(id).toBeTruthy();
   });

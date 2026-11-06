@@ -129,4 +129,19 @@ describe("сторінка «Мої заявки»", () => {
     expect(html).toContain('data-testid="purchase-status"');
     expect(html).not.toContain(messageFor("NO_REQUESTS"));
   });
+
+  it("AC-HIST-01: у списку «Мої заявки» перші дві заявки мають номери «PUR-1» і «PUR-2»", async () => {
+    data.requests = [2, 1].map((number) => ({
+      id: `r${number}`,
+      number,
+      department_id: "d1",
+      purchase_type: "purchasing_department",
+      status: "pending",
+      created_at: `2026-10-2${number}T10:00:00Z`,
+    }));
+    const html = await render();
+    expect(html).toContain("PUR-1");
+    expect(html).toContain("PUR-2");
+    expect(html).not.toContain("PUR-undefined");
+  });
 });

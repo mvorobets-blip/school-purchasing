@@ -12,6 +12,7 @@ import { Pagination } from "@/components/portal/pagination";
 import { getAwaitingDecision } from "@/lib/purchase/awaiting";
 import { pageCount, pageFromParam } from "@/lib/purchase/pagination";
 import { formatSubmitted } from "@/lib/purchase/date";
+import { formatRequestNumber } from "@/lib/purchase/number";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -82,7 +83,8 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
           <Table data-testid="decision-list">
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Submitted</TableHead>
+                <TableHead className="pl-4">Request</TableHead>
+                <TableHead>Submitted</TableHead>
                 <TableHead>Author</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Purchase type</TableHead>
@@ -93,14 +95,16 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
             <TableBody>
               {requests.map((r) => {
                 const submitted = formatSubmitted(r.created_at);
+                const number = formatRequestNumber(r.number);
                 const department = names.get(r.department_id) ?? "—";
                 return (
                   <TableRow key={r.id} data-testid="decision-row" className={cn("group", CLICKABLE_ROW)}>
-                    <TableCell className="pl-4 tabular-nums">
+                    <TableCell className="pl-4 font-mono tabular-nums">
                       <RowLink href={`/requests/${r.id}?from=approvals`} className="font-medium group-hover:text-accent-foreground">
-                        {submitted}
+                        {number}
                       </RowLink>
                     </TableCell>
+                    <TableCell className="tabular-nums">{submitted}</TableCell>
                     <TableCell data-testid="decision-author">{authorOf.get(r.id) ?? "—"}</TableCell>
                     <TableCell>{department}</TableCell>
                     <TableCell>{PURCHASE_TYPE_LABEL[r.purchase_type as PurchaseType] ?? r.purchase_type}</TableCell>
@@ -108,7 +112,7 @@ export default async function ApprovalsPage({ searchParams }: PageProps<"/approv
                       <StatusBadge status="pending" />
                     </TableCell>
                     <TableCell className={cn("pr-4", ROW_ACTIONS)}>
-                      <DecisionButtons requestId={r.id} label={`${department}, ${submitted}`} />
+                      <DecisionButtons requestId={r.id} label={`${number}, ${department}, ${submitted}`} />
                     </TableCell>
                   </TableRow>
                 );

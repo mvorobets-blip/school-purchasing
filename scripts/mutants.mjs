@@ -13,9 +13,10 @@
 // є (tests/db/supabase-pglite.ts), а мутанти нижче — на правила наших AC (walkthrough-dev WS8, крок 4.4; промпт P05).
 // AC-FRM-14 правила в SQL не має (порожній стан сторінки «My requests») — його доводить UAT.
 const PURCHASE = "supabase/migrations/20261025184732_purchase_requests.sql";
-// Жива версія private.submit_purchase (create or replace поверх PURCHASE).
-const SUBMIT = "supabase/migrations/20261027132703_submit_purchase_rounded_price_limit.sql";
 const PURCHASE_DB = "tests/db/purchase.test.ts";
+// Жива версія private.submit_purchase з WS9 (номер заявки) і private.validate_purchase_lines (перевірка рядків).
+const LIMITS = "supabase/migrations/20261106162407_request_number_and_line_limits.sql";
+const NUMBER_DB = "tests/db/purchase-number.test.ts";
 
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
@@ -51,40 +52,60 @@ export const mutants = [
   },
   // ── AC-FRM-15: рядок, де не заповнено назву, мету, кількість чи ціну, — INVALID_LINE, закупівлю не подано ─────
   {
-    id: "S4", kind: "sql", ac: "AC-FRM-15", file: SUBMIT, tests: [PURCHASE_DB],
+    id: "S4", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
     what: "submit_purchase: перевірку порожніх полів рядка прибрано повністю",
     find: "    if coalesce(btrim(v_line ->> 'name'), '') = ''\n      or coalesce(btrim(v_line ->> 'purpose'), '') = ''\n      or coalesce(btrim(v_line ->> 'quantity'), '') = ''\n      or coalesce(btrim(v_line ->> 'price'), '') = '' then",
     replace: "    if false then",
   },
   {
-    id: "S5", kind: "sql", ac: "AC-FRM-15", file: SUBMIT, tests: [PURCHASE_DB],
+    id: "S5", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню назву рядка не перевіряємо",
     find: "    if coalesce(btrim(v_line ->> 'name'), '') = ''\n      or coalesce(btrim(v_line ->> 'purpose'), '') = ''",
     replace: "    if coalesce(btrim(v_line ->> 'purpose'), '') = ''",
   },
   {
-    id: "S6", kind: "sql", ac: "AC-FRM-15", file: SUBMIT, tests: [PURCHASE_DB],
+    id: "S6", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню мету рядка не перевіряємо",
     find: "\n      or coalesce(btrim(v_line ->> 'purpose'), '') = ''",
     replace: "",
   },
   {
-    id: "S7", kind: "sql", ac: "AC-FRM-15", file: SUBMIT, tests: [PURCHASE_DB],
+    id: "S7", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню кількість рядка не перевіряємо",
     find: "\n      or coalesce(btrim(v_line ->> 'quantity'), '') = ''",
     replace: "",
   },
   {
-    id: "S8", kind: "sql", ac: "AC-FRM-15", file: SUBMIT, tests: [PURCHASE_DB],
+    id: "S8", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню ціну рядка не перевіряємо",
     find: "\n      or coalesce(btrim(v_line ->> 'price'), '') = '' then",
     replace: " then",
   },
   {
-    id: "S9", kind: "sql", ac: "AC-FRM-15", file: SUBMIT, tests: [PURCHASE_DB],
+    id: "S9", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
     what: "submit_purchase: мета з самих пробілів вважається заповненою (без btrim)",
     find: "      or coalesce(btrim(v_line ->> 'purpose'), '') = ''",
     replace: "      or coalesce(v_line ->> 'purpose', '') = ''",
+  },
+  // ── AC-HIST-01: номер — наступний з послідовності, не повторюється навіть після видалення ──────────────────────
+  {
+    id: "S12", kind: "sql", ac: "AC-HIST-01", file: LIMITS, tests: [NUMBER_DB],
+    what: "submit_purchase: номер = max(number) + 1 замість послідовності (після видалення номер повторюється)",
+    find: "nextval('private.purchase_request_number_seq')",
+    replace: "(select coalesce(max(number), 0) + 1 from public.purchase_requests)",
+  },
+  // ── Межі рядків (припущення PM у вимозі 64; регресійні тести без AC ID) ─────────────────────────────────────
+  {
+    id: "S13", kind: "sql", ac: "межа кількості (вимога 64)", file: LIMITS, tests: [NUMBER_DB, PURCHASE_DB],
+    what: "validate_purchase_lines: дробова кількість (1.5) і нуль проходять — лише > 0",
+    find: "or v_quantity < 1 or v_quantity <> trunc(v_quantity)",
+    replace: "or v_quantity <= 0",
+  },
+  {
+    id: "S14", kind: "sql", ac: "межа ціни (вимога 64)", file: LIMITS, tests: [NUMBER_DB, PURCHASE_DB],
+    what: "validate_purchase_lines: від'ємна ціна проходить",
+    find: "or v_price < 0 or round(v_price, 2)",
+    replace: "or round(v_price, 2)",
   },
 ];
 

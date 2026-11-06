@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
 import { formatSubmitted } from "@/lib/purchase/date";
+import { formatRequestNumber } from "@/lib/purchase/number";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { pageCount, pageFromParam, pageRange } from "@/lib/purchase/pagination";
 import { createClient } from "@/lib/supabase/server";
@@ -41,7 +42,7 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
   const [requestsRes, deptsRes] = await Promise.all([
     supabase
       .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, created_at")
+      .select("id, number, department_id, purchase_type, status, created_at")
       .eq("author_id", user.id)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
@@ -84,7 +85,8 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
           <Table data-testid="my-requests">
             <TableHeader>
               <TableRow>
-                <TableHead className="pl-4">Submitted</TableHead>
+                <TableHead className="pl-4">Request</TableHead>
+                <TableHead>Submitted</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Purchase type</TableHead>
                 <TableHead>Status</TableHead>
@@ -96,11 +98,12 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/reque
             <TableBody>
               {requests.map((r) => (
                 <TableRow key={r.id} data-testid="request-row" className={cn("group", CLICKABLE_ROW)}>
-                  <TableCell className="pl-4 tabular-nums">
+                  <TableCell className="pl-4 font-mono tabular-nums">
                     <RowLink href={`/requests/${r.id}`} className="font-medium group-hover:text-accent-foreground">
-                      {formatSubmitted(r.created_at)}
+                      {formatRequestNumber(r.number)}
                     </RowLink>
                   </TableCell>
+                  <TableCell className="tabular-nums">{formatSubmitted(r.created_at)}</TableCell>
                   <TableCell>{names.get(r.department_id) ?? "—"}</TableCell>
                   <TableCell>{PURCHASE_TYPE_LABEL[r.purchase_type as PurchaseType] ?? r.purchase_type}</TableCell>
                   <TableCell>

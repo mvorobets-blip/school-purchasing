@@ -2,7 +2,7 @@ import { cache } from "react";
 import { pageCount, pageRange } from "@/lib/purchase/pagination";
 import { createClient } from "@/lib/supabase/server";
 
-export type AwaitingRequest = { id: string; department_id: string; purchase_type: string; created_at: string };
+export type AwaitingRequest = { id: string; number: number; department_id: string; purchase_type: string; created_at: string };
 export type AwaitingDecision = {
   departmentIds: string[];
   requests: AwaitingRequest[]; // рядки сторінки page (найстаріші спершу); порожньо, якщо сторінки немає
@@ -40,7 +40,7 @@ export const getAwaitingDecision = cache(async (userId: string, page: number = 1
   const { from, to } = pageRange(page);
   const { data: requests, error: requestsError } = await supabase
     .from("purchase_requests")
-    .select("id, department_id, purchase_type, created_at")
+    .select("id, number, department_id, purchase_type, created_at")
     .in("department_id", departmentIds)
     .eq("status", "pending")
     .neq("author_id", userId)

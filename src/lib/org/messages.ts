@@ -9,6 +9,8 @@ export const MESSAGES = {
   NO_DEPARTMENTS: "You have not been added to any department. Contact your administrator.",
   NO_LINES: "Add at least one line",
   INVALID_LINE: "Fill in all line fields",
+  INVALID_QUANTITY: "Quantity: a whole number from 1",
+  INVALID_PRICE: "Price: a number from 0",
   SUBMITTED: "Purchase submitted",
   NO_REQUESTS: "You have not submitted any requests yet",
   NO_REASON: "Provide a reason",

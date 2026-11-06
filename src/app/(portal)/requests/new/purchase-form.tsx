@@ -48,7 +48,9 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
   const isError = state.status === "error";
   const showMessage = isError && editedAfter !== state;
   const forbidden = isError && state.message === messageFor("FORBIDDEN");
-  const markEmpty = isError && state.message === messageFor("INVALID_LINE");
+  // Після помилки рядка (порожнє поле чи межа кількості або ціни) підсвічуємо поля, які ще порожні чи неможливі.
+  const markEmpty =
+    isError && (["INVALID_LINE", "INVALID_QUANTITY", "INVALID_PRICE"] as const).some((c) => state.message === messageFor(c));
   const blocked = forbidden && submitBlocked(state, { departmentId, purchaseType });
 
   const edited = () => setEditedAfter(state);
@@ -57,7 +59,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, [field]: value } : l)));
   };
   // Кількість і ціна: «-», «+» і «e» не набрати з клавіатури; вставлене не переписуємо — неможливе значення база
-  // відхилить, і поле буде позначено після «Fill in all line fields».
+  // відхилить («Quantity: a whole number from 1» / «Price: a number from 0»), і поле буде позначено.
   const numberField = {
     type: "number",
     inputMode: "decimal",
@@ -177,7 +179,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 {field("name", "Item", { maxLength: LINE_TEXT_LIMIT })}
                 {field("purpose", "Purpose", { maxLength: LINE_TEXT_LIMIT })}
-                {field("quantity", "Quantity", { ...numberField, step: "any" })}
+                {field("quantity", "Quantity", { ...numberField, min: 1, step: "1", inputMode: "numeric" })}
                 {field("price", "Price", { ...numberField, step: "0.01" })}
                 {lines.length > 1 ? (
                   <Button
