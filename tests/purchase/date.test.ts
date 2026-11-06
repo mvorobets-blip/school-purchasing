@@ -9,6 +9,10 @@ describe("formatSubmittedAt", () => {
     expect(formatSubmittedAt("2026-11-05T19:32:00Z")).toBe("05.11.2026, 14:32");
   });
 
+  it("формат PostgREST (мікросекунди й «+00:00») — той самий результат", () => {
+    expect(formatSubmittedAt("2026-11-05T19:32:00.123456+00:00")).toBe("05.11.2026, 14:32");
+  });
+
   it("літній час (EDT, UTC−4): 18:05 UTC 1 липня — «01.07.2026, 14:05»", () => {
     expect(formatSubmittedAt("2026-07-01T18:05:00Z")).toBe("01.07.2026, 14:05");
   });

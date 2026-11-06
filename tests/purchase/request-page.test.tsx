@@ -206,5 +206,7 @@ describe("сторінка заявки", () => {
     expect(html).not.toContain("Submitted");
     expect(html).not.toContain("PM Demo Requester");
     expect(html).not.toContain("05.11.2026");
+    // Історію навіть не запитують, доки не з'ясовано, що заявку видно.
+    expect(rpcCalls.map((c) => c.fn)).not.toContain("request_history");
   });
 });

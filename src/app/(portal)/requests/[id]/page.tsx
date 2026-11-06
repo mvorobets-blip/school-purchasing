@@ -155,21 +155,24 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
         </Table>
       </Card>
 
-      {/* Історія заявки (AC-HIST-06): «Submitted · <ім'я> · 05.11.2026, 14:32» — підписи з таблиці PM (#49), час #74. */}
-      <Card>
-        <CardHeader>
-          <CardTitle>History</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ol className="flex flex-col gap-2 text-sm" data-testid="request-history">
-            {history.map((e, i) => (
-              <li key={`${e.created_at}-${i}`} className="tabular-nums">
-                {`${HISTORY_LABEL[e.kind] ?? e.kind} · ${e.actor_name ?? "—"} · ${formatSubmittedAt(e.created_at)}`}
-              </li>
-            ))}
-          </ol>
-        </CardContent>
-      </Card>
+      {/* Історія заявки (AC-HIST-06): «Submitted · <ім'я> · 05.11.2026, 14:32» — підписи з таблиці PM (#49), час #74.
+          Без записів картки немає (власного тексту порожнього стану PM не задавав). */}
+      {history.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle id="history-title">History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol aria-labelledby="history-title" className="flex flex-col gap-2 text-sm" data-testid="request-history">
+              {history.map((e, i) => (
+                <li key={`${e.created_at}-${i}`} className="tabular-nums">
+                  {`${HISTORY_LABEL[e.kind] ?? e.kind} · ${e.actor_name ?? "—"} · ${formatSubmittedAt(e.created_at)}`}
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      ) : null}
     </>
   );
 }

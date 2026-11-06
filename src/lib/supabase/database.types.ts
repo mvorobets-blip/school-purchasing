@@ -102,6 +102,33 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"purchase_request_events": {
+                  Row: {
+                    "actor_id": string,"created_at": string,"id": string,"kind": string,"request_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id": string,"created_at"?: string,"id"?: string,"kind": string,"request_id": string
+                  }
+                  Update: {
+                    "actor_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"request_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "purchase_request_events_actor_id_fkey"
+      columns: ["actor_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "purchase_request_events_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "purchase_requests"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"purchase_requests": {
                   Row: {
                     "author_id": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"department_id": string,"id": string,"number": number,"purchase_type": string,"reject_reason": string | null,"status": string

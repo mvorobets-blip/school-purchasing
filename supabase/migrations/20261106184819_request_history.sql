@@ -35,6 +35,10 @@ create policy purchase_request_events_select_visible
   );
 
 -- ── 2. Наявні заявки: подія «Подано» з датою подання й автором ──────────────────
+-- Блокуємо нові подання до кінця міграції: інакше заявка, подана старою submit_purchase між backfill і commit,
+-- лишилася б без запису «Submitted».
+lock table public.purchase_requests in share row exclusive mode;
+
 insert into public.purchase_request_events (request_id, kind, actor_id, created_at)
 select r.id, 'submitted', r.author_id, r.created_at
 from public.purchase_requests as r;
