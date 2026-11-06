@@ -1,3 +1,8 @@
+import { Pencil } from "lucide-react";
+import Link from "next/link";
+import { BackLink } from "@/components/portal/back-link";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/portal/status-badge";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +12,34 @@ import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { formatCents, lineSumCents, totalCents } from "@/lib/purchase/money";
 import { LINE_STATUS_LABEL, type LineStatus } from "@/lib/purchase/status";
 import { Checkbox } from "@/components/ui/checkbox";
+
+// Заголовок сторінки заявки: «← Назад», «Purchase PUR-n» і, для автора поверненої заявки, основна дія «Edit».
+export function RequestHeader({
+  back,
+  number,
+  editHref,
+}: {
+  back: { href: string; label: string };
+  number: string;
+  editHref: string | null;
+}) {
+  return (
+    <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-1 flex-col gap-1">
+        <BackLink href={back.href}>{back.label}</BackLink>
+        <h1 className="text-2xl font-semibold">
+          Purchase <span className="font-mono tabular-nums">{number}</span>
+        </h1>
+      </div>
+      {editHref ? (
+        <Link href={editHref} className={cn(buttonVariants())}>
+          <Pencil aria-hidden="true" />
+          Edit
+        </Link>
+      ) : null}
+    </div>
+  );
+}
 
 // Розділи сторінки заявки /requests/[id]: дані заявки, рядки з сумами, історія. Сторінка лише завантажує дані й
 // вирішує, чи їх видно (ForbiddenCard); тут — лише вигляд.

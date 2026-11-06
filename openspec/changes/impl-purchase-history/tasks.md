@@ -60,12 +60,12 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 5. Повторне подання — `task/resubmit`
 
-- [ ] 5.1 Міграція `<ts>_resubmit_purchase.sql`: `private.resubmit_purchase` + обгортка.
-- [ ] 5.2 `/requests/[id]/edit` (форма `/requests/new`, відділ і тип заблоковані), дія `resubmitPurchase`, «Edit» для
+- [x] 5.1 Міграція `<ts>_resubmit_purchase.sql`: `private.resubmit_purchase` + обгортка.
+- [x] 5.2 `/requests/[id]/edit` (форма `/requests/new`, відділ і тип заблоковані), дія `resubmitPurchase`, «Edit» для
   автора поверненої заявки.
-- [ ] 5.3 Тести: PGlite — AC-DEC-07 (виправлено рядок 1 → `pending`, той самий відділ, номер і новий запис «Submitted»),
+- [x] 5.3 Тести: PGlite — AC-DEC-07 (виправлено рядок 1 → `pending`, той самий відділ, номер і новий запис «Submitted»),
   не автор чи не `returned` → без змін, межі рядків як при першому поданні; дія й сторінка — AC-DEC-07.
-- [ ] 5.4 Мутанти: без перевірки автора → тест відмови червоний.
+- [x] 5.4 Мутанти: без перевірки автора → тест відмови червоний.
   Done when: AC-DEC-07 «реалізовано».
 
 ## 6. UAT, proof pack, прод — `task/uat-slice3`

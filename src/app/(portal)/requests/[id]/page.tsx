@@ -1,14 +1,21 @@
 import { redirect } from "next/navigation";
 import { ForbiddenCard } from "@/components/portal/forbidden-card";
-import { BackLink } from "@/components/portal/back-link";
-import { RequestDetails, RequestHistory, RequestLines } from "@/components/portal/request-sections";
-import { LineDecision } from "./line-decision";
+import { RequestDetails, RequestHeader, RequestHistory, RequestLines } from "@/components/portal/request-sections";
 import { Alert } from "@/components/ui/alert";
 import { getCurrentUser } from "@/lib/org/current-user";
+import { messageFor } from "@/lib/org/messages";
 import { formatRequestNumber } from "@/lib/purchase/number";
+import { loadRequestView } from "@/lib/purchase/request-view";
 import { createClient } from "@/lib/supabase/server";
+import { LineDecision } from "./line-decision";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Звідки прийшли: зі списку «Awaiting decision» (?from=approvals) — туди й «← Назад», інакше — «My requests».
+const BACK = {
+  approvals: { href: "/approvals", label: "Awaiting decision" },
+  requests: { href: "/requests", label: "My requests" },
+};
 
 // Сторінка заявки. Бачать автор, схвалювач її відділу й адміністратор (RLS). Іншим — «Not enough permissions» без даних:
 // не розрізняємо «немає» й «чужа», щоб не розкривати вміст (AC-FRM-08, AC-APR-03).
@@ -16,11 +23,8 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const { id } = await params;
-  // Звідки прийшли: зі списку «Awaiting decision» (?from=approvals) — туди й «← Назад», інакше — «My requests».
-  const fromApprovals = (await searchParams)?.from === "approvals";
-  const back = fromApprovals
-    ? { href: "/approvals", label: "Awaiting decision" }
-    : { href: "/requests", label: "My requests" };
+  const query = await searchParams;
+  const back = query?.from === "approvals" ? BACK.approvals : BACK.requests;
 
   const forbidden = (
     <ForbiddenCard
@@ -31,69 +35,38 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
   );
   if (!UUID.test(id)) return forbidden;
 
-  const supabase = await createClient();
-  const { data: request, error } = await supabase
-    .from("purchase_requests")
-    // select("*"): поки db-deploy не додав нову колонку (return_reason), сторінка не падає (рев'ю CodeRabbit, PR 61).
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
-  if (!request) return forbidden;
-  // Автор — ім'я, без імені в профілі — email, і лише якщо заявку дозволено бачити (private.request_author_names;
-  // AC-APR-08, 09); ролі, відділів і дозволів автора сторінка не читає (AC-APR-10). Підпис «Author» — таблиця PM (#49).
-  // Помилка запиту автора — помилка завантаження, а не «—» замість імені.
-  const { data: authorRows, error: authorError } = await supabase.rpc("request_author_names", { p_request_ids: [id] });
-  if (authorError) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
-  const authorName = authorRows?.[0]?.author_name ?? "—";
+  const view = await loadRequestView(await createClient(), id);
+  if (view.status === "forbidden") return forbidden;
+  if (view.status === "error") return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
 
-  const [linesRes, deptRes, historyRes, approverRes] = await Promise.all([
-    supabase
-      .from("purchase_request_lines")
-      .select("position, name, purpose, quantity, price, status")
-      .eq("request_id", id)
-      .order("position"),
-    supabase.from("departments").select("name").eq("id", request.department_id).maybeSingle(),
-    // Історія — лише якщо заявку видно (private.request_history: та сама умова, що RLS заявки; AC-HIST-10).
-    supabase.rpc("request_history", { p_request_id: id }),
-    // Чи може людина вирішити заявку (схвалювач відділу, не автор, «Awaiting approval») — лише так / ні від бази.
-    supabase.rpc("can_decide_purchase", { p_request_id: id }),
-  ]);
-  // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
-  // Помилка історії не ховає заявку: розділ «History» покаже власне повідомлення (рев'ю CodeRabbit, PR 59).
-  if (linesRes.error || deptRes.error) {
-    return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
-  }
-
-  const lines = linesRes.data ?? [];
+  const { request, lines } = view;
   const number = formatRequestNumber(request.number);
-  // Кнопки рішення — лише зручність: права (відділ, не автор, статус) перевіряє private.decide_purchase.
-  // Помилка цієї перевірки не ламає сторінку: тоді просто без кнопок (рішення однаково перевіряє база).
-  const canDecide = !approverRes.error && approverRes.data === true;
 
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <BackLink href={back.href}>{back.label}</BackLink>
-        <h1 className="text-2xl font-semibold">
-          Purchase <span className="font-mono tabular-nums">{number}</span>
-        </h1>
-      </div>
-
+      <RequestHeader
+        back={back}
+        number={number}
+        // «Edit» — лише автору поверненої заявки (матриця прав «Редагувати заявку»; права перевіряє resubmit_purchase).
+        editHref={request.status === "returned" && request.author_id === user.id ? `/requests/${id}/edit` : null}
+      />
+      {/* Після повторного подання (AC-DEC-07) — «Purchase submitted» (текст PM, таблиця вимоги 49). */}
+      {query?.ok === "RESUBMITTED" ? (
+        <Alert role="status" data-testid="purchase-message">
+          {messageFor("SUBMITTED")}
+        </Alert>
+      ) : null}
       <RequestDetails
-        authorName={authorName}
-        departmentName={deptRes.data?.name ?? "—"}
+        authorName={view.authorName}
+        departmentName={view.departmentName}
         purchaseType={request.purchase_type}
         status={request.status}
         rejectReason={request.reject_reason}
         returnReason={request.return_reason ?? null}
       />
-      {canDecide ? (
-        <LineDecision requestId={id} label={number} lines={lines} />
-      ) : (
-        <RequestLines lines={lines} />
-      )}
-      <RequestHistory history={historyRes.data ?? []} failed={Boolean(historyRes.error)} />
+      {/* Кнопки рішення — лише зручність: права (відділ, не автор, статус) перевіряє private.decide_purchase. */}
+      {view.canDecide ? <LineDecision requestId={id} label={number} lines={lines} /> : <RequestLines lines={lines} />}
+      <RequestHistory history={view.history} failed={view.historyFailed} />
     </>
   );
 }

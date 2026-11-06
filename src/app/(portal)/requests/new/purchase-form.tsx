@@ -21,7 +21,7 @@ import {
   type Option,
   type PurchaseLine,
 } from "@/lib/purchase/form";
-import { submitPurchase, type SubmitPurchaseState } from "../actions";
+import { resubmitPurchase, submitPurchase, type SubmitPurchaseState } from "../actions";
 
 type Line = PurchaseLine & { key: number };
 const blankLine = (key: number): Line => ({ key, name: "", purpose: "", quantity: "", price: "" });
@@ -30,17 +30,30 @@ const blankLine = (key: number): Line => ({ key, name: "", purpose: "", quantity
 // (PM «Вигляд і тон»). Усі поля керовані: React після кожного подання скидає некеровані поля форми, а введене має
 // лишатися після помилки (AC-FRM-06; DESIGN.md §6). Помилка — над формою; після «Fill in all line fields» порожні поля
 // підсвічено (AC-FRM-15); після «Not enough permissions» «Submit» вимкнено, доки не змінено відділ чи тип.
-export function PurchaseForm({ departments, types }: { departments: Option[]; types: Option[] }) {
+// resubmit — повторне подання поверненої заявки (AC-DEC-07): рядки заповнено з заявки, відділ і тип заблоковано (#66).
+export function PurchaseForm({
+  departments,
+  types,
+  resubmit,
+}: {
+  departments: Option[];
+  types: Option[];
+  resubmit?: { requestId: string; lines: readonly PurchaseLine[] };
+}) {
   const initial: SubmitPurchaseState = {
     status: "idle",
     message: "",
     departmentId: initialDepartment(departments),
     purchaseType: types[0]?.value ?? "",
   };
-  const [state, formAction, pending] = useActionState(submitPurchase, initial);
+  const action = resubmit ? resubmitPurchase.bind(null, resubmit.requestId) : submitPurchase;
+  const locked = Boolean(resubmit);
+  const [state, formAction, pending] = useActionState(action, initial);
   const [departmentId, setDepartmentId] = useState(initial.departmentId);
   const [purchaseType, setPurchaseType] = useState(initial.purchaseType);
-  const [lines, setLines] = useState<Line[]>([blankLine(1)]);
+  const [lines, setLines] = useState<Line[]>(() =>
+    resubmit?.lines.length ? resubmit.lines.map((l, i) => ({ ...l, key: i + 1 })) : [blankLine(1)],
+  );
   const [departmentMissing, setDepartmentMissing] = useState(false);
   // Відповідь сервера, яку людина вже почала виправляти: повідомлення ховаємо, щойно щось змінено у формі
   // (воно вже не описує поточний стан); червоні рамки лишаються лише на полях, які ще порожні чи неможливі.
@@ -94,6 +107,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
             <Label htmlFor="purchase-department">Department</Label>
             <Select
               name="departmentId"
+              disabled={locked}
               items={departments}
               value={departmentId || null}
               onValueChange={(v) => {
@@ -129,6 +143,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
             <Label htmlFor="purchase-type">Purchase type</Label>
             <Select
               name="purchaseType"
+              disabled={locked}
               items={types}
               value={purchaseType}
               onValueChange={(v) => {

@@ -25,6 +25,8 @@ const PARTIAL = "supabase/migrations/20261106190909_partial_approval.sql";
 // Жива версія private.decide_purchase (create or replace поверх 20261106190909_partial_approval.sql).
 const RETURN = "supabase/migrations/20261106193244_return_for_revision.sql";
 const RETURN_DB = "tests/db/return-for-revision.test.ts";
+const RESUBMIT = "supabase/migrations/20261106194622_resubmit_purchase.sql";
+const RESUBMIT_DB = "tests/db/resubmit.test.ts";
 
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
@@ -173,6 +175,25 @@ export const mutants = [
     what: "decide_purchase: повернення без причини проходить (перевірку NO_REASON для return прибрано)",
     find: "  if p_decision = 'return' then\n    if v_reason is null then\n      raise exception 'NO_REASON';\n    end if;\n",
     replace: "  if p_decision = 'return' then\n",
+  },
+  // ── AC-DEC-07: повторно подає лише автор поверненої заявки, з перевіркою рядків ──────────────────────────────
+  {
+    id: "S23", kind: "sql", ac: "AC-DEC-07", file: RESUBMIT, tests: [RESUBMIT_DB],
+    what: "resubmit_purchase: подати знову може будь-хто, хто бачить заявку (прибрано перевірку автора)",
+    find: "  if not found or v_request.author_id <> v_uid or v_request.status <> 'returned' then",
+    replace: "  if not found or v_request.status <> 'returned' then",
+  },
+  {
+    id: "S24", kind: "sql", ac: "AC-DEC-07", file: RESUBMIT, tests: [RESUBMIT_DB],
+    what: "resubmit_purchase: подати знову можна заявку в будь-якому статусі (прибрано перевірку «returned»)",
+    find: "  if not found or v_request.author_id <> v_uid or v_request.status <> 'returned' then",
+    replace: "  if not found or v_request.author_id <> v_uid then",
+  },
+  {
+    id: "S25", kind: "sql", ac: "AC-DEC-07", file: RESUBMIT, tests: [RESUBMIT_DB],
+    what: "resubmit_purchase: рядки не перевіряються (без validate_purchase_lines)",
+    find: "  perform private.validate_purchase_lines(p_lines);\n",
+    replace: "",
   },
 ];
 
