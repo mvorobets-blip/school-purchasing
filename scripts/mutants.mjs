@@ -195,6 +195,18 @@ export const mutants = [
     find: "  perform private.validate_purchase_lines(p_lines);\n",
     replace: "",
   },
+  {
+    id: "S26", kind: "sql", ac: "AC-DEC-07", file: RESUBMIT, tests: [RESUBMIT_DB],
+    what: "resubmit_purchase: неактивний автор подає знову (прибрано is_active_user)",
+    find: "begin\n  if not private.is_active_user() then\n    raise exception 'FORBIDDEN' using errcode = '42501';\n  end if;\n",
+    replace: "begin\n",
+  },
+  {
+    id: "S27", kind: "sql", ac: "AC-DEC-07", file: RESUBMIT, tests: [RESUBMIT_DB],
+    what: "resubmit_purchase: автор, якого прибрали з відділу, подає знову (прибрано is_member_of)",
+    find: "  if not (private.is_admin() or private.is_member_of(v_request.department_id)) then",
+    replace: "  if false then",
+  },
 ];
 
 // Приклади з демо (інша схема — у вашому репо цих файлів немає, тож не розкоментовуйте як є):

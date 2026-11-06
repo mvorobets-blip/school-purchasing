@@ -51,7 +51,7 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
         editHref={request.status === "returned" && request.author_id === user.id ? `/requests/${id}/edit` : null}
       />
       {/* Після повторного подання (AC-DEC-07) — «Purchase submitted» (текст PM, таблиця вимоги 49). */}
-      {query?.ok === "RESUBMITTED" ? (
+      {query?.ok === "RESUBMITTED" && request.status === "pending" && request.author_id === user.id ? (
         <Alert role="status" data-testid="purchase-message">
           {messageFor("SUBMITTED")}
         </Alert>

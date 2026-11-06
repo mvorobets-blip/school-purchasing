@@ -189,6 +189,25 @@ describe("повторне подання поверненої заявки (б�
     expect(await snapshot(id)).toEqual(before);
   });
 
+  // Дописав розробник за незалежним рев'ю задачі 5: ті самі права, що при першому поданні.
+  it("автора прибрали із заявників відділу після повернення — FORBIDDEN, нічого не змінено", async () => {
+    const id = await returnedRequest();
+    const before = await snapshot(id);
+    await t.asService("delete from public.department_members where department_id = $1 and profile_id = $2", [
+      dept["Початкова школа"],
+      MEMBER_1,
+    ]);
+    try {
+      await expect(resubmit(MEMBER_1, id, THREE_LINES)).rejects.toThrow(/FORBIDDEN/);
+    } finally {
+      await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, false)", [
+        dept["Початкова школа"],
+        MEMBER_1,
+      ]);
+    }
+    expect(await snapshot(id)).toEqual(before);
+  });
+
   it("рядки перевіряються як при першому поданні — відповідний код, заявка лишається «returned» зі старими рядками й одним записом", async () => {
     const id = await returnedRequest();
     const before = await snapshot(id);

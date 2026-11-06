@@ -13,7 +13,10 @@ const THREE_LINES = [
   { position: 2, name: "Маркери", purpose: "Для дошки", quantity: 2, price: 15.5, status: null },
   { position: 3, name: "Скріпки", purpose: "Для офісу", quantity: 5, price: 1, status: null },
 ];
-const db: { request: Record<string, unknown> | null; lines: Record<string, unknown>[] } = { request: null, lines: [] };
+const db: { request: Record<string, unknown> | null; lines: Record<string, unknown>[]; errorTable?: string } = {
+  request: null,
+  lines: [],
+};
 const queried: string[] = [];
 
 function query(table: string) {
@@ -21,6 +24,7 @@ function query(table: string) {
   const filters: [string, unknown][] = [];
   let single = false;
   const result = () => {
+    if (table === db.errorTable) return { data: null, error: { message: "boom" } };
     if (table === "purchase_requests") {
       const row = db.request && filters.every(([c, v]) => !(c in db.request!) || db.request![c] === v) ? db.request : null;
       return { data: single ? row : row ? [row] : [], error: null };
@@ -88,6 +92,7 @@ describe("сторінка повторного подання «/requests/[id]/
       created_at: "2026-10-26T10:00:00Z",
     };
     db.lines = THREE_LINES;
+    db.errorTable = undefined;
     queried.length = 0;
   });
 
@@ -135,5 +140,27 @@ describe("сторінка повторного подання «/requests/[id]/
     expect(html).toContain(messageFor("FORBIDDEN"));
     expect(html).not.toContain("<form");
     expect(html).not.toContain("Папір А4");
+  });
+
+  // Дописав розробник за незалежним рев'ю задачі 5.
+  it("над формою — причина повернення, щоб автор бачив, що виправити", async () => {
+    const html = await render();
+    expect(html).toMatch(/data-testid="return-reason"[^>]*>[\s\S]*Уточніть кількість/);
+    expect(html.indexOf("Уточніть кількість")).toBeLessThan(html.indexOf("<form"));
+  });
+
+  it("автор може додати й прибрати рядок: є «Add line» і кнопки прибирання рядків", async () => {
+    const html = await render();
+    expect(html).toContain("Add line");
+    expect(html).toContain("Remove line 1</button>");
+  });
+
+  it("помилка завантаження заявки, рядків чи відділу — повідомлення, а не форма", async () => {
+    for (const table of ["purchase_requests", "purchase_request_lines", "departments"]) {
+      db.errorTable = table;
+      const html = await render();
+      expect(html).toContain("Could not load the request. Refresh the page.");
+      expect(html).not.toContain("<form");
+    }
   });
 });

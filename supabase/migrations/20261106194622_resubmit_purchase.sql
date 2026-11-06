@@ -4,6 +4,8 @@
 -- «Очікує схвалення» в тому самому відділі, номер не змінюється (#68), в історії — ще один запис «Подано» (#67).
 -- Помилки:
 --   42501 FORBIDDEN — неактивний; заявки немає, вона не власна чи не «Повернено на доопрацювання» (без розкриття, що саме);
+--                     автор уже не заявник відділу чи втратив дозвіл «Самостійна закупівля» для цього типу — ті самі права,
+--                     що при першому поданні (матриця «Подавати закупівлю — лише у відділ, де він заявник»);
 --   P0001 NO_LINES / INVALID_LINE / INVALID_QUANTITY / INVALID_PRICE — як при першому поданні.
 -- Будь-яка помилка — нічого не змінено (одна транзакція).
 
@@ -25,6 +27,15 @@ begin
 
   select * into v_request from public.purchase_requests where id = p_request_id for update;
   if not found or v_request.author_id <> v_uid or v_request.status <> 'returned' then
+    raise exception 'FORBIDDEN' using errcode = '42501';
+  end if;
+  if not (private.is_admin() or private.is_member_of(v_request.department_id)) then
+    raise exception 'FORBIDDEN' using errcode = '42501';
+  end if;
+  if v_request.purchase_type = 'self_purchase' and not private.is_admin() and not exists (
+    select 1 from public.employee_permissions as e
+    where e.profile_id = v_uid and e.permission = 'self_purchase'
+  ) then
     raise exception 'FORBIDDEN' using errcode = '42501';
   end if;
 

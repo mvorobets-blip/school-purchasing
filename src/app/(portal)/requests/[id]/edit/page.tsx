@@ -30,7 +30,7 @@ export default async function EditRequestPage({ params }: PageProps<"/requests/[
   const supabase = await createClient();
   const { data: request, error } = await supabase
     .from("purchase_requests")
-    .select("id, number, department_id, purchase_type")
+    .select("id, number, department_id, purchase_type, return_reason")
     .eq("id", id)
     .eq("author_id", user.id)
     .eq("status", "returned")
@@ -63,6 +63,12 @@ export default async function EditRequestPage({ params }: PageProps<"/requests/[
           Edit <span className="font-mono tabular-nums">{number}</span>
         </h1>
       </div>
+      {/* Що просив схвалювач — перед формою, щоб автор бачив, що виправити (вимога 63, крок 3; AC-DEC-04). */}
+      {request.return_reason ? (
+        <Alert data-testid="return-reason">
+          <span className="font-medium">Return reason:</span> {request.return_reason}
+        </Alert>
+      ) : null}
       <PurchaseForm
         departments={[{ value: request.department_id, label: deptRes.data?.name ?? "—" }]}
         types={[
