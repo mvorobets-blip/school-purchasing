@@ -145,6 +145,7 @@ isOneToOne: false
             "add_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "decide_purchase": { Args: { "p_decision": string,"p_reason"?: string | null,"p_request_id": string }; Returns: undefined },
             "request_author_names": { Args: { "p_request_ids": string[] }; Returns: { author_name: string | null; request_id: string }[] },
+            "request_history": { Args: { "p_request_id": string }; Returns: { actor_name: string | null; created_at: string; kind: string }[] },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "set_approver": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
             "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },

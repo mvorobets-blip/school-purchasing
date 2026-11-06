@@ -6,10 +6,14 @@ import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
+import { formatSubmittedAt } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { formatCents, lineSumCents, totalCents } from "@/lib/purchase/money";
 import { formatRequestNumber } from "@/lib/purchase/number";
 import { createClient } from "@/lib/supabase/server";
+
+// Підписи записів історії — таблиця PM (вимога 49): «Подано» → «Submitted».
+const HISTORY_LABEL: Record<string, string> = { submitted: "Submitted" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -49,20 +53,23 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
   if (authorError) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   const authorName = authorRows?.[0]?.author_name ?? "—";
 
-  const [linesRes, deptRes] = await Promise.all([
+  const [linesRes, deptRes, historyRes] = await Promise.all([
     supabase
       .from("purchase_request_lines")
       .select("position, name, purpose, quantity, price")
       .eq("request_id", id)
       .order("position"),
     supabase.from("departments").select("name").eq("id", request.department_id).maybeSingle(),
+    // Історія — лише якщо заявку видно (private.request_history: та сама умова, що RLS заявки; AC-HIST-10).
+    supabase.rpc("request_history", { p_request_id: id }),
   ]);
   // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
-  if (linesRes.error || deptRes.error) {
+  if (linesRes.error || deptRes.error || historyRes.error) {
     return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   }
 
   const lines = linesRes.data ?? [];
+  const history = historyRes.data ?? [];
 
   return (
     <>
@@ -146,6 +153,22 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
             </TableRow>
           </TableFooter>
         </Table>
+      </Card>
+
+      {/* Історія заявки (AC-HIST-06): «Submitted · <ім'я> · 05.11.2026, 14:32» — підписи з таблиці PM (#49), час #74. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="flex flex-col gap-2 text-sm" data-testid="request-history">
+            {history.map((e, i) => (
+              <li key={`${e.created_at}-${i}`} className="tabular-nums">
+                {`${HISTORY_LABEL[e.kind] ?? e.kind} · ${e.actor_name ?? "—"} · ${formatSubmittedAt(e.created_at)}`}
+              </li>
+            ))}
+          </ol>
+        </CardContent>
       </Card>
     </>
   );
