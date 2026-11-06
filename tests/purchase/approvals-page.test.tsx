@@ -140,6 +140,12 @@ describe("сторінка «Awaiting decision»", () => {
     ]);
   });
 
+  it("після повернення на доопрацювання (?ok=RETURNED) — повідомлення «Request returned for revision.»", async () => {
+    data.approverOf = [{ department_id: "d1" }];
+    const html = await render({ ok: "RETURNED" });
+    expect(html).toMatch(/data-testid="decision-message"[^>]*>Request returned for revision\.</);
+  });
+
   const many = (n: number) =>
     Array.from({ length: n }, (_, i) => ({
       id: `r${i + 1}`,

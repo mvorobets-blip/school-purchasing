@@ -21,6 +21,9 @@ const HISTORY = "supabase/migrations/20261106184819_request_history.sql";
 const HISTORY_DB = "tests/db/request-history.test.ts";
 const PARTIAL = "supabase/migrations/20261106190909_partial_approval.sql";
 const PARTIAL_DB = "tests/db/partial-approval.test.ts";
+// Жива версія private.decide_purchase (create or replace поверх PARTIAL).
+const RETURN = "supabase/migrations/20261106193244_return_for_revision.sql";
+const RETURN_DB = "tests/db/return-for-revision.test.ts";
 
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
@@ -133,25 +136,25 @@ export const mutants = [
   },
   // ── AC-DEC-01: часткове схвалення; «Схвалено» — лише без відхилених рядків (AC-APR-02) ─────────────────────────
   {
-    id: "S18", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "S18", kind: "sql", ac: "AC-DEC-01", file: RETURN, tests: [PARTIAL_DB],
     what: "decide_purchase: позначено всі рядки — заявку все одно «частково схвалено» (без ALL_LINES_REJECTED)",
     find: "  if v_marked > 0 and v_marked = v_lines then\n    raise exception 'ALL_LINES_REJECTED';\n  end if;\n",
     replace: "",
   },
   {
-    id: "S19", kind: "sql", ac: "AC-APR-02", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "S19", kind: "sql", ac: "AC-APR-02", file: RETURN, tests: [PARTIAL_DB],
     what: "decide_purchase: схвалення без позначених рядків дає «частково схвалено»",
     find: "set status = case when v_marked > 0 then 'partially_approved' else 'approved' end",
     replace: "set status = 'partially_approved'",
   },
   {
-    id: "S20", kind: "sql", ac: "AC-APR-05", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "S20", kind: "sql", ac: "AC-APR-05", file: RETURN, tests: [PARTIAL_DB],
     what: "decide_purchase: схвалювач може вирішити власну заявку (прибрано OWN_REQUEST)",
     find: "  if v_request.author_id = v_uid then\n    raise exception 'OWN_REQUEST' using errcode = '42501';\n  end if;\n",
     replace: "",
   },
   {
-    id: "S21", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "S21", kind: "sql", ac: "AC-DEC-01", file: RETURN, tests: [PARTIAL_DB],
     what: "decide_purchase: статуси рядків переплутано — позначені «approved», решта «rejected»",
     find: "set status = case when position = any (v_rejected) then 'rejected' else 'approved' end",
     replace: "set status = case when position = any (v_rejected) then 'approved' else 'rejected' end",
@@ -162,6 +165,13 @@ export const mutants = [
     what: "тригер меж: назва з 201 символу проходить",
     find: "  if char_length(new.name) > 200 then",
     replace: "  if char_length(new.name) > 201 then",
+  },
+  // ── AC-DEC-06: повернення без причини не зберігається ────────────────────────────────────────────────────────
+  {
+    id: "S22", kind: "sql", ac: "AC-DEC-06", file: RETURN, tests: [RETURN_DB],
+    what: "decide_purchase: повернення без причини проходить (перевірку NO_REASON для return прибрано)",
+    find: "  if p_decision = 'return' then\n    if v_reason is null then\n      raise exception 'NO_REASON';\n    end if;\n",
+    replace: "  if p_decision = 'return' then\n",
   },
 ];
 

@@ -20,7 +20,64 @@ import { decidePurchase, type DecisionState } from "./actions";
 
 const idle: DecisionState = { status: "idle", message: "" };
 
-// «Approve» — основна дія рядка (суцільна); «Reject» — незворотна (червона межа) з причиною в діалозі (AC-APR-06, 07).
+type ReasonDecision = "reject" | "return";
+
+const REASON_DIALOG: Record<
+  ReasonDecision,
+  { trigger: string; title: string; variant: "destructive" | "outline"; submit: string; pending: string }
+> = {
+  // «Reject» — незворотна дія (червона межа, AC-APR-06, 07).
+  reject: { trigger: "Reject", title: "Reject request", variant: "destructive", submit: "Reject", pending: "Rejecting…" },
+  // «Return for revision» — автор виправить і подасть знову (AC-DEC-04, 06): звичайна другорядна дія.
+  return: {
+    trigger: "Return for revision",
+    title: "Return for revision",
+    variant: "outline",
+    submit: "Return for revision",
+    pending: "Returning…",
+  },
+};
+
+// Рішення з причиною в діалозі: без причини — «Provide a reason», заявка не змінюється.
+function ReasonDialog({ requestId, label, decision }: { requestId: string; label: string; decision: ReasonDecision }) {
+  const [state, action, pending] = useActionState(decidePurchase.bind(null, requestId, decision), idle);
+  const text = REASON_DIALOG[decision];
+  const fieldId = `${decision}-reason-${requestId}`;
+  return (
+    <Dialog>
+      <DialogTrigger
+        render={<Button type="button" size="sm" variant={text.variant} aria-label={`${text.trigger}: ${label}`} />}
+      >
+        {text.trigger}
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{text.title}</DialogTitle>
+          <DialogDescription>The requester will see the reason next to the status.</DialogDescription>
+        </DialogHeader>
+        <form action={action} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={fieldId}>Reason</Label>
+            <Textarea id={fieldId} name="reason" rows={3} maxLength={REASON_LIMIT} />
+          </div>
+          {state.status === "error" ? (
+            <Alert variant="destructive" data-testid="decision-message">
+              {state.message}
+            </Alert>
+          ) : null}
+          <DialogFooter>
+            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
+            <Button type="submit" variant={text.variant} disabled={pending}>
+              {pending ? text.pending : text.submit}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// «Approve» — основна дія (суцільна, одна на екран); «Return for revision» і «Reject» — з причиною в діалозі.
 // На сторінці заявки схвалювач позначає «Reject line» — позиції йдуть у форму схвалення, а кнопка стає «Partially approve»
 // (AC-DEC-01; тексти — таблиця PM, вимога 49).
 export function DecisionButtons({
@@ -38,7 +95,6 @@ export function DecisionButtons({
   const partial = rejectedPositions.length > 0;
   const [approveState, approve, approving] = useActionState(decidePurchase.bind(null, requestId, "approve"), idle);
   useEffect(() => onPendingChange?.(approving), [approving, onPendingChange]);
-  const [rejectState, reject, rejecting] = useActionState(decidePurchase.bind(null, requestId, "reject"), idle);
 
   return (
     <div className="flex flex-col items-end gap-2">
@@ -56,34 +112,8 @@ export function DecisionButtons({
             {approving ? "Approving…" : partial ? "Partially approve" : "Approve"}
           </Button>
         </form>
-        <Dialog>
-          <DialogTrigger render={<Button type="button" size="sm" variant="destructive" aria-label={`Reject: ${label}`} />}>
-            Reject
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reject request</DialogTitle>
-              <DialogDescription>The requester will see the reason next to the status.</DialogDescription>
-            </DialogHeader>
-            <form action={reject} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor={`reason-${requestId}`}>Reason</Label>
-                <Textarea id={`reason-${requestId}`} name="reason" rows={3} maxLength={REASON_LIMIT} />
-              </div>
-              {rejectState.status === "error" ? (
-                <Alert variant="destructive" data-testid="decision-message">
-                  {rejectState.message}
-                </Alert>
-              ) : null}
-              <DialogFooter>
-                <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
-                <Button type="submit" variant="destructive" disabled={rejecting}>
-                  {rejecting ? "Rejecting…" : "Reject"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <ReasonDialog requestId={requestId} label={label} decision="return" />
+        <ReasonDialog requestId={requestId} label={label} decision="reject" />
       </div>
       {approveState.status === "error" ? (
         <Alert variant={approveState.message === "Not enough permissions" ? "default" : "destructive"} data-testid="decision-message">

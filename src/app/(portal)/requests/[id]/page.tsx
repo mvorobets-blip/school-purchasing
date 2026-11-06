@@ -34,7 +34,7 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
   const supabase = await createClient();
   const { data: request, error } = await supabase
     .from("purchase_requests")
-    .select("id, number, department_id, purchase_type, status, reject_reason, created_at")
+    .select("id, number, department_id, purchase_type, status, reject_reason, return_reason, created_at")
     .eq("id", id)
     .maybeSingle();
   if (error) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
@@ -85,6 +85,7 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
         purchaseType={request.purchase_type}
         status={request.status}
         rejectReason={request.reject_reason}
+        returnReason={request.return_reason}
       />
       {canDecide ? (
         <LineDecision requestId={id} label={number} lines={lines} />

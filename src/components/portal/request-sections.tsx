@@ -17,6 +17,7 @@ type Details = {
   purchaseType: string;
   status: string;
   rejectReason: string | null;
+  returnReason: string | null;
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -28,7 +29,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export function RequestDetails({ authorName, departmentName, purchaseType, status, rejectReason }: Details) {
+export function RequestDetails({ authorName, departmentName, purchaseType, status, rejectReason, returnReason }: Details) {
   return (
     <Card>
       <CardContent>
@@ -53,6 +54,12 @@ export function RequestDetails({ authorName, departmentName, purchaseType, statu
             // Причину відхилення видно поруч зі статусом автору й схвалювачам відділу — рішення PM #59 (AC-APR-07).
             <Field label="Rejection reason">
               <dd data-testid="reject-reason">{rejectReason}</dd>
+            </Field>
+          ) : null}
+          {status === "returned" && returnReason ? (
+            // Причину повернення бачить автор поруч зі статусом — що виправити (вимога 63, крок 3; AC-DEC-04).
+            <Field label="Return reason">
+              <dd data-testid="return-reason">{returnReason}</dd>
             </Field>
           ) : null}
         </dl>

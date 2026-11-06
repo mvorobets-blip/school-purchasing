@@ -151,6 +151,49 @@ describe("дія decidePurchase", () => {
     });
   });
 
+  // Повернення на доопрацювання (задача 4): те саме decidePurchase з рішенням "return" і полем форми reason.
+  it("AC-DEC-06: повернення без причини — «Provide a reason», до бази не звертаємось", async () => {
+    for (const reason of [undefined, "", "   "]) {
+      expect(await decidePurchase(REQUEST, "return", idle, form(reason))).toEqual({ status: "error", message: "Provide a reason" });
+    }
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("AC-DEC-04: повернення з причиною «Уточніть кількість» — rpc з рішенням return і причиною, назад до списку з «RETURNED»", async () => {
+    await expect(decidePurchase(REQUEST, "return", idle, form("  Уточніть кількість  "))).rejects.toThrow(
+      "REDIRECT /approvals?ok=RETURNED",
+    );
+    expect(rpcCalls).toEqual([
+      [
+        "decide_purchase",
+        { p_request_id: REQUEST, p_decision: "return", p_reason: "Уточніть кількість", p_rejected_positions: [] },
+      ],
+    ]);
+  });
+
+  it("повернення з причиною довшою за 500 символів — «The reason can be up to 500 characters», до бази не звертаємось", async () => {
+    expect(await decidePurchase(REQUEST, "return", idle, form("я".repeat(501)))).toEqual({
+      status: "error",
+      message: "The reason can be up to 500 characters",
+    });
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("повернення: відповідь бази NO_REASON показано як «Provide a reason»", async () => {
+    rpcResult.error = { code: "P0001", message: "NO_REASON" };
+    expect(await decidePurchase(REQUEST, "return", idle, form("Уточніть кількість"))).toEqual({
+      status: "error",
+      message: "Provide a reason",
+    });
+  });
+
+  it("повернення: позначені «Reject line» до бази не йдуть — p_rejected_positions порожній", async () => {
+    await expect(decidePurchase(REQUEST, "return", idle, form("Уточніть кількість", ["2"]))).rejects.toThrow(
+      "REDIRECT /approvals?ok=RETURNED",
+    );
+    expect(rpcArgs(rpcCalls[0]).positions).toEqual([]);
+  });
+
   it("відмову check-обмеження довжини причини в базі показано тим самим повідомленням", async () => {
     rpcResult.error = {
       code: "23514",
