@@ -5,8 +5,8 @@ import { formatSubmitted } from "@/lib/purchase/date";
 describe("головна: підрахунки", () => {
   it("рахує заявки за статусами, невідомий статус пропускає", () => {
     const rows = [{ status: "pending" }, { status: "approved" }, { status: "pending" }, { status: "draft" }];
-    expect(countByStatus(rows)).toEqual({ pending: 2, approved: 1, rejected: 0 });
-    expect(countByStatus([])).toEqual({ pending: 0, approved: 0, rejected: 0 });
+    expect(countByStatus(rows)).toEqual({ pending: 2, approved: 1, rejected: 0, partially_approved: 0, returned: 0 });
+    expect(countByStatus([])).toEqual({ pending: 0, approved: 0, rejected: 0, partially_approved: 0, returned: 0 });
   });
 
   it("підсумок позицій: перша за порядком і скільки ще", () => {

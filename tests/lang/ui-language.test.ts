@@ -49,7 +49,8 @@ describe("англійський інтерфейс", () => {
   });
 
   it("AC-LANG-06: статуси підписано текстом «Awaiting approval», «Approved», «Rejected»", () => {
-    expect(STATUS_LABEL).toEqual({ pending: "Awaiting approval", approved: "Approved", rejected: "Rejected" });
+    // toMatchObject: у зрізі 3 додано статуси AC-LANG-09 (tests/purchase/status.test.ts).
+    expect(STATUS_LABEL).toMatchObject({ pending: "Awaiting approval", approved: "Approved", rejected: "Rejected" });
   });
 
   it("AC-LANG-08: ідентифікатори ролей без змін, підписи — англійською за таблицею", () => {
@@ -68,6 +69,7 @@ describe("англійський інтерфейс", () => {
       SUBMITTED: "Purchase submitted",
       NO_REQUESTS: "You have not submitted any requests yet",
       NO_DECISIONS: "No requests awaiting your decision",
+      ALL_LINES_REJECTED: "All lines are rejected: reject the whole request",
     });
   });
 });

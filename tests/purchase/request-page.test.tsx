@@ -22,6 +22,8 @@ const db: {
   history: [],
 };
 const queried: string[] = [];
+// Колонки, які сторінка вибирає з кожної таблиці (select) — щоб перевірити, що статус рядка справді запитано.
+const selected: Record<string, string> = {};
 const rpcCalls: { fn: string; args: unknown }[] = [];
 // Запис історії, який повертає request_history (AC-HIST-06): 19:32 UTC 5 листопада — 14:32 у Нью-Йорку (EST).
 const SUBMITTED = { kind: "submitted", actor_name: "PM Demo Requester", created_at: "2026-11-05T19:32:00Z" };
@@ -47,7 +49,10 @@ function query(table: string) {
     return { data: { name: "Початкова школа" }, error: null };
   };
   const builder = {
-    select: () => builder,
+    select: (columns: string) => {
+      selected[table] = columns;
+      return builder;
+    },
     eq: () => builder,
     order: () => builder,
     maybeSingle: () => builder,
@@ -97,6 +102,7 @@ describe("сторінка заявки", () => {
     db.historyError = false;
     queried.length = 0;
     rpcCalls.length = 0;
+    for (const key of Object.keys(selected)) delete selected[key];
   });
 
   it("AC-FRM-08: заявки немає у відповіді бази (чужа) — «Недостатньо прав» без даних", async () => {
@@ -220,5 +226,29 @@ describe("сторінка заявки", () => {
     expect(html).toContain("History");
     expect(html).toContain("Could not load the history. Refresh the page.");
     expect(html).not.toContain("Could not load the request");
+  });
+
+  it("AC-DEC-01: автор бачить «Partially approved», а в колонці «Line status» — рядок 2 «Rejected», рядки 1 і 3 «Approved»", async () => {
+    db.request = { ...db.request, status: "partially_approved" };
+    db.lines = [
+      { position: 1, name: "Папір А4", purpose: "Друк", quantity: 3, price: 20, status: "approved" },
+      { position: 2, name: "Маркери", purpose: "Для дошки", quantity: 2, price: 15.5, status: "rejected" },
+      { position: 3, name: "Скріпки", purpose: "Офіс", quantity: 5, price: 1, status: "approved" },
+    ];
+    const html = await render();
+    expect(selected.purchase_request_lines).toMatch(/\bstatus\b/);
+    expect(html).toMatch(/data-testid="purchase-status"[^>]*>Partially approved</);
+    expect(html).toMatch(/<th[^>]*>Line status<\/th>/);
+    // Рядки тіла таблиці: статус кожного — у його власному <tr>.
+    const tbody = html.slice(html.indexOf("<tbody"), html.indexOf("</tbody>"));
+    const rows = [...tbody.matchAll(/<tr[\s\S]*?<\/tr>/g)].map((m) => m[0].replace(/<[^>]+>/g, " "));
+    const rowOf = (name: string) => rows.find((r) => r.includes(name)) ?? "";
+    expect(rows).toHaveLength(3);
+    expect(rowOf("Маркери")).toMatch(/\bRejected\b/);
+    expect(rowOf("Маркери")).not.toMatch(/\bApproved\b/);
+    for (const name of ["Папір А4", "Скріпки"]) {
+      expect(rowOf(name)).toMatch(/\bApproved\b/);
+      expect(rowOf(name)).not.toMatch(/\bRejected\b/);
+    }
   });
 });

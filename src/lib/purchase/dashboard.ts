@@ -5,7 +5,7 @@ import { isPurchaseStatus, type PurchaseStatus } from "./status";
 export type StatusCounts = Record<PurchaseStatus, number>;
 
 export function countByStatus(rows: readonly { status: string }[]): StatusCounts {
-  const counts: StatusCounts = { pending: 0, approved: 0, rejected: 0 };
+  const counts: StatusCounts = { pending: 0, approved: 0, rejected: 0, partially_approved: 0, returned: 0 };
   for (const r of rows) if (isPurchaseStatus(r.status)) counts[r.status] += 1;
   return counts;
 }

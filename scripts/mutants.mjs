@@ -19,6 +19,8 @@ const LIMITS = "supabase/migrations/20261106162407_request_number_and_line_limit
 const NUMBER_DB = "tests/db/purchase-number.test.ts";
 const HISTORY = "supabase/migrations/20261106184819_request_history.sql";
 const HISTORY_DB = "tests/db/request-history.test.ts";
+const PARTIAL = "supabase/migrations/20261106190909_partial_approval.sql";
+const PARTIAL_DB = "tests/db/partial-approval.test.ts";
 
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
@@ -127,6 +129,25 @@ export const mutants = [
     id: "S17", kind: "sql", ac: "AC-HIST-06", file: HISTORY, tests: [HISTORY_DB],
     what: "тригер подання не пише подію submitted",
     find: "  insert into public.purchase_request_events (request_id, kind, actor_id, created_at)\n  values (new.id, 'submitted', new.author_id, new.created_at);\n",
+    replace: "",
+  },
+  // ── AC-DEC-01: часткове схвалення; «Схвалено» — лише без відхилених рядків (AC-APR-02) ─────────────────────────
+  {
+    id: "S18", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    what: "decide_purchase: позначено всі рядки — заявку все одно «частково схвалено» (без ALL_LINES_REJECTED)",
+    find: "  if v_marked > 0 and v_marked = v_lines then\n    raise exception 'ALL_LINES_REJECTED';\n  end if;\n",
+    replace: "",
+  },
+  {
+    id: "S19", kind: "sql", ac: "AC-APR-02", file: PARTIAL, tests: [PARTIAL_DB],
+    what: "decide_purchase: схвалення без позначених рядків дає «частково схвалено»",
+    find: "set status = case when v_marked > 0 then 'partially_approved' else 'approved' end",
+    replace: "set status = 'partially_approved'",
+  },
+  {
+    id: "S20", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    what: "decide_purchase: схвалювач може вирішити власну заявку (прибрано OWN_REQUEST)",
+    find: "  if v_request.author_id = v_uid then\n    raise exception 'OWN_REQUEST' using errcode = '42501';\n  end if;\n",
     replace: "",
   },
 ];

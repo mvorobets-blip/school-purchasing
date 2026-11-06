@@ -44,6 +44,10 @@
   --color-status-approved-foreground: var(--status-approved-foreground);
   --color-status-rejected: var(--status-rejected);
   --color-status-rejected-foreground: var(--status-rejected-foreground);
+  --color-status-partial: var(--status-partial);
+  --color-status-partial-foreground: var(--status-partial-foreground);
+  --color-status-returned: var(--status-returned);
+  --color-status-returned-foreground: var(--status-returned-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -88,6 +92,10 @@
   --status-approved-foreground: oklch(0.36 0.09 150);
   --status-rejected: oklch(0.93 0.04 25);
   --status-rejected-foreground: oklch(0.42 0.15 27);
+  --status-partial: oklch(0.93 0.05 280);
+  --status-partial-foreground: oklch(0.42 0.15 280);
+  --status-returned: oklch(0.93 0.07 65);
+  --status-returned-foreground: oklch(0.42 0.11 50);
 }
 
 /* Темна тема — атрибут <html data-theme="dark">: вибір людини (cookie theme, ставить сервер у src/app/layout.tsx)
@@ -128,6 +136,10 @@
   --status-approved-foreground: oklch(0.849 0.1 149);
   --status-rejected: oklch(0.667 0.184 28 / 16%);
   --status-rejected-foreground: oklch(0.809 0.091 26);
+  --status-partial: oklch(0.62 0.17 280 / 16%);
+  --status-partial-foreground: oklch(0.84 0.08 282);
+  --status-returned: oklch(0.76 0.14 65 / 16%);
+  --status-returned-foreground: oklch(0.86 0.1 68);
 }
 
 /* Тло темної теми: ледь помітні статичні зорі й слабкий фіолетовий серпанок угорі (DESIGN.md §2), без анімації. */

@@ -43,6 +43,8 @@
 | `status-pending` / `-foreground` | «Очікує схвалення», «Немає схвалювача» — теплий жовтий | `oklch(0.93 0.07 85)` / `oklch(0.38 0.08 70)` | `oklch(0.809 0.138 85 / 16%)` / `oklch(0.877 0.098 87)` | `bg-status-pending`, `text-status-pending-foreground` |
 | `status-approved` / `-foreground` | «Схвалено», «Налаштовано» — зелений | `oklch(0.93 0.06 150)` / `oklch(0.36 0.09 150)` | `oklch(0.687 0.166 147 / 16%)` / `oklch(0.849 0.1 149)` | `bg-status-approved`, `text-status-approved-foreground` |
 | `status-rejected` / `-foreground` | «Відхилено» — червоний | `oklch(0.93 0.04 25)` / `oklch(0.42 0.15 27)` | `oklch(0.667 0.184 28 / 16%)` / `oklch(0.809 0.091 26)` | `bg-status-rejected`, `text-status-rejected-foreground` |
+| `status-partial` / `-foreground` | «Частково схвалено» — індиго (зріз 3) | `oklch(0.93 0.05 280)` / `oklch(0.42 0.15 280)` | `oklch(0.62 0.17 280 / 16%)` / `oklch(0.84 0.08 282)` | `bg-status-partial`, `text-status-partial-foreground` |
+| `status-returned` / `-foreground` | «Повернено на доопрацювання» — бурштиновий (зріз 3) | `oklch(0.93 0.07 65)` / `oklch(0.42 0.11 50)` | `oklch(0.76 0.14 65 / 16%)` / `oklch(0.86 0.1 68)` | `bg-status-returned`, `text-status-returned-foreground` |
 
 ### Контраст
 
@@ -64,6 +66,8 @@
 | `status-pending-foreground` на `status-pending` | 8.3 | 9.9 | ≥ 4.5 |
 | `status-approved-foreground` на `status-approved` | 8.7 | 10.1 | ≥ 4.5 |
 | `status-rejected-foreground` на `status-rejected` | 7.3 | 8.6 | ≥ 4.5 |
+| `status-partial-foreground` на `status-partial` | 7.2 | 9.8 | ≥ 4.5 |
+| `status-returned-foreground` на `status-returned` | 6.9 | 9.7 | ≥ 4.5 |
 | `input` на `card` (поле, другорядна кнопка) | 3.3 | 3.6 | ≥ 3 |
 | `ring` на `background` (кільце фокусу, повна непрозорість `ring-ring`) | 6.0 | 5.3 | ≥ 3 |
 
