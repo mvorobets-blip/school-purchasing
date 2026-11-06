@@ -145,10 +145,16 @@ export const mutants = [
     replace: "set status = 'partially_approved'",
   },
   {
-    id: "S20", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "S20", kind: "sql", ac: "AC-APR-05", file: PARTIAL, tests: [PARTIAL_DB],
     what: "decide_purchase: схвалювач може вирішити власну заявку (прибрано OWN_REQUEST)",
     find: "  if v_request.author_id = v_uid then\n    raise exception 'OWN_REQUEST' using errcode = '42501';\n  end if;\n",
     replace: "",
+  },
+  {
+    id: "S21", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    what: "decide_purchase: статуси рядків переплутано — позначені «approved», решта «rejected»",
+    find: "set status = case when position = any (v_rejected) then 'rejected' else 'approved' end",
+    replace: "set status = case when position = any (v_rejected) then 'approved' else 'rejected' end",
   },
 ];
 

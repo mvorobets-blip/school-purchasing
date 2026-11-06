@@ -21,6 +21,12 @@ alter table public.purchase_request_lines add column status text;
 alter table public.purchase_request_lines add constraint purchase_request_lines_status_check
   check (status is null or status in ('approved', 'rejected'));
 
+-- Заявки, схвалені до цієї міграції (зріз 2), схвалено цілком: їхні рядки — «Схвалено», як у нових схвалених.
+update public.purchase_request_lines as l
+  set status = 'approved'
+  from public.purchase_requests as r
+  where r.id = l.request_id and r.status = 'approved';
+
 comment on column public.purchase_request_lines.status is
   'Рішення по рядку: null — ще не вирішено; approved / rejected — пише лише private.decide_purchase.';
 
@@ -77,6 +83,9 @@ begin
     return;
   end if;
 
+  if array_position(v_rejected, null) is not null then
+    raise exception 'INVALID_LINE';
+  end if;
   select count(*) into v_lines from public.purchase_request_lines where request_id = p_request_id;
   select count(*) into v_marked
     from public.purchase_request_lines

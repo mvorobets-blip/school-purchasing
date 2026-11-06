@@ -14,6 +14,7 @@ const db: {
   authorError: boolean;
   history: Record<string, unknown>[];
   historyError?: boolean;
+  canDecide?: boolean;
 } = {
   request: null,
   lines: ONE_LINE,
@@ -32,6 +33,7 @@ const SUBMITTED = { kind: "submitted", actor_name: "PM Demo Requester", created_
 async function rpc(fn: string, args: unknown) {
   rpcCalls.push({ fn, args });
   if (fn === "request_history") return db.historyError ? { data: null, error: { message: "boom" } } : { data: db.history, error: null };
+  if (fn === "can_decide_purchase") return { data: db.canDecide ?? false, error: null };
   return db.authorError
     ? { data: null, error: { message: "boom" } }
     : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null };
@@ -100,6 +102,7 @@ describe("сторінка заявки", () => {
     db.authorError = false;
     db.history = [SUBMITTED];
     db.historyError = false;
+    db.canDecide = false;
     queried.length = 0;
     rpcCalls.length = 0;
     for (const key of Object.keys(selected)) delete selected[key];
@@ -250,5 +253,27 @@ describe("сторінка заявки", () => {
       expect(rowOf(name)).toMatch(/\bApproved\b/);
       expect(rowOf(name)).not.toMatch(/\bRejected\b/);
     }
+  });
+
+  // Сторона схвалювача AC-DEC-01 (тест дописав розробник за незалежним рев'ю задачі 3).
+  it("AC-DEC-01: схвалювач відділу бачить колонку «Reject line» з прапорцем на кожному рядку й кнопку «Approve»", async () => {
+    db.canDecide = true;
+    db.lines = [
+      { position: 1, name: "Папір А4", purpose: "Друк", quantity: 3, price: 20, status: null },
+      { position: 2, name: "Маркери", purpose: "Дошка", quantity: 2, price: 15.5, status: null },
+    ];
+    const html = await render();
+    expect(html).toContain(">Reject line</th>");
+    expect(html).toContain('aria-label="Reject line 1: Папір А4"');
+    expect(html).toContain('aria-label="Reject line 2: Маркери"');
+    expect(html).toMatch(/>Approve</);
+    expect(html).not.toContain("Partially approve");
+  });
+
+  it("автор чи інший схвалювач (can_decide_purchase — ні) — без «Reject line» і кнопок рішення", async () => {
+    db.canDecide = false;
+    const html = await render();
+    expect(html).not.toContain("Reject line");
+    expect(html).not.toMatch(/>Approve</);
   });
 });

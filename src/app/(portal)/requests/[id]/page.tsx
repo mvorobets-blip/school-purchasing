@@ -60,14 +60,15 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
   ]);
   // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
   // Помилка історії не ховає заявку: розділ «History» покаже власне повідомлення (рев'ю CodeRabbit, PR 59).
-  if (linesRes.error || deptRes.error || approverRes.error) {
+  if (linesRes.error || deptRes.error) {
     return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   }
 
   const lines = linesRes.data ?? [];
   const number = formatRequestNumber(request.number);
   // Кнопки рішення — лише зручність: права (відділ, не автор, статус) перевіряє private.decide_purchase.
-  const canDecide = approverRes.data === true;
+  // Помилка цієї перевірки не ламає сторінку: тоді просто без кнопок (рішення однаково перевіряє база).
+  const canDecide = !approverRes.error && approverRes.data === true;
 
   return (
     <>

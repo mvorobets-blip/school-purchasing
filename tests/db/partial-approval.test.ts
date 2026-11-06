@@ -110,6 +110,19 @@ describe("часткове схвалення (база)", () => {
     await expectUnchanged(id);
   });
 
+  // Дописав розробник за незалежним рев'ю задачі 3: NULL у масиві не має тихо давати повне схвалення.
+  it("NULL серед позицій — INVALID_LINE, нічого не змінено", async () => {
+    const id = await submit(MEMBER_1);
+    await expect(
+      t.asUser(MARIA, "select public.decide_purchase($1::uuid, 'approve', null, array[null]::integer[])", [id]),
+    ).rejects.toThrow(/INVALID_LINE/);
+    await expectUnchanged(id);
+    await expect(
+      t.asUser(MARIA, "select public.decide_purchase($1::uuid, 'approve', null, array[2, null]::integer[])", [id]),
+    ).rejects.toThrow(/INVALID_LINE/);
+    await expectUnchanged(id);
+  });
+
   it("автор не вирішує власну заявку з відхиленими рядками — OWN_REQUEST, нічого не змінено", async () => {
     await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true)", [
       dept["Вища школа"],

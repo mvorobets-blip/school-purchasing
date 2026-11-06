@@ -13,15 +13,21 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type RpcError = { code?: string; message?: string } | null;
 
-// Позиції рядків з прапорців «Reject line» (name="rejectLine", value — позиція рядка); лише цілі числа від 1.
-function rejectedPositions(formData: FormData): number[] {
+// Позиції рядків з прапорців «Reject line» (name="rejectLine", value — позиція рядка). Неможливе значення — null:
+// тоді рішення не надсилаємо (інакше підроблена форма перетворила б часткове схвалення на повне).
+function rejectedPositions(formData: FormData): number[] | null {
   const values = formData.getAll("rejectLine").map((v) => Number(v));
-  return [...new Set(values.filter((n) => Number.isInteger(n) && n >= 1))];
+  if (values.some((n) => !Number.isInteger(n) || n < 1)) return null;
+  return [...new Set(values)];
 }
+
+const CHANGED = "The request has changed. Refresh the page.";
 
 function errorMessage(error: RpcError): string {
   if (error?.message?.includes("NO_REASON")) return messageFor("NO_REASON");
   if (error?.message?.includes("ALL_LINES_REJECTED")) return messageFor("ALL_LINES_REJECTED");
+  // Позначено рядок, якого в заявці вже немає, чи невідоме рішення — повтор тієї самої форми не допоможе.
+  if (error?.message?.includes("INVALID_LINE") || error?.message?.includes("INVALID_DECISION")) return CHANGED;
   if (error?.message?.includes("NOT_PENDING")) return "This request has already been decided.";
   if (error?.code === "42501" || error?.message?.includes("FORBIDDEN")) return messageFor("FORBIDDEN");
   if (isTextLengthError(error)) return REASON_TOO_LONG;
@@ -46,6 +52,7 @@ export async function decidePurchase(
 
   // Позначені «Reject line» рядки (позиції) — лише для схвалення; усі позначені база відхиляє з ALL_LINES_REJECTED (AC-DEC-01).
   const rejected = decision === "approve" ? rejectedPositions(formData) : [];
+  if (rejected === null) return { status: "error", message: CHANGED };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("decide_purchase", {

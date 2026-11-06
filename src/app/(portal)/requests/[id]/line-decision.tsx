@@ -22,7 +22,13 @@ export function LineDecision({ requestId, label, lines }: { requestId: string; l
   return (
     <>
       <RequestLines lines={lines} selectable={{ rejected, onToggle }} />
-      <DecisionButtons requestId={requestId} label={label} rejectedPositions={[...rejected].sort((a, b) => a - b)} />
+      {/* key: після зміни позначок попереднє повідомлення (напр. «All lines are rejected…») вже не стосується форми. */}
+      <DecisionButtons
+        key={[...rejected].sort((a, b) => a - b).join()}
+        requestId={requestId}
+        label={label}
+        rejectedPositions={[...rejected].sort((a, b) => a - b)}
+      />
     </>
   );
 }

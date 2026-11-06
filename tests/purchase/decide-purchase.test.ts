@@ -99,6 +99,14 @@ describe("дія decidePurchase", () => {
     ]);
   });
 
+  it("неможливе значення rejectLine (не ціле число від 1) — рішення не надіслано, «The request has changed. Refresh the page.»", async () => {
+    for (const bad of [["abc"], ["0"], ["1.5"], ["2", "-1"]]) {
+      const state = await decidePurchase(REQUEST, "approve", idle, form(undefined, bad));
+      expect(state).toEqual({ status: "error", message: "The request has changed. Refresh the page." });
+    }
+    expect(rpcCalls).toHaveLength(0);
+  });
+
   it("кілька позначених рядків передано числами в порядку форми", async () => {
     await expect(decidePurchase(REQUEST, "approve", idle, form(undefined, ["1", "3"]))).rejects.toThrow(
       "REDIRECT /approvals?ok=PARTIALLY_APPROVED",
