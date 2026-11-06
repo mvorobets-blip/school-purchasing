@@ -47,6 +47,8 @@ export interface TestDb {
   asAnon<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
   /** SQL в обхід RLS (як Dashboard / service_role) — для підготовки даних і перевірки результату. */
   asService<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
+  /** Застосувати міграції, пропущені через createTestDb({ stopBefore }) (без stopBefore — нічого). */
+  applyRemaining(): Promise<void>;
 }
 
 async function inTransaction<T>(db: PGlite, role: string, userId: string | null, sql: string, params: unknown[]) {
@@ -63,13 +65,19 @@ async function inTransaction<T>(db: PGlite, role: string, userId: string | null,
   }
 }
 
-export async function createTestDb(): Promise<TestDb> {
+// stopBefore — застосувати міграції лише до вказаного файлу (не включно): тест вставляє «старі» дані, як на проді,
+// а потім applyRemaining() застосовує решту (перевірка backfill нової міграції).
+export async function createTestDb(options: { stopBefore?: string } = {}): Promise<TestDb> {
   const db = new PGlite();
   await db.exec(SUPABASE_SHIM);
   const migrations = readdirSync(new URL("supabase/migrations/", root))
     .filter((f) => f.endsWith(".sql"))
     .sort();
-  for (const file of migrations) await db.exec(read(`supabase/migrations/${file}`));
+  const stop = options.stopBefore ? migrations.indexOf(options.stopBefore) : -1;
+  if (options.stopBefore && stop < 0) throw new Error(`Немає міграції ${options.stopBefore}`);
+  const first = stop < 0 ? migrations : migrations.slice(0, stop);
+  const rest = stop < 0 ? [] : migrations.slice(stop);
+  for (const file of first) await db.exec(read(`supabase/migrations/${file}`));
   await db.exec(read("supabase/seed.sql"));
 
   // Як scripts/create-demo-users.mjs: користувач Auth → тригер створює профіль → service_role ставить роль.
@@ -99,5 +107,8 @@ export async function createTestDb(): Promise<TestDb> {
       inTransaction<T>(db, "authenticated", userId, sql, params),
     asAnon: <T,>(sql: string, params: unknown[] = []) => inTransaction<T>(db, "anon", null, sql, params),
     asService: <T,>(sql: string, params: unknown[] = []) => inTransaction<T>(db, "service_role", null, sql, params),
+    applyRemaining: async () => {
+      for (const file of rest) await db.exec(read(`supabase/migrations/${file}`));
+    },
   };
 }

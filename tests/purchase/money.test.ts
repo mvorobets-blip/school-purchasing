@@ -14,13 +14,13 @@ describe("суми заявки", () => {
   });
 
   it("числа й рядки з бази дають ту саму суму (numeric приходить і як number, і як string)", () => {
-    expect(lineSumCents(3, 20)).toBe(6000);
-    expect(lineSumCents("3", "20.00")).toBe(6000);
-    expect(lineSumCents(2, 15.5)).toBe(3100);
+    expect(lineSumCents(3, 20)).toBe(BigInt(6000));
+    expect(lineSumCents("3", "20.00")).toBe(BigInt(6000));
+    expect(lineSumCents(2, 15.5)).toBe(BigInt(3100));
   });
 
   it("без похибки рухомої коми: 3 × 0.10 = 0.30, 7 × 19.99 = 139.93", () => {
-    expect(lineSumCents(3, "0.10")).toBe(30);
+    expect(lineSumCents(3, "0.10")).toBe(BigInt(30));
     expect(formatCents(lineSumCents(3, 0.1))).toBe("0.30");
     expect(formatCents(lineSumCents(7, 19.99))).toBe("139.93");
     expect(formatCents(totalCents([{ quantity: 1, price: 0.1 }, { quantity: 1, price: 0.2 }]))).toBe("0.30");
@@ -28,20 +28,32 @@ describe("суми заявки", () => {
 
   it("результат — ціле число центів", () => {
     for (const [q, p] of [[3, 0.1], [7, 19.99], [1, 1.005], [13, 0.07]] as const) {
-      expect(Number.isInteger(lineSumCents(q, p))).toBe(true);
+      expect(typeof lineSumCents(q, p)).toBe("bigint");
     }
   });
 
   it("нуль і порожня заявка — 0.00", () => {
     expect(formatCents(0)).toBe("0.00");
     expect(formatCents(lineSumCents(2, "0"))).toBe("0.00");
-    expect(totalCents([])).toBe(0);
+    expect(totalCents([])).toBe(BigInt(0));
   });
 
   it("formatCents: два знаки після крапки", () => {
     expect(formatCents(9100)).toBe("91.00");
     expect(formatCents(5)).toBe("0.05");
     expect(formatCents(6000)).toBe("60.00");
+  });
+
+  it("найбільші допустимі значення (кількість 2 147 483 647 × ціна 9 999 999 999.99) — сума точна до цента", () => {
+    expect(formatCents(lineSumCents(2147483647, "9999999999.99"))).toBe("21474836469978525163.53");
+    expect(formatCents(totalCents([
+      { quantity: 2147483647, price: "9999999999.99" },
+      { quantity: 1, price: "0.01" },
+    ]))).toBe("21474836469978525163.54");
+  });
+
+  it("дробова кількість зі старих рядків (зріз 2) рахується без помилки", () => {
+    expect(formatCents(lineSumCents("1.5", "20.00"))).toBe("30.00");
   });
 });
 

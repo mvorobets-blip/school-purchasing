@@ -17,10 +17,19 @@ create sequence private.purchase_request_number_seq as integer start with 1;
 
 alter table public.purchase_requests add column number integer;
 
+-- Backfill оновлює кожен рядок, а Postgres перевіряє на update і обмеження «not valid». Причина відхилення ≤ 500
+-- (20261027142924_purchase_text_limits.sql) додана як «not valid»: на проді можуть бути довші старі причини, і backfill
+-- упав би. Тому знімаємо її на час backfill і повертаємо так само «not valid» (нові записи вона й далі перевіряє).
+alter table public.purchase_requests drop constraint purchase_requests_reject_reason_length;
+
 update public.purchase_requests as r
   set number = n.rn
   from (select id, row_number() over (order by created_at, id) as rn from public.purchase_requests) as n
   where r.id = n.id;
+
+alter table public.purchase_requests
+  add constraint purchase_requests_reject_reason_length
+    check (reject_reason is null or char_length(reject_reason) <= 500) not valid;
 
 select setval(
   'private.purchase_request_number_seq',
@@ -30,6 +39,8 @@ select setval(
 
 alter table public.purchase_requests alter column number set not null;
 alter table public.purchase_requests add constraint purchase_requests_number_key unique (number);
+-- «owned by» колонці не ставимо: Postgres дозволяє його лише в тій самій схемі, а послідовність навмисно в private
+-- (PostgREST її не відкриває, nextval — лише через private.submit_purchase).
 
 comment on column public.purchase_requests.number is
   'Номер заявки (показується як PUR-<number>): видає private.submit_purchase з private.purchase_request_number_seq.';
@@ -78,8 +89,9 @@ begin
 end;
 $$;
 
-revoke execute on function private.validate_purchase_lines(jsonb) from public, anon;
-grant execute on function private.validate_purchase_lines(jsonb) to authenticated;
+-- Security invoker без доступу до таблиць: викликає лише private.submit_purchase (security definer, від власника),
+-- тож окремий grant нікому не потрібен.
+revoke execute on function private.validate_purchase_lines(jsonb) from public, anon, authenticated;
 
 -- ── 3. Подання закупівлі з номером ─────────────────────────────────────────────
 create or replace function private.submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb)

@@ -106,6 +106,10 @@ const QUANTITY_LIMIT = 2_147_483_647;
 export const QUANTITY_INVALID = MESSAGES.INVALID_QUANTITY;
 export const PRICE_INVALID = MESSAGES.INVALID_PRICE;
 
+// Помилка рядка (порожнє поле чи межа кількості або ціни) — після неї форма підсвічує поля, які ще порожні чи неможливі.
+const LINE_ERRORS: readonly string[] = [MESSAGES.INVALID_LINE, QUANTITY_INVALID, PRICE_INVALID];
+export const isLineError = (message: string) => LINE_ERRORS.includes(message);
+
 // Кількість — ціле число від 1, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — ті самі межі перевіряє база
 // (private.validate_purchase_lines). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
 export function invalidNumberFields(line: PurchaseLine): LineField[] {

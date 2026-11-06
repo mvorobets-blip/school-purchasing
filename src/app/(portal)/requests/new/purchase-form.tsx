@@ -14,6 +14,7 @@ import {
   initialDepartment,
   invalidNumberFields,
   isBlockedNumberKey,
+  isLineError,
   LINE_TEXT_LIMIT,
   submitBlocked,
   type LineField,
@@ -48,9 +49,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
   const isError = state.status === "error";
   const showMessage = isError && editedAfter !== state;
   const forbidden = isError && state.message === messageFor("FORBIDDEN");
-  // Після помилки рядка (порожнє поле чи межа кількості або ціни) підсвічуємо поля, які ще порожні чи неможливі.
-  const markEmpty =
-    isError && (["INVALID_LINE", "INVALID_QUANTITY", "INVALID_PRICE"] as const).some((c) => state.message === messageFor(c));
+  const markEmpty = isError && isLineError(state.message);
   const blocked = forbidden && submitBlocked(state, { departmentId, purchaseType });
 
   const edited = () => setEditedAfter(state);
@@ -60,10 +59,11 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
   };
   // Кількість і ціна: «-», «+» і «e» не набрати з клавіатури; вставлене не переписуємо — неможливе значення база
   // відхилить («Quantity: a whole number from 1» / «Price: a number from 0»), і поле буде позначено.
+  // Без min і цілого step: інакше браузер блокує 0, 1.5 чи -1 власною підказкою, і людина не бачить текстів PM
+  // «Quantity: a whole number from 1» / «Price: a number from 0» — межі перевіряє база (INVALID_QUANTITY, INVALID_PRICE).
   const numberField = {
     type: "number",
     inputMode: "decimal",
-    min: 0,
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (isBlockedNumberKey(e.key)) e.preventDefault();
     },
@@ -179,7 +179,7 @@ export function PurchaseForm({ departments, types }: { departments: Option[]; ty
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 {field("name", "Item", { maxLength: LINE_TEXT_LIMIT })}
                 {field("purpose", "Purpose", { maxLength: LINE_TEXT_LIMIT })}
-                {field("quantity", "Quantity", { ...numberField, min: 1, step: "1", inputMode: "numeric" })}
+                {field("quantity", "Quantity", { ...numberField, step: "any", inputMode: "numeric" })}
                 {field("price", "Price", { ...numberField, step: "0.01" })}
                 {lines.length > 1 ? (
                   <Button
