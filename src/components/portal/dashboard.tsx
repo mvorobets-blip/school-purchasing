@@ -90,6 +90,7 @@ export function RequestRow({
   meta,
   status,
   rejectReason,
+  returnReason,
 }: {
   href: string;
   title: string;
@@ -97,6 +98,7 @@ export function RequestRow({
   meta: ReactNode;
   status: string;
   rejectReason?: string | null;
+  returnReason?: string | null;
 }) {
   return (
     <Link
@@ -115,6 +117,12 @@ export function RequestRow({
       {status === "rejected" && rejectReason ? (
         <span className="col-span-2 mt-0.5 border-l-2 border-border pl-2 text-sm text-muted-foreground">
           Rejection reason: {rejectReason}
+        </span>
+      ) : null}
+      {/* Автор одразу бачить, що виправити в поверненій заявці (вимога 63, крок 3). */}
+      {status === "returned" && returnReason ? (
+        <span className="col-span-2 mt-0.5 border-l-2 border-border pl-2 text-sm text-muted-foreground">
+          Return reason: {returnReason}
         </span>
       ) : null}
     </Link>

@@ -11,8 +11,8 @@ export function countByStatus(rows: readonly { status: string }[]): StatusCounts
 }
 
 // Лічильники власних заявок на головній — у порядку перегляду; кожен статус, що може мати заявка автора, видно окремо
-// (зріз 3: «Partially approved» — рев'ю CodeRabbit, PR 60). Текст і колір — ті самі, що в бейджі статусу.
-const OWN_STATUSES: readonly PurchaseStatus[] = ["pending", "approved", "partially_approved", "rejected"];
+// (зріз 3: «Partially approved» — рев'ю CodeRabbit, PR 60; «Returned for revision» — задача 4). Текст і колір — ті самі, що в бейджі статусу.
+const OWN_STATUSES: readonly PurchaseStatus[] = ["pending", "approved", "partially_approved", "returned", "rejected"];
 
 export function ownStatusStats(counts: StatusCounts): { status: PurchaseStatus; label: string; iconClass: string; value: number }[] {
   return OWN_STATUSES.map((status) => ({ status, label: STATUS_LABEL[status], iconClass: STATUS_CLASS[status], value: counts[status] }));

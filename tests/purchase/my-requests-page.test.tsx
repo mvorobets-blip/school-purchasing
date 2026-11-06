@@ -76,6 +76,20 @@ describe("сторінка «Мої заявки»", () => {
     expect(html).not.toContain("Purchase submitted");
   });
 
+  it("AC-LANG-09: у списку статуси «Partially approved» і «Returned for revision» підписано текстом", async () => {
+    data.requests = ["partially_approved", "returned"].map((status, i) => ({
+      id: `r${i}`,
+      number: i + 1,
+      department_id: "d1",
+      purchase_type: "purchasing_department",
+      status,
+      created_at: "2026-10-26T10:00:00Z",
+    }));
+    const html = await render();
+    const statuses = [...html.matchAll(/data-testid="purchase-status"[^>]*>([^<]+)</g)].map((m) => m[1]);
+    expect(statuses).toEqual(["Partially approved", "Returned for revision"]);
+  });
+
   it("AC-LANG-06: у списку статуси підписано текстом «Awaiting approval», «Approved», «Rejected»", async () => {
     data.requests = ["pending", "approved", "rejected"].map((status, i) => ({
       id: `r${i}`,

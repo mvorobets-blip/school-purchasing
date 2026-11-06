@@ -32,4 +32,12 @@ describe("DecisionButtons", () => {
     // Суцільна індиго-кнопка — одна на екран (DESIGN.md).
     expect(buttons.filter((b) => b.includes("bg-primary"))).toHaveLength(1);
   });
+
+  it("після рефакторингу в ReasonDialog «Reject» лишився незворотною дією (destructive), підписи тригерів різні", () => {
+    const html = renderToStaticMarkup(<DecisionButtons requestId={ID} label="PUR-1" />);
+    const reject = [...html.matchAll(/<button[^>]*>[\s\S]*?<\/button>/g)].map((m) => m[0]).find((b) => b.replace(/<[^>]+>/g, "").trim() === "Reject") ?? "";
+    expect(reject).toContain("border-destructive");
+    expect(html).toContain('aria-label="Return for revision: PUR-1"');
+    expect(html).toContain('aria-label="Reject: PUR-1"');
+  });
 });

@@ -1,4 +1,4 @@
-import { Building2, Check, CheckCheck, Clock, ListChecks, Plus, TriangleAlert, X } from "lucide-react";
+import { Building2, Check, CheckCheck, Clock, ListChecks, Plus, RotateCcw, TriangleAlert, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DepartmentRow, RequestRow, SectionCard, StatLink } from "@/components/portal/dashboard";
@@ -38,7 +38,7 @@ export default async function Home() {
     supabase.from("employee_permissions").select("permission").eq("profile_id", user.id),
     supabase
       .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, reject_reason, created_at")
+      .select("id, department_id, purchase_type, status, reject_reason, return_reason, created_at")
       .eq("author_id", user.id)
       .order("created_at", { ascending: false }),
     getAwaitingDecision(user.id),
@@ -248,6 +248,7 @@ export default async function Home() {
       more={summary(r.id).more}
       status={r.status}
       rejectReason={r.reject_reason}
+      returnReason={r.return_reason}
       meta={`${deptName.get(r.department_id) ?? "—"} · ${typeLabel(r.purchase_type)} · ${formatSubmitted(r.created_at)}`}
     />
   ));
@@ -333,7 +334,7 @@ export default async function Home() {
   return (
     <>
       {header(newPurchase("default"))}
-      <section aria-label="My requests by status" className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
+      <section aria-label="My requests by status" className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
         {ownStatusStats(ownCounts).map((s) => (
           <StatLink
             key={s.status}
@@ -358,7 +359,7 @@ export default async function Home() {
 }
 
 // Іконки лічильників статусів на головній (декоративні: поруч завжди текст статусу).
-const STATUS_ICON = { pending: Clock, approved: Check, partially_approved: CheckCheck, rejected: X, returned: ListChecks } as const;
+const STATUS_ICON = { pending: Clock, approved: Check, partially_approved: CheckCheck, rejected: X, returned: RotateCcw } as const;
 
 function StatusLine({
   icon: Icon,

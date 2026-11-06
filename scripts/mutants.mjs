@@ -19,9 +19,10 @@ const LIMITS = "supabase/migrations/20261106162407_request_number_and_line_limit
 const NUMBER_DB = "tests/db/purchase-number.test.ts";
 const HISTORY = "supabase/migrations/20261106184819_request_history.sql";
 const HISTORY_DB = "tests/db/request-history.test.ts";
-const PARTIAL = "supabase/migrations/20261106190909_partial_approval.sql";
 const PARTIAL_DB = "tests/db/partial-approval.test.ts";
-// Жива версія private.decide_purchase (create or replace поверх PARTIAL).
+// Міграція часткового схвалення: тригер меж назви й мети рядка (S28).
+const PARTIAL = "supabase/migrations/20261106190909_partial_approval.sql";
+// Жива версія private.decide_purchase (create or replace поверх 20261106190909_partial_approval.sql).
 const RETURN = "supabase/migrations/20261106193244_return_for_revision.sql";
 const RETURN_DB = "tests/db/return-for-revision.test.ts";
 
@@ -148,7 +149,7 @@ export const mutants = [
     replace: "set status = 'partially_approved'",
   },
   {
-    id: "S20", kind: "sql", ac: "AC-APR-05", file: RETURN, tests: [PARTIAL_DB],
+    id: "S20", kind: "sql", ac: "AC-APR-05", file: RETURN, tests: [PARTIAL_DB, RETURN_DB],
     what: "decide_purchase: схвалювач може вирішити власну заявку (прибрано OWN_REQUEST)",
     find: "  if v_request.author_id = v_uid then\n    raise exception 'OWN_REQUEST' using errcode = '42501';\n  end if;\n",
     replace: "",
