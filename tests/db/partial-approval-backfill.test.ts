@@ -26,6 +26,19 @@ beforeAll(async () => {
     );
     ids[key] = id;
   }
+  // Старий рядок схваленої заявки з назвою й метою понад 200 символів (до меж «not valid», як може бути на проді).
+  await t.db.exec(
+    "alter table public.purchase_request_lines drop constraint purchase_request_lines_name_length, drop constraint purchase_request_lines_purpose_length",
+  );
+  await t.asService(
+    "insert into public.purchase_request_lines (request_id, position, name, purpose, quantity, price) values ($1, 3, repeat('н', 201), repeat('м', 201), 1, 1)",
+    [ids.approved],
+  );
+  await t.db.exec(
+    `alter table public.purchase_request_lines
+       add constraint purchase_request_lines_name_length check (char_length(name) <= 200) not valid,
+       add constraint purchase_request_lines_purpose_length check (char_length(purpose) <= 200) not valid`,
+  );
   await t.applyRemaining();
 }, 60_000);
 
@@ -36,8 +49,15 @@ describe("статуси рядків наявних заявок (backfill)", (
         "select status from public.purchase_request_lines where request_id = $1 order by position",
         [id],
       )).map((r) => r.status);
-    expect(await statuses(ids.approved)).toEqual(["approved", "approved"]);
+    // Зокрема старий рядок із назвою й метою понад 200 символів — міграція на ньому не падає.
+    expect(await statuses(ids.approved)).toEqual(["approved", "approved", "approved"]);
     expect(await statuses(ids.pending)).toEqual([null, null]);
     expect(await statuses(ids.rejected)).toEqual([null, null]);
+  });
+
+  it("межі назви й мети (≤ 200) після міграції лишились і перевіряють нові записи", async () => {
+    await expect(
+      t.asService("update public.purchase_request_lines set name = repeat('x', 201) where request_id = $1 and position = 1", [ids.pending]),
+    ).rejects.toThrow(/purchase_request_lines_name_length/);
   });
 });
