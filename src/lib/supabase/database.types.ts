@@ -104,14 +104,14 @@ isOneToOne: false
                   ]
                 },"purchase_requests": {
                   Row: {
-                    "author_id": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"department_id": string,"id": string,"purchase_type": string,"reject_reason": string | null,"status": string
+                    "author_id": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"department_id": string,"id": string,"number": number,"purchase_type": string,"reject_reason": string | null,"status": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "author_id": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"department_id": string,"id"?: string,"purchase_type": string,"reject_reason"?: string | null,"status"?: string
+                    "author_id": string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"department_id": string,"id"?: string,"number": number,"purchase_type": string,"reject_reason"?: string | null,"status"?: string
                   }
                   Update: {
-                    "author_id"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"department_id"?: string,"id"?: string,"purchase_type"?: string,"reject_reason"?: string | null,"status"?: string
+                    "author_id"?: string,"created_at"?: string,"decided_at"?: string | null,"decided_by"?: string | null,"department_id"?: string,"id"?: string,"number"?: number,"purchase_type"?: string,"reject_reason"?: string | null,"status"?: string
                   }
                   Relationships: [
                     {

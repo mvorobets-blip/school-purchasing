@@ -73,14 +73,33 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
-  it("кількість 0 чи від'ємна ціна — рядок іде в базу, її відмова INVALID_LINE — «Fill in all line fields»", async () => {
-    rpcResult.error = { code: "P0001", message: "INVALID_LINE" };
+  it("кількість не ціла чи менша за 1 — рядок іде в базу, її відмова INVALID_QUANTITY — «Quantity: a whole number from 1»", async () => {
+    rpcResult.error = { code: "P0001", message: "INVALID_QUANTITY" };
     const state = await submitPurchase(
       idle,
-      form({ "name.1": "Папір А4", "purpose.1": "Для друку", "quantity.1": "0", "price.1": "-1" }),
+      form({ "name.1": "Папір А4", "purpose.1": "Для друку", "quantity.1": "1.5", "price.1": "20.00" }),
     );
-    expect(state.message).toBe("Fill in all line fields");
-    expect(state.departmentId).toBe(DEPT);
+    expect(state).toEqual({
+      status: "error",
+      message: "Quantity: a whole number from 1",
+      departmentId: DEPT,
+      purchaseType: "purchasing_department",
+    });
+    expect(rpcCalls).toHaveLength(1);
+  });
+
+  it("від'ємна ціна — рядок іде в базу, її відмова INVALID_PRICE — «Price: a number from 0»", async () => {
+    rpcResult.error = { code: "P0001", message: "INVALID_PRICE" };
+    const state = await submitPurchase(
+      idle,
+      form({ "name.1": "Папір А4", "purpose.1": "Для друку", "quantity.1": "3", "price.1": "-1" }),
+    );
+    expect(state).toEqual({
+      status: "error",
+      message: "Price: a number from 0",
+      departmentId: DEPT,
+      purchaseType: "purchasing_department",
+    });
     expect(rpcCalls).toHaveLength(1);
   });
 

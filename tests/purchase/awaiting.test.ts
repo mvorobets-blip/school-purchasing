@@ -41,7 +41,7 @@ describe("getAwaitingDecision", () => {
       "purchase_requests.eq(status,pending)",
       "purchase_requests.neq(author_id,u1)",
       // потім рядки першої сторінки — найстаріші спершу, id — другий ключ
-      "purchase_requests.select(id, department_id, purchase_type, created_at)",
+      "purchase_requests.select(id, number, department_id, purchase_type, created_at)",
       "purchase_requests.in(department_id,d1|d2)",
       "purchase_requests.eq(status,pending)",
       "purchase_requests.neq(author_id,u1)",

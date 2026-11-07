@@ -1,3 +1,4 @@
+import { MESSAGES } from "@/lib/org/messages";
 import { purchaseTypeAccess } from "@/lib/org/permissions";
 import type { Role } from "@/lib/org/roles";
 
@@ -96,17 +97,29 @@ export const isTextLengthError = (error: { code?: string; message?: string } | n
   error?.code === "23514" && /_length\b/.test(error.message ?? "");
 
 // Межа ціни: колонка numeric(12, 2) округлює до копійок, і від 9 999 999 999.995 ціна стає 10 000 000 000.00.
-// Ту саму межу (після округлення) перевіряє private.submit_purchase — міграція
-// 20261027132703_submit_purchase_rounded_price_limit.sql — і відповідає INVALID_LINE; тут позначаємо поле заздалегідь.
+// Ту саму межу (після округлення) перевіряє private.validate_purchase_lines — міграція
+// 20261106162407_request_number_and_line_limits.sql — і відповідає INVALID_PRICE; тут позначаємо поле заздалегідь.
 const PRICE_LIMIT = 9_999_999_999.995;
+const QUANTITY_LIMIT = 2_147_483_647;
 
-// Кількість > 0, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — ті самі межі перевіряє база
-// (private.submit_purchase). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
+// Повідомлення про межі — таблиця PM (вимога 49); межі — припущення PM у вимозі 64.
+export const QUANTITY_INVALID = MESSAGES.INVALID_QUANTITY;
+export const PRICE_INVALID = MESSAGES.INVALID_PRICE;
+
+// Помилка рядка (порожнє поле чи межа кількості або ціни) — після неї форма підсвічує поля, які ще порожні чи неможливі.
+const LINE_ERRORS: readonly string[] = [MESSAGES.INVALID_LINE, QUANTITY_INVALID, PRICE_INVALID];
+export const isLineError = (message: string) => LINE_ERRORS.includes(message);
+
+// Кількість — ціле число від 1, ціна від 0 і менша за PRICE_LIMIT, лише скінченні числа — ті самі межі перевіряє база
+// (private.validate_purchase_lines). Порожні поля — справа emptyLineFields; тут лише заповнені, але неможливі значення.
 export function invalidNumberFields(line: PurchaseLine): LineField[] {
   const bad: LineField[] = [];
   const quantity = line.quantity.trim();
   const price = line.price.trim();
-  if (quantity !== "" && !(Number.isFinite(Number(quantity)) && Number(quantity) > 0)) bad.push("quantity");
+  // Ціле — за самим рядком, а не через Number(): «2.0000000000000001» Number() округлив би до 2. «2.0» — ціле, як і в базі.
+  const whole = /^(\d+)(\.0*)?$/.exec(quantity);
+  const q = whole ? Number(whole[1]) : NaN;
+  if (quantity !== "" && !(whole && q >= 1 && q <= QUANTITY_LIMIT)) bad.push("quantity");
   if (price !== "" && !(Number.isFinite(Number(price)) && Number(price) >= 0 && Number(price) < PRICE_LIMIT)) bad.push("price");
   return bad;
 }

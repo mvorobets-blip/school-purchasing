@@ -6,7 +6,9 @@ import {
   invalidNumberFields,
   isBlockedNumberKey,
   parseLines,
+  PRICE_INVALID,
   purchaseTypeOptions,
+  QUANTITY_INVALID,
   submitBlocked,
 } from "@/lib/purchase/form";
 
@@ -116,9 +118,31 @@ describe("поведінка форми закупівлі", () => {
 describe("числа в рядку закупівлі", () => {
   const line = (quantity: string, price: string) => ({ name: "Папір А4", purpose: "Друк", quantity, price });
 
-  it("кількість > 0 і ціна ≥ 0 — допустимі; ціна 0 і дробова кількість теж", () => {
+  // Свідома зміна поведінки (impl-purchase-history, задача 1.3): у зрізі 2 дробову кількість приймали, тепер — ні.
+  it("ціла кількість від 1 і ціна від 0 — допустимі; дробова кількість (1.5) — ні", () => {
     expect(invalidNumberFields(line("3", "20.00"))).toEqual([]);
-    expect(invalidNumberFields(line("1.5", "0"))).toEqual([]);
+    expect(invalidNumberFields(line("1", "0"))).toEqual([]);
+    expect(invalidNumberFields(line("2", "0.00"))).toEqual([]);
+    expect(invalidNumberFields(line("1.5", "0"))).toEqual(["quantity"]);
+    expect(invalidNumberFields(line("0.5", "20"))).toEqual(["quantity"]);
+    expect(invalidNumberFields(line("2.0001", "20"))).toEqual(["quantity"]);
+  });
+
+  it("ціна від'ємна (навіть -0.01) — неможлива, кількість при цьому не позначено", () => {
+    expect(invalidNumberFields(line("2", "-0.01"))).toEqual(["price"]);
+  });
+
+  // Рев'ю CodeRabbit (PR 58): ціле — за рядком, а не через Number(), що округлює дуже довгі дроби.
+  it("кількість «2.0000000000000001» — не ціла; «2.0» і «007» — цілі (як у базі)", () => {
+    const line = (quantity: string) => ({ name: "Папір", purpose: "Друк", quantity, price: "1" });
+    expect(invalidNumberFields(line("2.0000000000000001"))).toEqual(["quantity"]);
+    expect(invalidNumberFields(line("2.0"))).toEqual([]);
+    expect(invalidNumberFields(line("007"))).toEqual([]);
+  });
+
+  it("тексти повідомлень про межі — дослівно з таблиці PM", () => {
+    expect(QUANTITY_INVALID).toBe("Quantity: a whole number from 1");
+    expect(PRICE_INVALID).toBe("Price: a number from 0");
   });
 
   it("кількість 0 чи від'ємна, ціна від'ємна, не число — неможливі; порожні поля тут не рахуємо", () => {
