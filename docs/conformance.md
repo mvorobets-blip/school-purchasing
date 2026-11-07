@@ -89,6 +89,14 @@
 | AC-APR-08 | схвалювач бачить ім'я автора в списку для рішення й на сторінці заявки | `supabase/migrations/20261026222326_request_author_email_fallback.sql` (private.request_author_names), `src/app/(portal)/approvals/page.tsx`, `src/app/(portal)/requests/[id]/page.tsx` («Author») | `tests/db/approval.test.ts`, `tests/purchase/approvals-page.test.tsx`, `tests/purchase/request-page.test.tsx` | реалізовано |
 | AC-APR-09 | без імені в профілі — email автора замість імені | `supabase/migrations/20261026222326_request_author_email_fallback.sql` (coalesce імені й email) | `tests/db/approval.test.ts` | реалізовано |
 | AC-APR-10 | ролі, відділів і дозволів автора схвалювач не бачить | `supabase/migrations/20261026222326_request_author_email_fallback.sql` (лише ім'я), сторінки не читають профілю автора | `tests/db/approval.test.ts`, `tests/purchase/approvals-page.test.tsx`, `tests/purchase/request-page.test.tsx` | реалізовано |
+| AC-DEC-01 | схвалювач відхиляє рядок 2 і схвалює решту — «Partially approved», рядок 2 «Rejected», рядки 1 і 3 «Approved» | — | — | відкладено (чекає реалізації) |
+| AC-DEC-04 | повернення на доопрацювання з причиною — «Returned for revision» | — | — | відкладено (чекає реалізації) |
+| AC-DEC-06 | повернення без причини — «Provide a reason», статус лишається «Awaiting approval» | — | — | відкладено (чекає реалізації) |
+| AC-DEC-07 | автор виправляє повернену заявку й подає знову — «Awaiting approval», відділ той самий | — | — | відкладено (чекає реалізації) |
+| AC-HIST-01 | дві поспіль подані заявки мають номери «PUR-1» і «PUR-2» у «My requests» | — | — | відкладено (чекає реалізації) |
+| AC-HIST-02 | суми рядків 60.00 і 31.00, сума заявки 91.00 | — | — | відкладено (чекає реалізації) |
+| AC-HIST-06 | в історії запис «Submitted» з іменем автора, датою й часом за `America/New_York` | — | — | відкладено (чекає реалізації) |
+| AC-HIST-10 | схвалювач чужого відділу за прямим посиланням — «Not enough permissions», історії не показано, статус не змінився | — | — | відкладено (чекає реалізації) |
 | AC-LANG-01 | усі написи інтерфейсу англійською, без українських слів | `src/app/layout.tsx` (lang="en"), `src/lib/org/messages.ts` | `tests/lang/ui-language.test.ts` | реалізовано |
 | AC-LANG-02 | сторінка входу й помилка входу англійською | `src/app/login/page.tsx` | `tests/lang/ui-language-render.test.tsx` | реалізовано |
 | AC-LANG-03 | відмова — «Not enough permissions» без розкриття вмісту | `src/lib/org/messages.ts` (FORBIDDEN) | `tests/lang/ui-language.test.ts`, `tests/purchase/request-page.test.tsx` | реалізовано |
@@ -96,3 +104,4 @@
 | AC-LANG-05 | відхилення без причини — «Provide a reason» | `src/lib/org/messages.ts` (NO_REASON) | `tests/lang/ui-language.test.ts`, `tests/purchase/decide-purchase.test.ts` | реалізовано |
 | AC-LANG-06 | статуси текстом «Awaiting approval», «Approved», «Rejected» | `src/lib/purchase/status.ts` (STATUS_LABEL) | `tests/lang/ui-language.test.ts`, `tests/purchase/my-requests-page.test.tsx`, `tests/purchase/request-page.test.tsx` | реалізовано |
 | AC-LANG-08 | ідентифікатори ролей без змін, підпис ролі англійською | `src/lib/org/roles.ts` (ROLE_LABEL), `src/app/(portal)/profile/page.tsx` | `tests/lang/ui-language.test.ts`, `tests/lang/ui-language-render.test.tsx` | реалізовано |
+| AC-LANG-09 | статуси текстом «Partially approved» і «Returned for revision», не лише кольором | — | — | відкладено (чекає реалізації) |
