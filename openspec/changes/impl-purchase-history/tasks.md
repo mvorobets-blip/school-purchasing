@@ -16,7 +16,8 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 - [ ] 1.3 Форма: кількість — ціле від 1 («Quantity: a whole number from 1»), ціна — від 0 («Price: a number from 0»);
   тест зрізу 2 «дробова кількість допустима» змінюється (свідома зміна поведінки — в описі PR).
 - [ ] 1.4 Тести: PGlite — AC-HIST-01 (порожня база: `PUR-1`, `PUR-2`), backfill за датою, номер не повторюється;
-  unit — AC-HIST-02 (3×20.00, 2×15.50 → 60.00, 31.00, 91.00); регресійні без AC ID — межі кількості й ціни в базі й формі.
+  unit — AC-HIST-02 (3×20.00, 2×15.50 → 60.00, 31.00, 91.00); регресійні без AC ID — межі кількості й ціни в базі й формі,
+  сума понад `Number.MAX_SAFE_INTEGER` (найбільші допустимі кількість і ціна — точно до цента, BigInt).
 - [ ] 1.5 Мутанти: номер не з послідовності; кількість 1.5 пропущено → тести червоні.
   Done when: AC-HIST-01, AC-HIST-02 «реалізовано»; `db-deploy` застосував міграцію.
 
@@ -28,7 +29,8 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
   без позначки поясу — #74); `src/lib/purchase/date.ts` — `formatSubmittedAt`.
 - [ ] 2.3 Тести: PGlite — AC-HIST-10 (схвалювач іншого відділу: подій 0, статус не змінився; прямий `insert`/`update`
   події відхилено), AC-HIST-06 (подія з автором і часом); unit — формат часу (зокрема перехід на літній час);
-  сторінка — AC-HIST-10 (`ForbiddenCard`, «History» немає).
+  сторінка — AC-HIST-10 (`ForbiddenCard`, «History» немає); регресійні — історію бачать схвалювач відділу заявки й
+  адміністратор (PGlite) і розділ «History» на сторінці для того, кому видно заявку.
 - [ ] 2.4 Мутанти: політика `select` подій без перевірки видимості заявки → AC-HIST-10 червоний.
   Done when: AC-HIST-06, AC-HIST-10 «реалізовано».
 
@@ -74,4 +76,5 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
   `@writes`, `uatEmail()`, `deleteUatUsers`); розробник запускає `npm run uat` і `npm run uat:nc`.
 - [ ] 6.3 Звіт UAT у `docs/qa/uat/<дата>/`; proof pack — рядок на кожен із 9 AC (тест, доказ падіння, UAT, PR + SHA);
   archive `impl-purchase-history` в останньому PR зрізу.
-  Done when: усі 9 AC «реалізовано» з вердиктом UAT; proof pack без порожніх рядків.
+  Done when: AC-DEC-01, AC-DEC-04, AC-DEC-06, AC-DEC-07, AC-HIST-01, AC-HIST-02, AC-HIST-06, AC-HIST-10, AC-LANG-09 —
+  «реалізовано» з вердиктом UAT; proof pack без порожніх рядків.
