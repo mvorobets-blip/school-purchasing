@@ -2,7 +2,7 @@
 -- AC-HIST-06: у історії є запис «Подано» з іменем автора й датою та часом (America/New_York — форматує інтерфейс).
 -- AC-HIST-10: історію бачить лише той, кому видно заявку (автор, схвалювач її відділу, адміністратор) — та сама умова,
 -- що в політиці purchase_requests_select_visible; іншим — 0 записів, заявка не змінюється.
--- Історія не редагується (припущення PM у вимозі 64): authenticated має лише select, insert робить лише функція подання.
+-- Історія не редагується (припущення PM у вимозі 64): authenticated має лише select, подію пише лише тригер подання.
 -- Записи рішень (схвалення, відхилення, повернення) — поза WS9 (вимога 64, «Поза межами»).
 
 -- ── 1. Таблиця подій ───────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ create table public.purchase_request_events (
 create index purchase_request_events_request_id_idx on public.purchase_request_events (request_id, created_at);
 
 comment on table public.purchase_request_events is
-  'Історія заявки: подання (і далі — рішення). Пише лише private.submit_purchase; не редагується.';
+  'Історія заявки: подання (і далі — рішення). Подання пише тригер purchase_requests_submitted_event; не редагується.';
 
 alter table public.purchase_request_events enable row level security;
 revoke all on table public.purchase_request_events from anon, authenticated;
@@ -34,68 +34,33 @@ create policy purchase_request_events_select_visible
     and exists (select 1 from public.purchase_requests as r where r.id = request_id)
   );
 
--- ── 2. Подання пише подію в тій самій транзакції ───────────────────────────────
--- Решта функції — як у 20261106162407_request_number_and_line_limits.sql (застосовану міграцію не редагуємо).
-create or replace function private.submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb)
-returns uuid
+-- ── 2. Подання пише подію — тригером на вставку заявки ─────────────────────────
+-- Тригер, а не новий текст submit_purchase: CREATE TRIGGER бере блокування таблиці, що чекає завершення вставок, які
+-- вже йдуть, тож після нього кожна нова заявка (зокрема подана ще старою функцією під час міграції) отримує подію в
+-- тій самій транзакції. Подію пише функція private (security definer): authenticated не має insert на події.
+create function private.add_submitted_event()
+returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_uid uuid := (select auth.uid());
-  v_admin boolean := private.is_admin();
-  v_id uuid;
-  v_created timestamptz;
-  v_line jsonb;
-  v_position integer := 0;
 begin
-  if not private.is_active_user() then
-    raise exception 'FORBIDDEN' using errcode = '42501';
-  end if;
-  if not (v_admin or private.is_member_of(p_department_id)) then
-    raise exception 'FORBIDDEN' using errcode = '42501';
-  end if;
-  if p_purchase_type is null or p_purchase_type not in ('purchasing_department', 'self_purchase') then
-    raise exception 'INVALID_TYPE' using errcode = '22023';
-  end if;
-  if p_purchase_type = 'self_purchase' and not v_admin and not exists (
-    select 1 from public.employee_permissions as e
-    where e.profile_id = v_uid and e.permission = 'self_purchase'
-  ) then
-    raise exception 'FORBIDDEN' using errcode = '42501';
-  end if;
-  perform private.validate_purchase_lines(p_lines);
-
-  insert into public.purchase_requests (author_id, department_id, purchase_type, number)
-  values (v_uid, p_department_id, p_purchase_type, nextval('private.purchase_request_number_seq'))
-  returning id, created_at into v_id, v_created;
-
-  for v_line in select value from jsonb_array_elements(p_lines) loop
-    v_position := v_position + 1;
-    insert into public.purchase_request_lines (request_id, position, name, purpose, quantity, price)
-    values (
-      v_id,
-      v_position,
-      btrim(v_line ->> 'name'),
-      btrim(v_line ->> 'purpose'),
-      (v_line ->> 'quantity')::numeric,
-      round((v_line ->> 'price')::numeric, 2)
-    );
-  end loop;
-
   insert into public.purchase_request_events (request_id, kind, actor_id, created_at)
-  values (v_id, 'submitted', v_uid, v_created);
-
-  return v_id;
+  values (new.id, 'submitted', new.author_id, new.created_at);
+  return new;
 end;
 $$;
 
+revoke execute on function private.add_submitted_event() from public, anon, authenticated;
+
+create trigger purchase_requests_submitted_event
+  after insert on public.purchase_requests
+  for each row execute function private.add_submitted_event();
+
 -- ── 3. Наявні заявки: подія «Подано» з датою подання й автором ──────────────────
 -- Без lock table: Supabase CLI виконує міграцію не в одній транзакції (LOCK TABLE поза транзакцією — помилка 25P01).
--- Порядок дає те саме без блокування: спершу (розділ 2) submit_purchase уже пише подію сама, тож заявки, подані після
--- цього, подію мають; backfill нижче дописує подію лише заявкам без неї — і тим, що подали старою функцією під час
--- міграції, без дублікатів.
+-- Після тригера (розділ 2) усі заявки, вставлені раніше, уже закомічені; backfill дописує подію лише заявкам без неї —
+-- без дублікатів, навіть якщо міграцію виконати повторно.
 insert into public.purchase_request_events (request_id, kind, actor_id, created_at)
 select r.id, 'submitted', r.author_id, r.created_at
 from public.purchase_requests as r

@@ -91,7 +91,7 @@ export const mutants = [
   },
   // ── AC-HIST-01: номер — наступний з послідовності, не повторюється навіть після видалення ──────────────────────
   {
-    id: "S12", kind: "sql", ac: "AC-HIST-01", file: HISTORY, tests: [NUMBER_DB],
+    id: "S12", kind: "sql", ac: "AC-HIST-01", file: LIMITS, tests: [NUMBER_DB],
     what: "submit_purchase: номер = max(number) + 1 замість послідовності (після видалення номер повторюється)",
     find: "nextval('private.purchase_request_number_seq')",
     replace: "(select coalesce(max(number), 0) + 1 from public.purchase_requests)",
@@ -125,8 +125,8 @@ export const mutants = [
   // ── AC-HIST-06: подання пише запис «Подано» ──────────────────────────────────────────────────────────────────
   {
     id: "S17", kind: "sql", ac: "AC-HIST-06", file: HISTORY, tests: [HISTORY_DB],
-    what: "submit_purchase не пише подію submitted",
-    find: "  insert into public.purchase_request_events (request_id, kind, actor_id, created_at)\n  values (v_id, 'submitted', v_uid, v_created);",
+    what: "тригер подання не пише подію submitted",
+    find: "  insert into public.purchase_request_events (request_id, kind, actor_id, created_at)\n  values (new.id, 'submitted', new.author_id, new.created_at);\n",
     replace: "",
   },
 ];

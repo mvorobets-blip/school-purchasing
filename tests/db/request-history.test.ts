@@ -197,4 +197,21 @@ describe("історія заявки (база)", () => {
       await t.asService("update public.profiles set is_active = true where id = $1", [MEMBER_1]);
     }
   });
+
+  // Рев'ю CodeRabbit (PR 59): подію пише тригер на вставку заявки — і для заявки, вставленої поза submit_purchase
+  // (як стара функція під час міграції), рівно одна подія з автором і часом подання.
+  it("будь-яка нова заявка, зокрема вставлена поза submit_purchase, має рівно одну подію submitted", async () => {
+    const [{ id }] = await t.asService<{ id: string }>(
+      `insert into public.purchase_requests (author_id, department_id, purchase_type, number)
+       values ($1, $2, 'purchasing_department', 900001) returning id`,
+      [MEMBER_1, dept["Початкова школа"]],
+    );
+    const events = await t.asService<{ kind: string; actor_id: string; same_time: boolean }>(
+      `select e.kind, e.actor_id, e.created_at = r.created_at as same_time
+         from public.purchase_request_events as e join public.purchase_requests as r on r.id = e.request_id
+        where e.request_id = $1`,
+      [id],
+    );
+    expect(events).toEqual([{ kind: "submitted", actor_id: MEMBER_1, same_time: true }]);
+  });
 });
