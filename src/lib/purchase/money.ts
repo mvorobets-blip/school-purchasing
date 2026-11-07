@@ -18,9 +18,9 @@ export function totalCents(lines: readonly { quantity: Amount; price: Amount }[]
   return lines.reduce((sum, l) => sum + lineSumCents(l.quantity, l.price), BigInt(0));
 }
 
-// «60.00» — без символу валюти: валюту показує заголовок «Sum, USD» (погоджено в design.md).
+// «60.00» — без символу валюти: валюту показує заголовок «Sum, USD» (погоджено в design.md). Від'ємних сум не буває:
+// кількість — від 1, ціна — від 0 (межі перевіряє база).
 export function formatCents(cents: bigint | number): string {
   const value = BigInt(cents);
-  const abs = value < BigInt(0) ? -value : value;
-  return `${value < BigInt(0) ? "-" : ""}${abs / BigInt(100)}.${String(abs % BigInt(100)).padStart(2, "0")}`;
+  return `${value / BigInt(100)}.${String(value % BigInt(100)).padStart(2, "0")}`;
 }
