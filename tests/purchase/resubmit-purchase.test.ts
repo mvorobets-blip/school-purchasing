@@ -132,4 +132,11 @@ describe("дія resubmitPurchase", () => {
     }
     expect(rpcCalls).toHaveLength(cases.length);
   });
+
+  // Дописав розробник за незалежним аудитом WS9.
+  it("неможливий id заявки (не UUID) — «Not enough permissions», до бази не звертаємось", async () => {
+    const state = await resubmitPurchase("not-a-uuid", idle, form(FIXED_LINES));
+    expect(state.message).toBe("Not enough permissions");
+    expect(rpcCalls).toHaveLength(0);
+  });
 });
