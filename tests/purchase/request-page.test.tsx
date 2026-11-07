@@ -13,6 +13,7 @@ const db: {
   linesError: boolean;
   authorError: boolean;
   history: Record<string, unknown>[];
+  historyError?: boolean;
 } = {
   request: null,
   lines: ONE_LINE,
@@ -28,7 +29,7 @@ const SUBMITTED = { kind: "submitted", actor_name: "PM Demo Requester", created_
 // rpc за назвою функції: request_author_names — як раніше; request_history — записи історії.
 async function rpc(fn: string, args: unknown) {
   rpcCalls.push({ fn, args });
-  if (fn === "request_history") return { data: db.history, error: null };
+  if (fn === "request_history") return db.historyError ? { data: null, error: { message: "boom" } } : { data: db.history, error: null };
   return db.authorError
     ? { data: null, error: { message: "boom" } }
     : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null };
@@ -93,6 +94,7 @@ describe("сторінка заявки", () => {
     db.linesError = false;
     db.authorError = false;
     db.history = [SUBMITTED];
+    db.historyError = false;
     queried.length = 0;
     rpcCalls.length = 0;
   });
@@ -208,5 +210,15 @@ describe("сторінка заявки", () => {
     expect(html).not.toContain("05.11.2026");
     // Історію навіть не запитують, доки не з'ясовано, що заявку видно.
     expect(rpcCalls.map((c) => c.fn)).not.toContain("request_history");
+  });
+
+  // Рев'ю CodeRabbit (PR 59): помилка історії не ховає заявку.
+  it("помилка завантаження історії — заявка й рядки на місці, у розділі «History» повідомлення про помилку", async () => {
+    db.historyError = true;
+    const html = await render();
+    expect(html).toContain("Папір А4");
+    expect(html).toContain("History");
+    expect(html).toContain("Could not load the history. Refresh the page.");
+    expect(html).not.toContain("Could not load the request");
   });
 });

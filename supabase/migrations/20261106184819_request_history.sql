@@ -34,16 +34,7 @@ create policy purchase_request_events_select_visible
     and exists (select 1 from public.purchase_requests as r where r.id = request_id)
   );
 
--- ── 2. Наявні заявки: подія «Подано» з датою подання й автором ──────────────────
--- Блокуємо нові подання до кінця міграції: інакше заявка, подана старою submit_purchase між backfill і commit,
--- лишилася б без запису «Submitted».
-lock table public.purchase_requests in share row exclusive mode;
-
-insert into public.purchase_request_events (request_id, kind, actor_id, created_at)
-select r.id, 'submitted', r.author_id, r.created_at
-from public.purchase_requests as r;
-
--- ── 3. Подання пише подію в тій самій транзакції ───────────────────────────────
+-- ── 2. Подання пише подію в тій самій транзакції ───────────────────────────────
 -- Решта функції — як у 20261106162407_request_number_and_line_limits.sql (застосовану міграцію не редагуємо).
 create or replace function private.submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb)
 returns uuid
@@ -99,6 +90,16 @@ begin
   return v_id;
 end;
 $$;
+
+-- ── 3. Наявні заявки: подія «Подано» з датою подання й автором ──────────────────
+-- Без lock table: Supabase CLI виконує міграцію не в одній транзакції (LOCK TABLE поза транзакцією — помилка 25P01).
+-- Порядок дає те саме без блокування: спершу (розділ 2) submit_purchase уже пише подію сама, тож заявки, подані після
+-- цього, подію мають; backfill нижче дописує подію лише заявкам без неї — і тим, що подали старою функцією під час
+-- міграції, без дублікатів.
+insert into public.purchase_request_events (request_id, kind, actor_id, created_at)
+select r.id, 'submitted', r.author_id, r.created_at
+from public.purchase_requests as r
+where not exists (select 1 from public.purchase_request_events as e where e.request_id = r.id);
 
 -- ── 4. Історія з іменем учасника ───────────────────────────────────────────────
 -- Ім'я з профілю, без імені — email (як AC-APR-09); лише якщо заявку видно (та сама умова, що в RLS заявки):

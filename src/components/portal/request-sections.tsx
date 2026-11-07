@@ -1,4 +1,5 @@
 import { StatusBadge } from "@/components/portal/status-badge";
+import { Alert } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatSubmittedAt } from "@/lib/purchase/date";
@@ -110,14 +111,20 @@ type HistoryEntry = { kind: string; actor_name: string | null; created_at: strin
 
 // Історія заявки (AC-HIST-06): «Submitted · <ім'я> · 05.11.2026, 14:32» — підписи з таблиці PM (#49), час #74.
 // Без записів картки немає (власного тексту порожнього стану PM не задавав).
-export function RequestHistory({ history }: { history: readonly HistoryEntry[] }) {
-  if (history.length === 0) return null;
+export function RequestHistory({ history, failed = false }: { history: readonly HistoryEntry[]; failed?: boolean }) {
+  if (!failed && history.length === 0) return null;
   return (
     <Card>
       <CardHeader>
         <CardTitle id="history-title">History</CardTitle>
       </CardHeader>
       <CardContent>
+        {failed ? (
+          // Помилка завантаження — повідомлення, а не порожній список (DESIGN.md §6); решта сторінки лишається.
+          <Alert variant="destructive" data-testid="history-error">
+            Could not load the history. Refresh the page.
+          </Alert>
+        ) : null}
         <ol aria-labelledby="history-title" className="flex flex-col gap-2 text-sm" data-testid="request-history">
           {history.map((e, i) => (
             <li key={`${e.created_at}-${i}`} className="tabular-nums">

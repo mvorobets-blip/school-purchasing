@@ -56,7 +56,8 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
     supabase.rpc("request_history", { p_request_id: id }),
   ]);
   // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
-  if (linesRes.error || deptRes.error || historyRes.error) {
+  // Помилка історії не ховає заявку: розділ «History» покаже власне повідомлення (рев'ю CodeRabbit, PR 59).
+  if (linesRes.error || deptRes.error) {
     return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   }
 
@@ -77,7 +78,7 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
         rejectReason={request.reject_reason}
       />
       <RequestLines lines={linesRes.data ?? []} />
-      <RequestHistory history={historyRes.data ?? []} />
+      <RequestHistory history={historyRes.data ?? []} failed={Boolean(historyRes.error)} />
     </>
   );
 }

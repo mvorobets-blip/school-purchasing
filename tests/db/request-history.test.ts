@@ -126,13 +126,23 @@ describe("історія заявки (база)", () => {
   });
 
   it("історія — лише події цієї заявки, впорядковані за часом", async () => {
-    const second = await submit(MEMBER_1, "Початкова школа");
-    const rows = await history(MEMBER_1, second);
-    expect(rows).toHaveLength(1);
-    expect(await history(MEMBER_1, primary)).toHaveLength(1);
-    // Порядок за created_at: подія пізнішої заявки не раніша за подію першої.
-    const [first] = await history(MEMBER_1, primary);
-    expect(new Date(rows[0].created_at).getTime()).toBeGreaterThanOrEqual(new Date(first.created_at).getTime());
+    const id = await submit(MEMBER_1, "Початкова школа");
+    const other = await submit(MEMBER_1, "Початкова школа");
+    // Ще одна подія тієї самої заявки — раніша за першу (вставлено пізніше, але з меншим created_at), щоб перевірити
+    // саме сортування, а не порядок вставки (рев'ю CodeRabbit, PR 59).
+    const [{ created_at: submittedAt }] = await t.asService<{ created_at: string }>(
+      "select created_at::text from public.purchase_request_events where request_id = $1",
+      [id],
+    );
+    await t.asService(
+      "insert into public.purchase_request_events (request_id, kind, actor_id, created_at) values ($1, 'submitted', $2, $3::timestamptz - interval '1 hour')",
+      [id, MEMBER_1, submittedAt],
+    );
+    const rows = await history(MEMBER_1, id);
+    expect(rows).toHaveLength(2);
+    expect(new Date(rows[0].created_at).getTime()).toBeLessThan(new Date(rows[1].created_at).getTime());
+    // Подія іншої заявки сюди не потрапляє.
+    expect(await history(MEMBER_1, other)).toHaveLength(1);
   });
 
   it("заявник того ж відділу не бачить історії чужої заявки", async () => {
