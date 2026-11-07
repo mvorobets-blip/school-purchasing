@@ -23,15 +23,15 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 2. Історія «Submitted» і доступ до неї — `task/request-history`
 
-- [ ] 2.1 Міграція `<ts>_request_history.sql`: `purchase_request_events` (RLS, лише `select`), подія в `submit_purchase`,
+- [x] 2.1 Міграція `<ts>_request_history.sql`: `purchase_request_events` (RLS, лише `select`), подія в `submit_purchase`,
   backfill, `private.request_history` з ім'ям чи email.
-- [ ] 2.2 Розділ «History» на сторінці заявки: «Submitted · <ім'я> · 05.11.2026, 14:32» (`America/New_York`, 24 год,
+- [x] 2.2 Розділ «History» на сторінці заявки: «Submitted · <ім'я> · 05.11.2026, 14:32» (`America/New_York`, 24 год,
   без позначки поясу — #74); `src/lib/purchase/date.ts` — `formatSubmittedAt`.
-- [ ] 2.3 Тести: PGlite — AC-HIST-10 (схвалювач іншого відділу: подій 0, статус не змінився; прямий `insert`/`update`
+- [x] 2.3 Тести: PGlite — AC-HIST-10 (схвалювач іншого відділу: подій 0, статус не змінився; прямий `insert`/`update`
   події відхилено), AC-HIST-06 (подія з автором і часом); unit — формат часу (зокрема перехід на літній час);
   сторінка — AC-HIST-10 (`ForbiddenCard`, «History» немає); регресійні — історію бачать схвалювач відділу заявки й
   адміністратор (PGlite) і розділ «History» на сторінці для того, кому видно заявку.
-- [ ] 2.4 Мутанти: політика `select` подій без перевірки видимості заявки → AC-HIST-10 червоний.
+- [x] 2.4 Мутанти: політика `select` подій без перевірки видимості заявки → AC-HIST-10 червоний.
   Done when: AC-HIST-06, AC-HIST-10 «реалізовано».
 
 ## 3. Часткове схвалення — `task/partial-approval`
