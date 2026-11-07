@@ -4,14 +4,27 @@
 // не вміщується точно в number (Number.MAX_SAFE_INTEGER ≈ 9·10¹⁵).
 type Amount = number | string;
 
-// Ціна з бази — numeric(12, 2): у центах (≤ 10¹²) вона точна й у number, тож Math.round прибирає лише похибку 0.1 + 0.2.
-const priceCents = (price: Amount) => BigInt(Math.round(Number(price) * 100));
+// Десяткове число з бази (numeric приходить і як number, і як string) — точно: ціле значення й кількість знаків після
+// крапки, без арифметики з рухомою комою.
+function decimal(value: Amount): { digits: bigint; scale: number } {
+  const match = /^(\d+)(?:\.(\d*))?$/.exec(String(value).trim());
+  if (!match) throw new Error(`Not a decimal: ${value}`);
+  const fraction = match[2] ?? "";
+  return { digits: BigInt(match[1] + fraction), scale: fraction.length };
+}
+
+const TEN = BigInt(10);
+const pow10 = (n: number) => TEN ** BigInt(n);
+
+// Округлення до цілого «від половини вгору» для невід'ємних: (a + b/2) / b.
+const roundDiv = (a: bigint, b: bigint) => (a + b / BigInt(2)) / b;
 
 export function lineSumCents(quantity: Amount, price: Amount): bigint {
-  const q = Number(quantity);
-  // Дробова кількість може лишитись у рядках зрізу 2 на проді (межу «ціле від 1» тримає лише функція подання).
-  if (!Number.isInteger(q)) return BigInt(Math.round(q * Number(priceCents(price))));
-  return BigInt(q) * priceCents(price);
+  // Ціна — numeric(12, 2), кількість — ціле від 1; дробова кількість може лишитись у рядках зрізу 2 на проді
+  // (межу «ціле від 1» тримає лише функція подання) — тому добуток округлюємо до центу один раз, точно.
+  const q = decimal(quantity);
+  const p = decimal(price);
+  return roundDiv(q.digits * p.digits * BigInt(100), pow10(q.scale + p.scale));
 }
 
 export function totalCents(lines: readonly { quantity: Amount; price: Amount }[]): bigint {

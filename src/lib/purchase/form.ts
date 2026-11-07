@@ -116,8 +116,10 @@ export function invalidNumberFields(line: PurchaseLine): LineField[] {
   const bad: LineField[] = [];
   const quantity = line.quantity.trim();
   const price = line.price.trim();
-  const q = Number(quantity);
-  if (quantity !== "" && !(Number.isInteger(q) && q >= 1 && q <= QUANTITY_LIMIT)) bad.push("quantity");
+  // Ціле — за самим рядком, а не через Number(): «2.0000000000000001» Number() округлив би до 2. «2.0» — ціле, як і в базі.
+  const whole = /^(\d+)(\.0*)?$/.exec(quantity);
+  const q = whole ? Number(whole[1]) : NaN;
+  if (quantity !== "" && !(whole && q >= 1 && q <= QUANTITY_LIMIT)) bad.push("quantity");
   if (price !== "" && !(Number.isFinite(Number(price)) && Number(price) >= 0 && Number(price) < PRICE_LIMIT)) bad.push("price");
   return bad;
 }

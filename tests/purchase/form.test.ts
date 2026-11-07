@@ -132,6 +132,14 @@ describe("числа в рядку закупівлі", () => {
     expect(invalidNumberFields(line("2", "-0.01"))).toEqual(["price"]);
   });
 
+  // Рев'ю CodeRabbit (PR 58): ціле — за рядком, а не через Number(), що округлює дуже довгі дроби.
+  it("кількість «2.0000000000000001» — не ціла; «2.0» і «007» — цілі (як у базі)", () => {
+    const line = (quantity: string) => ({ name: "Папір", purpose: "Друк", quantity, price: "1" });
+    expect(invalidNumberFields(line("2.0000000000000001"))).toEqual(["quantity"]);
+    expect(invalidNumberFields(line("2.0"))).toEqual([]);
+    expect(invalidNumberFields(line("007"))).toEqual([]);
+  });
+
   it("тексти повідомлень про межі — дослівно з таблиці PM", () => {
     expect(QUANTITY_INVALID).toBe("Quantity: a whole number from 1");
     expect(PRICE_INVALID).toBe("Price: a number from 0");

@@ -55,6 +55,20 @@ describe("суми заявки", () => {
   it("дробова кількість зі старих рядків (зріз 2) рахується без помилки", () => {
     expect(formatCents(lineSumCents("1.5", "20.00"))).toBe("30.00");
   });
+
+  // Рев'ю CodeRabbit (PR 58): добуток дробової кількості й ціни — десятковою арифметикою, округлення до центу один раз.
+  it("дробова кількість × ціна — точно: 1.005 × 1.00 = 1.01, 1.005 × 1 (number) = 1.01, 0.333 × 3.00 = 1.00", () => {
+    expect(formatCents(lineSumCents("1.005", "1.00"))).toBe("1.01");
+    expect(formatCents(lineSumCents(1.005, 1))).toBe("1.01");
+    expect(formatCents(lineSumCents("0.333", "3.00"))).toBe("1.00");
+  });
+
+  it("значення з пробілами по краях читаються; не число — помилка, а не мовчазна неправильна сума", () => {
+    expect(formatCents(lineSumCents(" 2 ", " 1.50 "))).toBe("3.00");
+    for (const bad of ["abc", "1.5x", "x1.5", "-1", ""]) {
+      expect(() => lineSumCents(bad, "1.00")).toThrow(/Not a decimal/);
+    }
+  });
 });
 
 describe("номер заявки", () => {

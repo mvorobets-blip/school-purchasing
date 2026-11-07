@@ -8,13 +8,16 @@ import { withUser } from "../support/current-user";
 const data: { requests: Record<string, unknown>[] } = { requests: [] };
 const filters: string[] = [];
 
+// Колонки, які сторінка вибирає (select без head) — «таблиця:колонки».
+const selected: string[] = [];
 // Мок як PostgREST: select(…, { head: true }) — лише кількість; .range(from, to) — зріз рядків; count — уся кількість.
 function query(table: string) {
   const all = table === "purchase_requests" ? data.requests : [{ id: "d1", name: "Початкова школа" }];
   let rows: Record<string, unknown>[] | null = all;
   const builder = {
-    select: (_cols: string, opts?: { head?: boolean }) => {
+    select: (cols: string, opts?: { head?: boolean }) => {
       if (opts?.head) rows = null;
+      else selected.push(`${table}:${cols}`);
       return builder;
     },
     eq: (col: string, val: unknown) => (filters.push(`${table}.eq(${col},${String(val)})`), builder),
@@ -47,6 +50,7 @@ describe("сторінка «Мої заявки»", () => {
   beforeEach(() => {
     data.requests = [];
     filters.length = 0;
+    selected.length = 0;
   });
 
   it("AC-FRM-10: «Мої заявки» запитують лише заявки автора, що увійшов, і показують «Awaiting approval»", async () => {
@@ -140,6 +144,8 @@ describe("сторінка «Мої заявки»", () => {
       created_at: `2026-10-2${number}T10:00:00Z`,
     }));
     const html = await render();
+    // Номер справді читається з бази (колонка number у select заявок), а не лише показується з моку.
+    expect(selected.some((s) => /^purchase_requests:(.*\bnumber\b|\*)/.test(s))).toBe(true);
     expect(html).toContain("PUR-1");
     expect(html).toContain("PUR-2");
     expect(html).not.toContain("PUR-undefined");
