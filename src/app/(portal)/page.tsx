@@ -90,6 +90,12 @@ export default async function Home() {
       : null,
     recentIds.length ? supabase.from("purchase_requests").select("*").in("id", recentIds) : null,
   ]);
+  // Помилка запиту позицій чи причин — повідомлення, а не рядки без назв чи без причини (DESIGN.md §6; рев'ю CodeRabbit, PR 61).
+  if (linesRes?.error || reasonsRes?.error) {
+    return <Alert variant="destructive">Could not load data. Refresh the page.</Alert>;
+  }
+  // Статус і причину показаної заявки беремо з одного рядка: якщо заявку вирішили між запитами, рядок не покаже
+  // застарілий статус без причини (лічильники — з першого запиту, наздоженуть при оновленні).
   const reasonsOf = new Map((reasonsRes?.data ?? []).map((r) => [r.id, r]));
   const summaries = lineSummaries(linesRes?.data ?? []);
   const summary = (id: string) => summaries.get(id) ?? { first: "Purchase", more: 0 };
@@ -253,7 +259,7 @@ export default async function Home() {
       href={`/requests/${r.id}`}
       title={summary(r.id).first}
       more={summary(r.id).more}
-      status={r.status}
+      status={reasonsOf.get(r.id)?.status ?? r.status}
       rejectReason={reasonsOf.get(r.id)?.reject_reason ?? null}
       returnReason={reasonsOf.get(r.id)?.return_reason ?? null}
       meta={`${deptName.get(r.department_id) ?? "—"} · ${typeLabel(r.purchase_type)} · ${formatSubmitted(r.created_at)}`}
