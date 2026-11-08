@@ -102,6 +102,33 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"purchase_request_events": {
+                  Row: {
+                    "actor_id": string,"created_at": string,"id": string,"kind": string,"request_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id": string,"created_at"?: string,"id"?: string,"kind": string,"request_id": string
+                  }
+                  Update: {
+                    "actor_id"?: string,"created_at"?: string,"id"?: string,"kind"?: string,"request_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "purchase_request_events_actor_id_fkey"
+      columns: ["actor_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "purchase_request_events_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "purchase_requests"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"purchase_requests": {
                   Row: {
                     "author_id": string,"created_at": string,"decided_at": string | null,"decided_by": string | null,"department_id": string,"id": string,"number": number,"purchase_type": string,"reject_reason": string | null,"status": string
@@ -145,6 +172,7 @@ isOneToOne: false
             "add_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "decide_purchase": { Args: { "p_decision": string,"p_reason"?: string | null,"p_request_id": string }; Returns: undefined },
             "request_author_names": { Args: { "p_request_ids": string[] }; Returns: { author_name: string | null; request_id: string }[] },
+            "request_history": { Args: { "p_request_id": string }; Returns: { actor_name: string | null; created_at: string; kind: string }[] },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "set_approver": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
             "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },

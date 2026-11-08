@@ -12,13 +12,28 @@ const db: {
   lines: Record<string, unknown>[];
   linesError: boolean;
   authorError: boolean;
+  history: Record<string, unknown>[];
+  historyError?: boolean;
 } = {
   request: null,
   lines: ONE_LINE,
   linesError: false,
   authorError: false,
+  history: [],
 };
 const queried: string[] = [];
+const rpcCalls: { fn: string; args: unknown }[] = [];
+// Запис історії, який повертає request_history (AC-HIST-06): 19:32 UTC 5 листопада — 14:32 у Нью-Йорку (EST).
+const SUBMITTED = { kind: "submitted", actor_name: "PM Demo Requester", created_at: "2026-11-05T19:32:00Z" };
+
+// rpc за назвою функції: request_author_names — як раніше; request_history — записи історії.
+async function rpc(fn: string, args: unknown) {
+  rpcCalls.push({ fn, args });
+  if (fn === "request_history") return db.historyError ? { data: null, error: { message: "boom" } } : { data: db.history, error: null };
+  return db.authorError
+    ? { data: null, error: { message: "boom" } }
+    : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null };
+}
 
 function query(table: string) {
   queried.push(table);
@@ -52,10 +67,7 @@ vi.mock("@/lib/supabase/server", () => ({
       { id: "u1", role: "requester", isActive: true },
       {
         from: query,
-        rpc: async () =>
-          db.authorError
-            ? { data: null, error: { message: "boom" } }
-            : { data: db.request ? [{ request_id: ID, author_name: "Андрій Демо-Перший" }] : [], error: null },
+        rpc,
       },
     ),
 }));
@@ -81,7 +93,10 @@ describe("сторінка заявки", () => {
     db.lines = ONE_LINE;
     db.linesError = false;
     db.authorError = false;
+    db.history = [SUBMITTED];
+    db.historyError = false;
     queried.length = 0;
+    rpcCalls.length = 0;
   });
 
   it("AC-FRM-08: заявки немає у відповіді бази (чужа) — «Недостатньо прав» без даних", async () => {
@@ -172,5 +187,38 @@ describe("сторінка заявки", () => {
     const html = await render();
     expect(html).not.toContain("0.30000000000000004");
     expect(html).toMatch(/Total[\s\S]*?>0\.30</);
+  });
+
+  it("AC-HIST-06: розділ «History» із записом «Submitted · PM Demo Requester · 05.11.2026, 14:32»", async () => {
+    const html = await render();
+    expect(rpcCalls).toContainEqual({ fn: "request_history", args: { p_request_id: ID } });
+    expect(html).toContain("History");
+    // Текст без розмітки між частинами запису: «Submitted · ім'я · дата, час».
+    const text = html.replace(/<[^>]+>/g, "");
+    expect(text).toContain("Submitted · PM Demo Requester · 05.11.2026, 14:32");
+  });
+
+  it("AC-HIST-10: чужа заявка (схвалювач іншого відділу) — «Not enough permissions», розділу «History» і записів немає", async () => {
+    db.request = null;
+    // Навіть якби база віддала записи, сторінка їх не показує.
+    db.history = [SUBMITTED];
+    const html = await render();
+    expect(html).toContain("Not enough permissions");
+    expect(html).not.toContain("History");
+    expect(html).not.toContain("Submitted");
+    expect(html).not.toContain("PM Demo Requester");
+    expect(html).not.toContain("05.11.2026");
+    // Історію навіть не запитують, доки не з'ясовано, що заявку видно.
+    expect(rpcCalls.map((c) => c.fn)).not.toContain("request_history");
+  });
+
+  // Рев'ю CodeRabbit (PR 59): помилка історії не ховає заявку.
+  it("помилка завантаження історії — заявка й рядки на місці, у розділі «History» повідомлення про помилку", async () => {
+    db.historyError = true;
+    const html = await render();
+    expect(html).toContain("Папір А4");
+    expect(html).toContain("History");
+    expect(html).toContain("Could not load the history. Refresh the page.");
+    expect(html).not.toContain("Could not load the request");
   });
 });

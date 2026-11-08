@@ -17,6 +17,8 @@ const PURCHASE_DB = "tests/db/purchase.test.ts";
 // Жива версія private.submit_purchase з WS9 (номер заявки) і private.validate_purchase_lines (перевірка рядків).
 const LIMITS = "supabase/migrations/20261106162407_request_number_and_line_limits.sql";
 const NUMBER_DB = "tests/db/purchase-number.test.ts";
+const HISTORY = "supabase/migrations/20261106184819_request_history.sql";
+const HISTORY_DB = "tests/db/request-history.test.ts";
 
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
@@ -106,6 +108,26 @@ export const mutants = [
     what: "validate_purchase_lines: від'ємна ціна проходить",
     find: "or v_price < 0 or round(v_price, 2)",
     replace: "or round(v_price, 2)",
+  },
+  // ── AC-HIST-10: історію чужого відділу не видно ──────────────────────────────────────────────────────────────
+  {
+    id: "S15", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],
+    what: "політика purchase_request_events_select_visible: події видно без перевірки, чи видно заявку",
+    find: "    and exists (select 1 from public.purchase_requests as r where r.id = request_id)",
+    replace: "    and true",
+  },
+  {
+    id: "S16", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],
+    what: "private.request_history: історію з іменами віддає будь-якому активному користувачу",
+    find: "      r.author_id = (select auth.uid())\n      or (select private.is_admin())\n      or private.is_approver_of(r.department_id)",
+    replace: "      true",
+  },
+  // ── AC-HIST-06: подання пише запис «Подано» ──────────────────────────────────────────────────────────────────
+  {
+    id: "S17", kind: "sql", ac: "AC-HIST-06", file: HISTORY, tests: [HISTORY_DB],
+    what: "тригер подання не пише подію submitted",
+    find: "  insert into public.purchase_request_events (request_id, kind, actor_id, created_at)\n  values (new.id, 'submitted', new.author_id, new.created_at);\n",
+    replace: "",
   },
 ];
 

@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import { ForbiddenCard } from "@/components/portal/forbidden-card";
 import { BackLink } from "@/components/portal/back-link";
-import { StatusBadge } from "@/components/portal/status-badge";
+import { RequestDetails, RequestHistory, RequestLines } from "@/components/portal/request-sections";
 import { Alert } from "@/components/ui/alert";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
-import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
-import { formatCents, lineSumCents, totalCents } from "@/lib/purchase/money";
 import { formatRequestNumber } from "@/lib/purchase/number";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,20 +45,21 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
   if (authorError) return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   const authorName = authorRows?.[0]?.author_name ?? "—";
 
-  const [linesRes, deptRes] = await Promise.all([
+  const [linesRes, deptRes, historyRes] = await Promise.all([
     supabase
       .from("purchase_request_lines")
       .select("position, name, purpose, quantity, price")
       .eq("request_id", id)
       .order("position"),
     supabase.from("departments").select("name").eq("id", request.department_id).maybeSingle(),
+    // Історія — лише якщо заявку видно (private.request_history: та сама умова, що RLS заявки; AC-HIST-10).
+    supabase.rpc("request_history", { p_request_id: id }),
   ]);
   // Помилка завантаження рядків чи відділу — повідомлення, а не порожня таблиця (DESIGN.md §6).
+  // Помилка історії не ховає заявку: розділ «History» покаже власне повідомлення (рев'ю CodeRabbit, PR 59).
   if (linesRes.error || deptRes.error) {
     return <Alert variant="destructive">Could not load the request. Refresh the page.</Alert>;
   }
-
-  const lines = linesRes.data ?? [];
 
   return (
     <>
@@ -73,80 +70,15 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
         </h1>
       </div>
 
-      <Card>
-        <CardContent>
-          <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Author</dt>
-              <dd className="font-medium" data-testid="request-author">
-                {authorName}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Department</dt>
-              <dd className="font-medium">{deptRes.data?.name ?? "—"}</dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Purchase type</dt>
-              <dd className="font-medium">
-                {PURCHASE_TYPE_LABEL[request.purchase_type as PurchaseType] ?? request.purchase_type}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Status</dt>
-              <dd>
-                <StatusBadge status={request.status} />
-              </dd>
-            </div>
-            {request.status === "rejected" && request.reject_reason ? (
-              // Причину відхилення видно поруч зі статусом автору й схвалювачам відділу — рішення PM #59 (AC-APR-07).
-              <div className="flex flex-col gap-1">
-                <dt className="text-muted-foreground">Rejection reason</dt>
-                <dd data-testid="reject-reason">{request.reject_reason}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </CardContent>
-      </Card>
-
-      <Card className="pb-0">
-        <CardHeader>
-          <CardTitle>Lines</CardTitle>
-        </CardHeader>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="pl-4">Item</TableHead>
-              <TableHead>Purpose</TableHead>
-              <TableHead className="text-right">Quantity</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-              <TableHead className="pr-4 text-right">Sum, USD</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lines.map((l) => (
-              <TableRow key={l.position}>
-                <TableCell className="pl-4 font-medium">{l.name}</TableCell>
-                <TableCell>{l.purpose}</TableCell>
-                <TableCell className="text-right tabular-nums">{l.quantity}</TableCell>
-                <TableCell className="text-right tabular-nums">{Number(l.price).toFixed(2)}</TableCell>
-                <TableCell className="pr-4 text-right tabular-nums">{formatCents(lineSumCents(l.quantity, l.price))}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          {/* Сума заявки — усі рядки, зокрема відхилені (AC-HIST-02; припущення PM у вимозі 64, відповідь на #65). */}
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={4} className="pl-4 font-medium">
-                Total
-              </TableCell>
-              <TableCell className="pr-4 text-right font-medium tabular-nums" data-testid="request-total">
-                {formatCents(totalCents(lines))}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
-      </Card>
+      <RequestDetails
+        authorName={authorName}
+        departmentName={deptRes.data?.name ?? "—"}
+        purchaseType={request.purchase_type}
+        status={request.status}
+        rejectReason={request.reject_reason}
+      />
+      <RequestLines lines={linesRes.data ?? []} />
+      <RequestHistory history={historyRes.data ?? []} failed={Boolean(historyRes.error)} />
     </>
   );
 }
