@@ -40,6 +40,21 @@ describe("чи може користувач вирішити заявку", () 
     expect(await canDecide(PETRO, requestId)).toBe(false);
   });
 
+  // Рев'ю CodeRabbit (PR 60): автор, що сам схвалює свій відділ, власну заявку не вирішує (AC-APR-05).
+  it("автор, який схвалює свій відділ, не може вирішити власну заявку — ні", async () => {
+    const dept = (await t.asService<{ id: string }>("select id from public.departments where name = 'Початкова школа'"))[0].id;
+    // Марія — і заявник, і схвалювач «Початкової школи».
+    await t.asService(
+      "insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true) on conflict (department_id, profile_id) do update set is_approver = true",
+      [dept, MARIA],
+    );
+    const [{ id }] = await t.asUser<{ id: string }>(MARIA, "select public.submit_purchase($1, 'purchasing_department', $2::jsonb) as id", [
+      dept,
+      JSON.stringify([{ name: "Маркери", purpose: "Дошка", quantity: 2, price: "15.50" }]),
+    ]);
+    expect(await canDecide(MARIA, id)).toBe(false);
+  });
+
   it("після рішення — ні; гість функції не викликає", async () => {
     await t.asUser(MARIA, "select public.decide_purchase($1::uuid, 'approve')", [requestId]);
     expect(await canDecide(MARIA, requestId)).toBe(false);

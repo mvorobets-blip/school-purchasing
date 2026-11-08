@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +27,17 @@ export function DecisionButtons({
   requestId,
   label,
   rejectedPositions = [],
+  onPendingChange,
 }: {
   requestId: string;
   label: string;
   rejectedPositions?: readonly number[];
+  // Поки схвалення зберігається, сторінка блокує «Reject line» — позначки не мають змінюватись під час запиту.
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const partial = rejectedPositions.length > 0;
   const [approveState, approve, approving] = useActionState(decidePurchase.bind(null, requestId, "approve"), idle);
+  useEffect(() => onPendingChange?.(approving), [approving, onPendingChange]);
   const [rejectState, reject, rejecting] = useActionState(decidePurchase.bind(null, requestId, "reject"), idle);
 
   return (

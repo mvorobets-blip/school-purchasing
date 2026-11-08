@@ -100,11 +100,20 @@ describe("дія decidePurchase", () => {
   });
 
   it("неможливе значення rejectLine (не ціле число від 1) — рішення не надіслано, «The request has changed. Refresh the page.»", async () => {
-    for (const bad of [["abc"], ["0"], ["1.5"], ["2", "-1"]]) {
+    for (const bad of [["abc"], ["0"], ["1.5"], ["2", "-1"], ["2147483648"]]) {
       const state = await decidePurchase(REQUEST, "approve", idle, form(undefined, bad));
       expect(state).toEqual({ status: "error", message: "The request has changed. Refresh the page." });
     }
     expect(rpcCalls).toHaveLength(0);
+  });
+
+  // Рев'ю CodeRabbit (PR 60): відповіді бази про змінену заявку — той самий текст, що для підробленої форми.
+  it("база відповіла INVALID_LINE чи INVALID_DECISION — «The request has changed. Refresh the page.»", async () => {
+    for (const message of ["INVALID_LINE", "INVALID_DECISION"]) {
+      rpcResult.error = { code: "P0001", message };
+      const state = await decidePurchase(REQUEST, "approve", idle, form(undefined, ["2"]));
+      expect(state).toEqual({ status: "error", message: "The request has changed. Refresh the page." });
+    }
   });
 
   it("кілька позначених рядків передано числами в порядку форми", async () => {

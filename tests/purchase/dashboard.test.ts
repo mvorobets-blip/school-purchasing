@@ -1,12 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { countByStatus, lineSummaries, pendingByDepartment } from "@/lib/purchase/dashboard";
+import { countByStatus, lineSummaries, ownStatusStats, pendingByDepartment } from "@/lib/purchase/dashboard";
 import { formatSubmitted } from "@/lib/purchase/date";
 
 describe("головна: підрахунки", () => {
   it("рахує заявки за статусами, невідомий статус пропускає", () => {
-    const rows = [{ status: "pending" }, { status: "approved" }, { status: "pending" }, { status: "draft" }];
-    expect(countByStatus(rows)).toEqual({ pending: 2, approved: 1, rejected: 0, partially_approved: 0, returned: 0 });
+    const rows = [
+      { status: "pending" },
+      { status: "approved" },
+      { status: "pending" },
+      { status: "draft" },
+      { status: "partially_approved" },
+      { status: "returned" },
+      { status: "returned" },
+    ];
+    expect(countByStatus(rows)).toEqual({ pending: 2, approved: 1, rejected: 0, partially_approved: 1, returned: 2 });
     expect(countByStatus([])).toEqual({ pending: 0, approved: 0, rejected: 0, partially_approved: 0, returned: 0 });
+  });
+
+  // Рев'ю CodeRabbit (PR 60): частково схвалена заявка має власний лічильник на головній.
+  it("лічильники власних заявок на головній — зокрема «Partially approved», з текстом і кольором статусу", () => {
+    const stats = ownStatusStats({ pending: 2, approved: 1, rejected: 0, partially_approved: 3, returned: 0 });
+    expect(stats.map((s) => [s.label, s.value])).toEqual([
+      ["Awaiting approval", 2],
+      ["Approved", 1],
+      ["Partially approved", 3],
+      ["Rejected", 0],
+    ]);
+    expect(stats.find((s) => s.status === "partially_approved")?.iconClass).toBe("bg-status-partial text-status-partial-foreground");
   });
 
   it("підсумок позицій: перша за порядком і скільки ще", () => {

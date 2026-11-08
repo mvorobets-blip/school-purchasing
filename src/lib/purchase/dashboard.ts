@@ -1,4 +1,4 @@
-import { isPurchaseStatus, type PurchaseStatus } from "./status";
+import { isPurchaseStatus, STATUS_CLASS, STATUS_LABEL, type PurchaseStatus } from "./status";
 
 // Чисті функції для головної: лише підрахунки з даних, які RLS уже віддав користувачу (без нових прав і сум).
 
@@ -8,6 +8,14 @@ export function countByStatus(rows: readonly { status: string }[]): StatusCounts
   const counts: StatusCounts = { pending: 0, approved: 0, rejected: 0, partially_approved: 0, returned: 0 };
   for (const r of rows) if (isPurchaseStatus(r.status)) counts[r.status] += 1;
   return counts;
+}
+
+// Лічильники власних заявок на головній — у порядку перегляду; кожен статус, що може мати заявка автора, видно окремо
+// (зріз 3: «Partially approved» — рев'ю CodeRabbit, PR 60). Текст і колір — ті самі, що в бейджі статусу.
+const OWN_STATUSES: readonly PurchaseStatus[] = ["pending", "approved", "partially_approved", "rejected"];
+
+export function ownStatusStats(counts: StatusCounts): { status: PurchaseStatus; label: string; iconClass: string; value: number }[] {
+  return OWN_STATUSES.map((status) => ({ status, label: STATUS_LABEL[status], iconClass: STATUS_CLASS[status], value: counts[status] }));
 }
 
 // Номерів заявок у зрізі немає (PM: «Поза межами»), тож заявку впізнають за першою позицією: «Папір А4 + 2 more».

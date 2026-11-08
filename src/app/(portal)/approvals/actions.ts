@@ -17,7 +17,8 @@ type RpcError = { code?: string; message?: string } | null;
 // тоді рішення не надсилаємо (інакше підроблена форма перетворила б часткове схвалення на повне).
 function rejectedPositions(formData: FormData): number[] | null {
   const values = formData.getAll("rejectLine").map((v) => Number(v));
-  if (values.some((n) => !Number.isInteger(n) || n < 1)) return null;
+  // Позиція — integer у базі: більше за 2 147 483 647 не буває (інакше база відповіла б загальною помилкою типу).
+  if (values.some((n) => !Number.isInteger(n) || n < 1 || n > 2_147_483_647)) return null;
   return [...new Set(values)];
 }
 

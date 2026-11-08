@@ -21,22 +21,45 @@ alter table public.purchase_request_lines add column status text;
 alter table public.purchase_request_lines add constraint purchase_request_lines_status_check
   check (status is null or status in ('approved', 'rejected'));
 
--- Заявки, схвалені до цієї міграції (зріз 2), схвалено цілком: їхні рядки — «Схвалено», як у нових схвалених.
--- Backfill оновлює рядки, а Postgres перевіряє на update і обмеження «not valid»: межі назви й мети ≤ 200
--- (20261027142924_purchase_text_limits.sql) додано як «not valid» — на проді можуть бути довші старі рядки.
--- Тому знімаємо їх на час backfill і повертаємо так само «not valid» (нові записи вони й далі перевіряють).
+-- Межі назви й мети ≤ 200 (20261027142924_purchase_text_limits.sql) були check «not valid». Postgres перевіряє такий
+-- check на будь-якому update рядка — і рішення (статус рядка) по старій заявці з довшою назвою впало б, як і backfill
+-- нижче. Тепер статус рядка змінює рішення, тож межі переносимо в тригер, що перевіряє лише вставку й зміну самої
+-- назви чи мети; старі довгі тексти лишаються як є. Повідомлення — те саме (23514, ім'я колишнього обмеження), тож дії
+-- й тести, що на нього спираються (isTextLengthError), не змінюються.
 alter table public.purchase_request_lines
   drop constraint purchase_request_lines_name_length,
   drop constraint purchase_request_lines_purpose_length;
 
+create function private.check_line_text_length()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if char_length(new.name) > 200 then
+    raise exception 'new row for relation "purchase_request_lines" violates check constraint "purchase_request_lines_name_length"'
+      using errcode = '23514';
+  end if;
+  if char_length(new.purpose) > 200 then
+    raise exception 'new row for relation "purchase_request_lines" violates check constraint "purchase_request_lines_purpose_length"'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function private.check_line_text_length() from public, anon, authenticated;
+
+create trigger purchase_request_lines_text_length
+  before insert or update of name, purpose on public.purchase_request_lines
+  for each row execute function private.check_line_text_length();
+
+-- Заявки, схвалені до цієї міграції (зріз 2), схвалено цілком: їхні рядки — «Схвалено», як у нових схвалених.
+-- Назву й мету backfill не змінює — тригер меж його не зупиняє, навіть для старих рядків понад 200 символів.
 update public.purchase_request_lines as l
   set status = 'approved'
   from public.purchase_requests as r
   where r.id = l.request_id and r.status = 'approved';
-
-alter table public.purchase_request_lines
-  add constraint purchase_request_lines_name_length check (char_length(name) <= 200) not valid,
-  add constraint purchase_request_lines_purpose_length check (char_length(purpose) <= 200) not valid;
 
 comment on column public.purchase_request_lines.status is
   'Рішення по рядку: null — ще не вирішено; approved / rejected — пише лише private.decide_purchase.';

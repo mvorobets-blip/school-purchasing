@@ -123,7 +123,7 @@ describe("часткове схвалення (база)", () => {
     await expectUnchanged(id);
   });
 
-  it("автор не вирішує власну заявку з відхиленими рядками — OWN_REQUEST, нічого не змінено", async () => {
+  it("AC-APR-05: автор не вирішує власну заявку з відхиленими рядками — OWN_REQUEST, нічого не змінено", async () => {
     await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true)", [
       dept["Вища школа"],
       MARIA,

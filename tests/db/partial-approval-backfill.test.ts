@@ -34,6 +34,16 @@ beforeAll(async () => {
     "insert into public.purchase_request_lines (request_id, position, name, purpose, quantity, price) values ($1, 3, repeat('н', 201), repeat('м', 201), 1, 1)",
     [ids.approved],
   );
+  // Такий самий старий рядок у заявці «Очікує схвалення» — її ще вирішуватимуть (рев'ю CodeRabbit, PR 60).
+  await t.asService(
+    "insert into public.purchase_request_lines (request_id, position, name, purpose, quantity, price) values ($1, 3, repeat('н', 201), repeat('м', 201), 1, 1)",
+    [ids.pending],
+  );
+  // Марія — схвалювач відділу заявок.
+  await t.asService("insert into public.department_members (department_id, profile_id, is_approver) values ($1, $2, true)", [
+    deptId,
+    t.users["member2@example.test"],
+  ]);
   await t.db.exec(
     `alter table public.purchase_request_lines
        add constraint purchase_request_lines_name_length check (char_length(name) <= 200) not valid,
@@ -51,7 +61,7 @@ describe("статуси рядків наявних заявок (backfill)", (
       )).map((r) => r.status);
     // Зокрема старий рядок із назвою й метою понад 200 символів — міграція на ньому не падає.
     expect(await statuses(ids.approved)).toEqual(["approved", "approved", "approved"]);
-    expect(await statuses(ids.pending)).toEqual([null, null]);
+    expect(await statuses(ids.pending)).toEqual([null, null, null]);
     expect(await statuses(ids.rejected)).toEqual([null, null]);
   });
 
@@ -59,5 +69,16 @@ describe("статуси рядків наявних заявок (backfill)", (
     await expect(
       t.asService("update public.purchase_request_lines set name = repeat('x', 201) where request_id = $1 and position = 1", [ids.pending]),
     ).rejects.toThrow(/purchase_request_lines_name_length/);
+  });
+
+  it("рішення по старій заявці з назвою й метою понад 200 символів проходить, тексти не змінено", async () => {
+    await t.asUser(t.users["member2@example.test"], "select public.decide_purchase($1::uuid, 'approve', null, array[2])", [ids.pending]);
+    const [request] = await t.asService<{ status: string }>("select status from public.purchase_requests where id = $1", [ids.pending]);
+    expect(request.status).toBe("partially_approved");
+    const [long] = await t.asService<{ status: string; name_len: number; purpose_len: number }>(
+      "select status, char_length(name) as name_len, char_length(purpose) as purpose_len from public.purchase_request_lines where request_id = $1 and position = 3",
+      [ids.pending],
+    );
+    expect(long).toEqual({ status: "approved", name_len: 201, purpose_len: 201 });
   });
 });

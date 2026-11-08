@@ -64,7 +64,7 @@ export function RequestDetails({ authorName, departmentName, purchaseType, statu
 type Line = { position: number; name: string; purpose: string; quantity: number; price: number; status?: string | null };
 
 // Вибір «Reject line» схвалювачем (AC-DEC-01) — лише на сторінці заявки «Awaiting approval», яку він може вирішити.
-type Selectable = { rejected: ReadonlySet<number>; onToggle: (position: number) => void };
+type Selectable = { rejected: ReadonlySet<number>; onToggle: (position: number) => void; disabled?: boolean };
 
 const lineStatusText = (status: string | null | undefined) =>
   status && Object.hasOwn(LINE_STATUS_LABEL, status) ? LINE_STATUS_LABEL[status as LineStatus] : "—";
@@ -110,6 +110,7 @@ export function RequestLines({ lines, selectable }: { lines: readonly Line[]; se
                   <Checkbox
                     checked={selectable.rejected.has(l.position)}
                     onCheckedChange={() => selectable.onToggle(l.position)}
+                    disabled={selectable.disabled}
                     aria-label={`Reject line ${l.position}: ${l.name}`}
                   />
                 </TableCell>

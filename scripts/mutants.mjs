@@ -156,6 +156,13 @@ export const mutants = [
     find: "set status = case when position = any (v_rejected) then 'rejected' else 'approved' end",
     replace: "set status = case when position = any (v_rejected) then 'approved' else 'rejected' end",
   },
+  // ── Межа назви рядка ≤ 200 — тепер тригер (технічна межа, регресійні тести без AC ID) ───────────────────────
+  {
+    id: "S28", kind: "sql", ac: "межа назви рядка (технічна)", file: PARTIAL, tests: [PURCHASE_DB, "tests/db/partial-approval-backfill.test.ts"],
+    what: "тригер меж: назва з 201 символу проходить",
+    find: "  if char_length(new.name) > 200 then",
+    replace: "  if char_length(new.name) > 201 then",
+  },
 ];
 
 // Приклади з демо (інша схема — у вашому репо цих файлів немає, тож не розкоментовуйте як є):
