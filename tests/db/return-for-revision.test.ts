@@ -160,4 +160,16 @@ describe("повернення на доопрацювання (база)", () =
     }
     await expectUnchanged(id);
   });
+
+  // Рев'ю CodeRabbit (PR 61): обмеження додано «not valid» і перевірено окремою міграцією — після неї вони звичайні.
+  it("обмеження причини повернення перевірено (validated) окремою міграцією", async () => {
+    const rows = await t.asService<{ conname: string; convalidated: boolean }>(
+      `select conname, convalidated from pg_constraint
+        where conname in ('purchase_requests_return_reason_length', 'purchase_requests_return_reason_check') order by conname`,
+    );
+    expect(rows).toEqual([
+      { conname: "purchase_requests_return_reason_check", convalidated: true },
+      { conname: "purchase_requests_return_reason_length", convalidated: true },
+    ]);
+  });
 });

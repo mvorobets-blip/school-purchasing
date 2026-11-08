@@ -6,12 +6,15 @@
 
 -- ── 1. Причина повернення ──────────────────────────────────────────────────────
 alter table public.purchase_requests add column return_reason text;
+-- Обмеження додаємо «not valid» (без перевірки наявних рядків під блокуванням таблиці); перевіряє їх окрема наступна
+-- міграція 20261106193245_validate_return_reason.sql після фіксації цієї (рев'ю CodeRabbit, PR 61). Нові записи вони
+-- перевіряють одразу.
 alter table public.purchase_requests
   add constraint purchase_requests_return_reason_length
-    check (return_reason is null or char_length(return_reason) <= 500),
+    check (return_reason is null or char_length(return_reason) <= 500) not valid,
   -- Повернена заявка завжди з причиною (AC-DEC-06).
   add constraint purchase_requests_return_reason_check
-    check (status <> 'returned' or nullif(btrim(return_reason), '') is not null);
+    check (status <> 'returned' or nullif(btrim(return_reason), '') is not null) not valid;
 
 comment on column public.purchase_requests.return_reason is
   'Причина повернення на доопрацювання (≤ 500): пише лише private.decide_purchase; видно тим, хто бачить заявку.';

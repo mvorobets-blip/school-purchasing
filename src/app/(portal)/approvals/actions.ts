@@ -24,6 +24,8 @@ function rejectedPositions(formData: FormData): number[] | null {
 
 const CHANGED = "The request has changed. Refresh the page.";
 
+const DECISIONS: readonly string[] = ["approve", "reject", "return"];
+
 // Код повідомлення на сторінці «Awaiting decision» після рішення (approve — залежить від позначених рядків).
 const OK_CODE: Partial<Record<"approve" | "reject" | "return", string>> = { reject: "REJECTED", return: "RETURNED" };
 
@@ -49,6 +51,8 @@ export async function decidePurchase(
 ): Promise<DecisionState> {
   const user = await getCurrentUser();
   if (!user || !UUID.test(requestId)) return { status: "error", message: messageFor("FORBIDDEN") };
+  // Дію можна викликати напряму з будь-яким рішенням — невідоме не надсилаємо (база теж відмовила б INVALID_DECISION).
+  if (!DECISIONS.includes(decision)) return { status: "error", message: CHANGED };
 
   const reason = String(formData.get("reason") ?? "").trim();
   // Відхилення й повернення — лише з причиною (AC-APR-06, AC-DEC-06): без неї до бази не звертаємось.

@@ -38,7 +38,7 @@ export default async function Home() {
     supabase.from("employee_permissions").select("permission").eq("profile_id", user.id),
     supabase
       .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, reject_reason, return_reason, created_at")
+      .select("id, department_id, purchase_type, status, created_at")
       .eq("author_id", user.id)
       .order("created_at", { ascending: false }),
     getAwaitingDecision(user.id),
@@ -81,9 +81,16 @@ export default async function Home() {
     ...awaiting.requests.slice(0, RECENT).map((r) => r.id),
     ...latestRequests.map((r) => r.id),
   ];
-  const linesRes = shownIds.length
-    ? await supabase.from("purchase_request_lines").select("request_id, position, name").in("request_id", shownIds)
-    : null;
+  // Причини відхилення й повернення — лише для показаних власних заявок (рев'ю CodeRabbit, PR 61). select("*"): поки
+  // db-deploy не додав нову колонку, сторінка не падає — причини просто ще немає.
+  const recentIds = ownRequests.slice(0, RECENT).map((r) => r.id);
+  const [linesRes, reasonsRes] = await Promise.all([
+    shownIds.length
+      ? supabase.from("purchase_request_lines").select("request_id, position, name").in("request_id", shownIds)
+      : null,
+    recentIds.length ? supabase.from("purchase_requests").select("*").in("id", recentIds) : null,
+  ]);
+  const reasonsOf = new Map((reasonsRes?.data ?? []).map((r) => [r.id, r]));
   const summaries = lineSummaries(linesRes?.data ?? []);
   const summary = (id: string) => summaries.get(id) ?? { first: "Purchase", more: 0 };
 
@@ -247,8 +254,8 @@ export default async function Home() {
       title={summary(r.id).first}
       more={summary(r.id).more}
       status={r.status}
-      rejectReason={r.reject_reason}
-      returnReason={r.return_reason}
+      rejectReason={reasonsOf.get(r.id)?.reject_reason ?? null}
+      returnReason={reasonsOf.get(r.id)?.return_reason ?? null}
       meta={`${deptName.get(r.department_id) ?? "—"} · ${typeLabel(r.purchase_type)} · ${formatSubmitted(r.created_at)}`}
     />
   ));

@@ -153,7 +153,8 @@ describe("сторінка заявки", () => {
     db.request = { ...db.request, status: "returned", return_reason: "Уточніть кількість" };
     const html = await render();
     // Сторінка справді запитує причину повернення з бази.
-    expect(selected.purchase_requests).toMatch(/\breturn_reason\b/);
+    // return_reason — явно або через «*» (сторінка не падає до міграції).
+    expect(selected.purchase_requests).toMatch(/\breturn_reason\b|^\*$/);
     expect(html).toMatch(/data-testid="purchase-status"[^>]*>Returned for revision</);
     expect(html).toContain(">Return reason</dt>");
     expect(html).toMatch(/data-testid="return-reason"[^>]*>Уточніть кількість</);

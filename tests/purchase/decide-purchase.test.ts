@@ -201,4 +201,11 @@ describe("дія decidePurchase", () => {
     };
     expect((await decidePurchase(REQUEST, "reject", idle, form("Немає бюджету"))).message).toBe("The reason can be up to 500 characters");
   });
+
+  // Рев'ю CodeRabbit (PR 61): дію можна викликати напряму з будь-яким рішенням.
+  it("невідоме рішення — «The request has changed. Refresh the page.», до бази не звертаємось", async () => {
+    const state = await decidePurchase(REQUEST, "delete" as never, idle, form("Причина"));
+    expect(state).toEqual({ status: "error", message: "The request has changed. Refresh the page." });
+    expect(rpcCalls).toHaveLength(0);
+  });
 });

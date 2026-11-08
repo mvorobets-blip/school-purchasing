@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,13 +38,13 @@ const REASON_DIALOG: Record<
   },
 };
 
-// Рішення з причиною в діалозі: без причини — «Provide a reason», заявка не змінюється.
+// Рішення з причиною в діалозі: без причини — «Provide a reason», заявка не змінюється. Кожне нове відкриття діалогу
+// починає форму заново (ключ раунду), тож помилка попереднього надсилання не лишається на екрані.
 function ReasonDialog({ requestId, label, decision }: { requestId: string; label: string; decision: ReasonDecision }) {
-  const [state, action, pending] = useActionState(decidePurchase.bind(null, requestId, decision), idle);
+  const [round, setRound] = useState(0);
   const text = REASON_DIALOG[decision];
-  const fieldId = `${decision}-reason-${requestId}`;
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => open && setRound((r) => r + 1)}>
       <DialogTrigger
         render={<Button type="button" size="sm" variant={text.variant} aria-label={`${text.trigger}: ${label}`} />}
       >
@@ -55,25 +55,34 @@ function ReasonDialog({ requestId, label, decision }: { requestId: string; label
           <DialogTitle>{text.title}</DialogTitle>
           <DialogDescription>The requester will see the reason next to the status.</DialogDescription>
         </DialogHeader>
-        <form action={action} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={fieldId}>Reason</Label>
-            <Textarea id={fieldId} name="reason" rows={3} maxLength={REASON_LIMIT} />
-          </div>
-          {state.status === "error" ? (
-            <Alert variant="destructive" data-testid="decision-message">
-              {state.message}
-            </Alert>
-          ) : null}
-          <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
-            <Button type="submit" variant={text.variant} disabled={pending}>
-              {pending ? text.pending : text.submit}
-            </Button>
-          </DialogFooter>
-        </form>
+        <ReasonForm key={round} requestId={requestId} decision={decision} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ReasonForm({ requestId, decision }: { requestId: string; decision: ReasonDecision }) {
+  const [state, action, pending] = useActionState(decidePurchase.bind(null, requestId, decision), idle);
+  const text = REASON_DIALOG[decision];
+  const fieldId = `${decision}-reason-${requestId}`;
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={fieldId}>Reason</Label>
+        <Textarea id={fieldId} name="reason" rows={3} maxLength={REASON_LIMIT} />
+      </div>
+      {state.status === "error" ? (
+        <Alert variant="destructive" data-testid="decision-message">
+          {state.message}
+        </Alert>
+      ) : null}
+      <DialogFooter>
+        <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>
+        <Button type="submit" variant={text.variant} disabled={pending}>
+          {pending ? text.pending : text.submit}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 
