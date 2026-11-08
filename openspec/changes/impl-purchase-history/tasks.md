@@ -36,15 +36,15 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 3. Часткове схвалення — `task/partial-approval`
 
-- [ ] 3.1 Міграція `<ts>_partial_approval.sql`: статуси `partially_approved`, `returned`; статус рядка;
+- [x] 3.1 Міграція `<ts>_partial_approval.sql`: статуси `partially_approved`, `returned`; статус рядка;
   `decide_purchase` з позначеними рядками (`ALL_LINES_REJECTED`).
-- [ ] 3.2 Сторінка заявки для схвалювача: «Reject line», «Approve» / «Partially approve», «Line status» для автора;
+- [x] 3.2 Сторінка заявки для схвалювача: «Reject line», «Approve» / «Partially approve», «Line status» для автора;
   `STATUS_LABEL` += «Partially approved», «Returned for revision»; токени `status-partial`, `status-returned`
   (`DESIGN.md` §9, `globals.css`, контраст в описі PR).
-- [ ] 3.3 Тести: PGlite — AC-DEC-01 (рядок 2 `rejected`, 1 і 3 `approved`, заявка `partially_approved`), усі позначено →
+- [x] 3.3 Тести: PGlite — AC-DEC-01 (рядок 2 `rejected`, 1 і 3 `approved`, заявка `partially_approved`), усі позначено →
   без змін, схвалення без позначених → `approved` (регресія AC-APR-02), не схвалювач чи автор → без змін; дія й
   сторінка — AC-DEC-01, AC-LANG-09 («Partially approved» текстом).
-- [ ] 3.4 Мутанти: без перевірки «усі рядки» → тест червоний; `partially_approved` замість `approved` без позначених →
+- [x] 3.4 Мутанти: без перевірки «усі рядки» → тест червоний; `partially_approved` замість `approved` без позначених →
   AC-APR-02 червоний.
   Done when: AC-DEC-01 «реалізовано».
 

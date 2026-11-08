@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { formatSubmittedAt } from "@/lib/purchase/date";
 import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { formatCents, lineSumCents, totalCents } from "@/lib/purchase/money";
+import { LINE_STATUS_LABEL, type LineStatus } from "@/lib/purchase/status";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Розділи сторінки заявки /requests/[id]: дані заявки, рядки з сумами, історія. Сторінка лише завантажує дані й
 // вирішує, чи їх видно (ForbiddenCard); тут — лише вигляд.
@@ -59,9 +61,18 @@ export function RequestDetails({ authorName, departmentName, purchaseType, statu
   );
 }
 
-type Line = { position: number; name: string; purpose: string; quantity: number; price: number };
+type Line = { position: number; name: string; purpose: string; quantity: number; price: number; status?: string | null };
 
-export function RequestLines({ lines }: { lines: readonly Line[] }) {
+// Вибір «Reject line» схвалювачем (AC-DEC-01) — лише на сторінці заявки «Awaiting approval», яку він може вирішити.
+type Selectable = { rejected: ReadonlySet<number>; onToggle: (position: number) => void; disabled?: boolean };
+
+const lineStatusText = (status: string | null | undefined) =>
+  status && Object.hasOwn(LINE_STATUS_LABEL, status) ? LINE_STATUS_LABEL[status as LineStatus] : "—";
+
+export function RequestLines({ lines, selectable }: { lines: readonly Line[]; selectable?: Selectable }) {
+  // «Line status» — після рішення (AC-DEC-01: автор бачить «Approved» / «Rejected» у кожного рядка).
+  const decided = lines.some((l) => l.status);
+  const extra = (decided ? 1 : 0) + (selectable ? 1 : 0);
   return (
     <Card className="pb-0">
       <CardHeader>
@@ -74,7 +85,9 @@ export function RequestLines({ lines }: { lines: readonly Line[] }) {
             <TableHead>Purpose</TableHead>
             <TableHead className="text-right">Quantity</TableHead>
             <TableHead className="text-right">Price</TableHead>
-            <TableHead className="pr-4 text-right">Sum, USD</TableHead>
+            <TableHead className={extra ? "text-right" : "pr-4 text-right"}>Sum, USD</TableHead>
+            {decided ? <TableHead className={selectable ? undefined : "pr-4"}>Line status</TableHead> : null}
+            {selectable ? <TableHead className="pr-4">Reject line</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -84,7 +97,24 @@ export function RequestLines({ lines }: { lines: readonly Line[] }) {
               <TableCell>{l.purpose}</TableCell>
               <TableCell className="text-right tabular-nums">{l.quantity}</TableCell>
               <TableCell className="text-right tabular-nums">{Number(l.price).toFixed(2)}</TableCell>
-              <TableCell className="pr-4 text-right tabular-nums">{formatCents(lineSumCents(l.quantity, l.price))}</TableCell>
+              <TableCell className={extra ? "text-right tabular-nums" : "pr-4 text-right tabular-nums"}>
+                {formatCents(lineSumCents(l.quantity, l.price))}
+              </TableCell>
+              {decided ? (
+                <TableCell className={selectable ? undefined : "pr-4"} data-testid="line-status">
+                  {lineStatusText(l.status)}
+                </TableCell>
+              ) : null}
+              {selectable ? (
+                <TableCell className="pr-4">
+                  <Checkbox
+                    checked={selectable.rejected.has(l.position)}
+                    onCheckedChange={() => selectable.onToggle(l.position)}
+                    disabled={selectable.disabled}
+                    aria-label={`Reject line ${l.position}: ${l.name}`}
+                  />
+                </TableCell>
+              ) : null}
             </TableRow>
           ))}
         </TableBody>
@@ -94,9 +124,10 @@ export function RequestLines({ lines }: { lines: readonly Line[] }) {
             <TableCell colSpan={4} className="pl-4 font-medium">
               Total
             </TableCell>
-            <TableCell className="pr-4 text-right font-medium tabular-nums" data-testid="request-total">
+            <TableCell className={extra ? "text-right font-medium tabular-nums" : "pr-4 text-right font-medium tabular-nums"} data-testid="request-total">
               {formatCents(totalCents(lines))}
             </TableCell>
+            {extra ? <TableCell colSpan={extra} /> : null}
           </TableRow>
         </TableFooter>
       </Table>

@@ -1,4 +1,4 @@
-import { Building2, Check, Clock, ListChecks, Plus, TriangleAlert, X } from "lucide-react";
+import { Building2, Check, CheckCheck, Clock, ListChecks, Plus, TriangleAlert, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DepartmentRow, RequestRow, SectionCard, StatLink } from "@/components/portal/dashboard";
@@ -12,7 +12,7 @@ import { messageFor } from "@/lib/org/messages";
 import { ROLE_LABEL } from "@/lib/org/roles";
 import { cn } from "@/lib/utils";
 import { getAwaitingDecision } from "@/lib/purchase/awaiting";
-import { countByStatus, lineSummaries, pendingByDepartment } from "@/lib/purchase/dashboard";
+import { countByStatus, lineSummaries, ownStatusStats, pendingByDepartment } from "@/lib/purchase/dashboard";
 import { formatSubmitted } from "@/lib/purchase/date";
 import { departmentOptions, PURCHASE_TYPE_LABEL, purchaseTypeOptions, type PurchaseType } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
@@ -279,9 +279,9 @@ export default async function Home() {
             </SectionCard>
           )}
           <SectionCard title="My requests" link={{ href: "/requests", label: "All my requests" }}>
-            <StatusLine icon={Clock} iconClass="bg-status-pending text-status-pending-foreground" label="Awaiting approval" value={ownCounts.pending} />
-            <StatusLine icon={Check} iconClass="bg-status-approved text-status-approved-foreground" label="Approved" value={ownCounts.approved} />
-            <StatusLine icon={X} iconClass="bg-status-rejected text-status-rejected-foreground" label="Rejected" value={ownCounts.rejected} />
+            {ownStatusStats(ownCounts).map((s) => (
+              <StatusLine key={s.status} icon={STATUS_ICON[s.status]} iconClass={s.iconClass} label={s.label} value={s.value} />
+            ))}
             <p className="mt-2 text-sm text-muted-foreground">I approve in: {approveIn}</p>
           </SectionCard>
         </div>
@@ -333,10 +333,19 @@ export default async function Home() {
   return (
     <>
       {header(newPurchase("default"))}
-      <section aria-label="My requests by status" className="grid grid-cols-3 gap-2 sm:gap-4">
-        <StatLink href="/requests" icon={Clock} iconClass="bg-status-pending text-status-pending-foreground" label="Awaiting approval" value={ownCounts.pending} hint="My requests" testId="stat-pending" />
-        <StatLink href="/requests" icon={Check} iconClass="bg-status-approved text-status-approved-foreground" label="Approved" value={ownCounts.approved} hint="My requests" testId="stat-approved" />
-        <StatLink href="/requests" icon={X} iconClass="bg-status-rejected text-status-rejected-foreground" label="Rejected" value={ownCounts.rejected} hint="My requests" testId="stat-rejected" />
+      <section aria-label="My requests by status" className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
+        {ownStatusStats(ownCounts).map((s) => (
+          <StatLink
+            key={s.status}
+            href="/requests"
+            icon={STATUS_ICON[s.status]}
+            iconClass={s.iconClass}
+            label={s.label}
+            value={s.value}
+            hint="My requests"
+            testId={`stat-${s.status}`}
+          />
+        ))}
       </section>
       <div className="grid items-start gap-4 lg:grid-cols-[1.6fr_1fr]">
         <SectionCard title="Recent requests" link={{ href: "/requests", label: "All my requests" }} testId="recent-requests">
@@ -347,6 +356,9 @@ export default async function Home() {
     </>
   );
 }
+
+// Іконки лічильників статусів на головній (декоративні: поруч завжди текст статусу).
+const STATUS_ICON = { pending: Clock, approved: Check, partially_approved: CheckCheck, rejected: X, returned: ListChecks } as const;
 
 function StatusLine({
   icon: Icon,

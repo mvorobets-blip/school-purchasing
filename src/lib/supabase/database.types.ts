@@ -84,14 +84,14 @@ isOneToOne: false
                   ]
                 },"purchase_request_lines": {
                   Row: {
-                    "id": string,"name": string,"position": number,"price": number,"purpose": string,"quantity": number,"request_id": string
+                    "id": string,"name": string,"position": number,"price": number,"purpose": string,"quantity": number,"request_id": string,"status": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: string,"name": string,"position": number,"price": number,"purpose": string,"quantity": number,"request_id": string
+                    "id"?: string,"name": string,"position": number,"price": number,"purpose": string,"quantity": number,"request_id": string,"status"?: string | null
                   }
                   Update: {
-                    "id"?: string,"name"?: string,"position"?: number,"price"?: number,"purpose"?: string,"quantity"?: number,"request_id"?: string
+                    "id"?: string,"name"?: string,"position"?: number,"price"?: number,"purpose"?: string,"quantity"?: number,"request_id"?: string,"status"?: string | null
                   }
                   Relationships: [
                     {
@@ -170,7 +170,8 @@ isOneToOne: false
           }
           Functions: {
             "add_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
-            "decide_purchase": { Args: { "p_decision": string,"p_reason"?: string | null,"p_request_id": string }; Returns: undefined },
+            "can_decide_purchase": { Args: { "p_request_id": string }; Returns: boolean },
+            "decide_purchase": { Args: { "p_decision": string,"p_reason"?: string | null,"p_rejected_positions"?: number[],"p_request_id": string }; Returns: undefined },
             "request_author_names": { Args: { "p_request_ids": string[] }; Returns: { author_name: string | null; request_id: string }[] },
             "request_history": { Args: { "p_request_id": string }; Returns: { actor_name: string | null; created_at: string; kind: string }[] },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },

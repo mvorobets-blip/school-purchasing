@@ -14,6 +14,7 @@ export const MESSAGES = {
   SUBMITTED: "Purchase submitted",
   NO_REQUESTS: "You have not submitted any requests yet",
   NO_REASON: "Provide a reason",
+  ALL_LINES_REJECTED: "All lines are rejected: reject the whole request",
   NO_DECISIONS: "No requests awaiting your decision",
   DEACTIVATED: "Account deactivated. Contact your administrator",
 } as const;

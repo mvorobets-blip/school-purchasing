@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,16 +21,39 @@ import { decidePurchase, type DecisionState } from "./actions";
 const idle: DecisionState = { status: "idle", message: "" };
 
 // «Approve» — основна дія рядка (суцільна); «Reject» — незворотна (червона межа) з причиною в діалозі (AC-APR-06, 07).
-export function DecisionButtons({ requestId, label }: { requestId: string; label: string }) {
+// На сторінці заявки схвалювач позначає «Reject line» — позиції йдуть у форму схвалення, а кнопка стає «Partially approve»
+// (AC-DEC-01; тексти — таблиця PM, вимога 49).
+export function DecisionButtons({
+  requestId,
+  label,
+  rejectedPositions = [],
+  onPendingChange,
+}: {
+  requestId: string;
+  label: string;
+  rejectedPositions?: readonly number[];
+  // Поки схвалення зберігається, сторінка блокує «Reject line» — позначки не мають змінюватись під час запиту.
+  onPendingChange?: (pending: boolean) => void;
+}) {
+  const partial = rejectedPositions.length > 0;
   const [approveState, approve, approving] = useActionState(decidePurchase.bind(null, requestId, "approve"), idle);
+  useEffect(() => onPendingChange?.(approving), [approving, onPendingChange]);
   const [rejectState, reject, rejecting] = useActionState(decidePurchase.bind(null, requestId, "reject"), idle);
 
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap justify-end gap-2">
         <form action={approve}>
-          <Button type="submit" size="sm" disabled={approving} aria-label={`Approve: ${label}`}>
-            {approving ? "Approving…" : "Approve"}
+          {rejectedPositions.map((p) => (
+            <input key={p} type="hidden" name="rejectLine" value={p} />
+          ))}
+          <Button
+            type="submit"
+            size="sm"
+            disabled={approving}
+            aria-label={`${partial ? "Partially approve" : "Approve"}: ${label}`}
+          >
+            {approving ? "Approving…" : partial ? "Partially approve" : "Approve"}
           </Button>
         </form>
         <Dialog>

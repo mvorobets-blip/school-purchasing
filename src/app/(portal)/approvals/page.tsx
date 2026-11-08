@@ -18,7 +18,11 @@ import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { DecisionButtons } from "./decision-buttons";
 
-const OK_TEXT: Record<string, string> = { APPROVED: "Request approved.", REJECTED: "Request rejected." };
+const OK_TEXT: Record<string, string> = {
+  APPROVED: "Request approved.",
+  PARTIALLY_APPROVED: "Request partially approved.",
+  REJECTED: "Request rejected.",
+};
 
 // Список для рішення: подані заявки відділів, які людина схвалює, крім власних (AC-APR-01; матриця прав).
 // Хто не схвалює жодного відділу — «Not enough permissions» без жодної заявки (AC-APR-04).
