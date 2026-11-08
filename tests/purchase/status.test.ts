@@ -32,6 +32,17 @@ describe("статуси заявки зрізу 3", () => {
     expect(badge("returned")).toContain("bg-status-returned");
   });
 
+  // Колір кожного статусу — свій токен (DESIGN.md §2); статус завжди з текстом, колір лише підсилює.
+  it("кожен статус має власний токен кольору (зокрема статуси зрізу 2)", () => {
+    expect(status.STATUS_CLASS).toEqual({
+      pending: "bg-status-pending text-status-pending-foreground",
+      approved: "bg-status-approved text-status-approved-foreground",
+      rejected: "bg-status-rejected text-status-rejected-foreground",
+      partially_approved: "bg-status-partial text-status-partial-foreground",
+      returned: "bg-status-returned text-status-returned-foreground",
+    });
+  });
+
   it("підписи статусу рядка — «Approved» і «Rejected»", () => {
     expect((status as Record<string, unknown>).LINE_STATUS_LABEL).toEqual({ approved: "Approved", rejected: "Rejected" });
   });
