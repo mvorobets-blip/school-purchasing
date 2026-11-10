@@ -26,11 +26,21 @@ const THREE_LINES = [
 
 test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
-/** Сторінка синтетичного автора: вхід через форму /login (пароль не потрапляє у звіт — signIn). */
+/** Сторінка синтетичного автора в окремому контексті (поруч зі схвалювачем): вхід через форму /login (пароль не
+ * потрапляє у звіт — signIn). Контекст пише власне відео: Playwright записує лише сторінку тесту (прогін 10.11 —
+ * частина автора без відео); closeAuthor додає це відео до тесту як «author-video». */
 async function asAuthor(browser: Browser, author: UatAuthor): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+  const size = { width: 1280, height: 800 };
+  const context = await browser.newContext({ recordVideo: { dir: test.info().outputPath("author-video"), size } });
+  const page = await context.newPage();
   await signIn(page, author.email, author.password);
   return page;
+}
+
+async function closeAuthor(page: Page) {
+  await page.context().close();
+  const video = page.video();
+  if (video) await test.info().attach("author-video", { path: await video.path(), contentType: "video/webm" });
 }
 
 /** «Дано»: людина — схвалювач рівно цього відділу (таблиця відділів у «My profile»). */
@@ -100,7 +110,7 @@ test.describe("схвалювач Марія (approver-primary@example.test)", (
           },
         );
       } finally {
-        await own.context().close();
+        await closeAuthor(own);
       }
     },
   );
@@ -249,7 +259,7 @@ test.describe("схвалювач Марія (approver-primary@example.test)", (
           },
         );
       } finally {
-        await own.context().close();
+        await closeAuthor(own);
       }
     },
   );
@@ -259,14 +269,14 @@ test.describe("синтетичний автор (працівник 1)", () => 
   test(
     "AC-HIST-01: працівник 1 подає дві закупівлі — у «My requests» номери PUR-n і PUR-(n+1)",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-HIST-01" } },
-    async ({ browser }) => {
+    async ({ page }) => {
       let author: UatAuthor;
-      let page: Page;
       await given(
         "в системі ще немає жодної закупівлі (на проді — у працівника 1 ще немає жодної; номери глобальні, відповідь PM на ValiaBihun/2026-quitcode-dream-team#73)",
         async () => {
           author = await createAuthor(PRIMARY, "hist01");
-          page = await asAuthor(browser, author);
+          // Автор — на сторінці тесту (її пише відео прогону).
+          await signIn(page, author.email, author.password);
           await page.goto("/requests");
           await expect(page.getByTestId("no-requests")).toBeVisible();
         },
@@ -290,7 +300,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
         });
 
         await thenStep(
-          page!,
+          page,
           {
             clause:
               "в списку «Мої заявки» вони мають номери «PUR-1» і «PUR-2» (на проді — «PUR-n» і «PUR-(n+1)»: друга на одиницю більша).",
@@ -306,7 +316,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
           },
         );
       } finally {
-        await page!.context().close();
+        await page.context().clearCookies();
       }
     },
   );
@@ -314,7 +324,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
   test(
     "AC-HIST-02: рядки 3 × 20.00 і 2 × 15.50 — суми рядків 60.00 і 31.00, сума заявки 91.00",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-HIST-02" } },
-    async ({ browser }) => {
+    async ({ page }) => {
       let author: UatAuthor;
       let id = "";
       await given("закупівля з двома рядками: кількість 3 за ціною 20.00 і кількість 2 за ціною 15.50", async () => {
@@ -322,7 +332,8 @@ test.describe("синтетичний автор (працівник 1)", () => 
         id = await submitAs(author, PRIMARY, THREE_LINES.slice(0, 2));
       });
 
-      const page = await asAuthor(browser, author!);
+      // Автор — на сторінці тесту (її пише відео прогону).
+      await signIn(page, author!.email, author!.password);
       try {
         await when("автор відкриває заявку", async () => {
           await page.goto(`/requests/${id}`);
@@ -341,7 +352,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
           },
         );
       } finally {
-        await page.context().close();
+        await page.context().clearCookies();
       }
     },
   );
@@ -349,7 +360,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
   test(
     "AC-HIST-06: в історії запис «Submitted» з іменем автора і датою та часом America/New_York",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-HIST-06" } },
-    async ({ browser }) => {
+    async ({ page }) => {
       let author: UatAuthor;
       let id = "";
       let submittedAt = new Date();
@@ -359,7 +370,8 @@ test.describe("синтетичний автор (працівник 1)", () => 
         id = await submitAs(author, PRIMARY, THREE_LINES.slice(0, 1));
       });
 
-      const page = await asAuthor(browser, author!);
+      // Автор — на сторінці тесту (її пише відео прогону).
+      await signIn(page, author!.email, author!.password);
       try {
         await when("він відкриває історію цієї заявки", async () => {
           await page.goto(`/requests/${id}`);
@@ -395,7 +407,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
           },
         );
       } finally {
-        await page.context().close();
+        await page.context().clearCookies();
       }
     },
   );
