@@ -1,5 +1,5 @@
 // UAT зрізу 3 (WS9) на проді: вимоги PM ValiaBihun/2026-quitcode-dream-team#63 (AC-DEC-01, 04, 06),
-// ValiaBihun/2026-quitcode-dream-team#64 (AC-HIST-01, 02, 06, 10) і #49 (AC-LANG-09). AC-DEC-07 — після злиття задачі 5.
+// ValiaBihun/2026-quitcode-dream-team#64 (AC-HIST-01, 02, 06, 10) і #49 (AC-LANG-09); AC-DEC-07 — з задачею 5 (PR 63).
 // «Тоді» в clause — дослівно з вимог; інтерфейс англійською (#49), тож перевіряємо дослівний переклад PM:
 // «Частково схвалено» → «Partially approved», «Повернено на доопрацювання» → «Returned for revision», «Відхилено» /
 // «Схвалено» (рядок) → «Rejected» / «Approved», «Вкажіть причину» → «Provide a reason», «Очікує схвалення» →
@@ -266,6 +266,66 @@ test.describe("схвалювач Марія (approver-primary@example.test)", (
 });
 
 test.describe("синтетичний автор (працівник 1)", () => {
+  test(
+    "AC-DEC-07: автор виправив рядок 1 поверненої заявки й подав знову — «Awaiting approval», відділ той самий",
+    { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-DEC-07" } },
+    async ({ page, browser }) => {
+      let author: UatAuthor;
+      let id = "";
+      await given("заявка зі статусом «Повернено на доопрацювання», автор виправив рядок 1", async () => {
+        author = await createAuthor(PRIMARY, "dec07");
+        id = await submitAs(author, PRIMARY, THREE_LINES.slice(0, 1));
+        // Повертає Марія (схвалювач «Primary School») — окремий контекст.
+        const maria = await (await browser.newContext({ storageState: MARIA })).newPage();
+        try {
+          await maria.goto(`/requests/${id}`);
+          await maria.getByRole("button", { name: /^Return for revision:/ }).click();
+          await maria.getByRole("dialog").getByLabel("Reason").fill("Уточніть кількість");
+          await maria.getByRole("dialog").getByRole("button", { name: "Return for revision" }).click();
+          await maria.waitForURL((url) => url.pathname === "/approvals");
+        } finally {
+          await maria.context().close();
+        }
+        expect(await requestStatus(id)).toBe("returned");
+        // Автор — на сторінці тесту (її пише відео прогону): відкриває редагування й виправляє рядок 1 (кількість 3 → 5).
+        await signIn(page, author.email, author.password);
+        await page.goto(`/requests/${id}`);
+        await page.getByRole("link", { name: "Edit" }).click();
+        await page.waitForURL((url) => url.pathname === `/requests/${id}/edit`);
+        await expect(page.getByLabel("Quantity")).toHaveValue("3");
+        await page.getByLabel("Quantity").fill("5");
+      });
+
+      try {
+        await when("автор подає заявку знову", async () => {
+          await page.getByRole("button", { name: "Submit" }).click();
+          await page.waitForURL((url) => url.pathname === `/requests/${id}`);
+        });
+
+        await thenStep(
+          page,
+          {
+            clause: "статус заявки «Очікує схвалення», відділ той самий.",
+            visible: [
+              "статус заявки «Awaiting approval»",
+              `відділ «${PRIMARY}» (той самий, що при першому поданні)`,
+              "рядок 1 «Папір А4» — кількість 5 (виправлено)",
+            ],
+            hidden: ["статус у базі — pending"],
+          },
+          async () => {
+            await expect(page.getByTestId("purchase-status").first()).toHaveText("Awaiting approval");
+            await expect(page.getByRole("main").getByText(PRIMARY, { exact: true })).toBeVisible();
+            await expect(lineRow(page, "Папір А4").getByRole("cell").nth(2)).toHaveText("5");
+            expect(await requestStatus(id)).toBe("pending");
+          },
+        );
+      } finally {
+        await page.context().clearCookies();
+      }
+    },
+  );
+
   test(
     "AC-HIST-01: працівник 1 подає дві закупівлі — у «My requests» номери PUR-n і PUR-(n+1)",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-HIST-01" } },
