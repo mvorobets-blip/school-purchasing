@@ -298,6 +298,43 @@ describe("сторінка заявки", () => {
     expect(html).not.toContain("Partially approve");
   });
 
+  // Повторне подання (задача 5): поточний користувач у моку — u1; автор заявки — її author_id.
+  const EDIT_LINK = new RegExp(`<a[^>]*href="/requests/${ID}/edit"[^>]*>[\\s\\S]*?Edit[\\s\\S]*?</a>`);
+
+  it("AC-DEC-07: автор поверненої заявки бачить посилання «Edit» на форму повторного подання", async () => {
+    db.request = { ...db.request, author_id: "u1", status: "returned", return_reason: "Уточніть кількість" };
+    const html = await render();
+    expect(html).toMatch(EDIT_LINK);
+  });
+
+  it("«Edit» немає в заявки автора зі статусом не «returned» і в поверненої заявки іншого автора", async () => {
+    for (const status of ["pending", "approved", "rejected", "partially_approved"]) {
+      db.request = { ...db.request, author_id: "u1", status };
+      expect(await render()).not.toContain(`/requests/${ID}/edit`);
+    }
+    db.request = { ...db.request, author_id: "u2", status: "returned", return_reason: "Уточніть кількість" };
+    expect(await render()).not.toContain(`/requests/${ID}/edit`);
+  });
+
+  it("після повторного подання (?ok=RESUBMITTED) — «Purchase submitted» на сторінці заявки, без параметра — немає", async () => {
+    db.request = { ...db.request, author_id: "u1", status: "pending" };
+    const html = await render({ ok: "RESUBMITTED" });
+    expect(html).toContain(messageFor("SUBMITTED"));
+    expect(html).toContain("Purchase submitted");
+    // Повідомлення — над заявкою, перед її відомостями.
+    expect(html.indexOf("Purchase submitted")).toBeLessThan(html.indexOf('data-testid="purchase-status"'));
+    expect(await render()).not.toContain("Purchase submitted");
+  });
+
+  // Дописав розробник за незалежним рев'ю задачі 5: «Тоді» AC-DEC-07 на рівні сторінки (база — tests/db/resubmit.test.ts).
+  it("AC-DEC-07: після повторного подання автор бачить статус «Awaiting approval» і той самий відділ «Початкова школа»", async () => {
+    db.request = { ...db.request, author_id: "u1", status: "pending", department_id: "d1" };
+    const html = await render({ ok: "RESUBMITTED" });
+    expect(html).toMatch(/data-testid="purchase-status"[^>]*>Awaiting approval</);
+    expect(html).toMatch(/Department<\/dt><dd[^>]*>Початкова школа</);
+    expect(html).not.toContain(`/requests/${ID}/edit`);
+  });
+
   it("автор чи інший схвалювач (can_decide_purchase — ні) — без «Reject line» і кнопок рішення", async () => {
     db.canDecide = false;
     const html = await render();
