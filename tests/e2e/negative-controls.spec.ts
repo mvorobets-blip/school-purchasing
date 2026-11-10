@@ -10,6 +10,7 @@
 //          заявку uat-…-nc3 (прибирає cleanup.teardown.ts), тож потрібен SUPABASE_SECRET_KEY, як для @writes.
 import { expect, test, type Page } from "@playwright/test";
 import { createAuthor, requestStatus, submitAs } from "./support/admin";
+import { approverOnlyOf } from "./support/roles";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
 test.use({ storageState: "playwright/.auth/requester2.json" });
@@ -103,6 +104,7 @@ test.describe("зріз 3", () => {
       let id = "";
       // Те саме, що AC-DEC-06 у tests/e2e/purchase-history.spec.ts, крім одного місця — тексту в твердженні.
       await given("заявка відділу «Початкова школа» зі статусом «Очікує схвалення», Марія схвалює цей відділ", async () => {
+        await approverOnlyOf(page, "Primary School", "approver-primary@example.test");
         const lines = [{ name: "Папір А4", purpose: "Друк", quantity: "3", price: "20.00" }];
         id = await submitAs(await createAuthor("Primary School", "nc3"), "Primary School", lines);
         expect(await requestStatus(id)).toBe("pending");

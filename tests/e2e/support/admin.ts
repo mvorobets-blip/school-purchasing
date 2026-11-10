@@ -152,8 +152,10 @@ export async function submitAs(
   if (signInError) throw signInError;
   const { data: depts, error: deptError } = await client.from("departments").select("id").ilike("name", department);
   if (deptError) throw deptError;
+  // Рівно один відділ із такою назвою — інакше rpc отримав би не той відділ чи порожній id (рев'ю CodeRabbit, PR 62).
+  if (depts?.length !== 1) throw new Error(`ПЕРЕДУМОВА НА ПРОДІ: має бути рівно один відділ «${department}»`);
   const { data, error } = await client.rpc("submit_purchase", {
-    p_department_id: depts?.[0]?.id,
+    p_department_id: depts[0].id,
     p_purchase_type: "purchasing_department",
     p_lines: lines,
   });

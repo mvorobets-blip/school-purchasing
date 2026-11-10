@@ -11,6 +11,7 @@
 // «Дано» про ролі Марії й Петра тест перевіряє сам (крок given): акаунти спільні з PM, відділи призначає адміністратор.
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { createAuthor, requestStatus, submitAs, type UatAuthor } from "./support/admin";
+import { approverOnlyOf } from "./support/roles";
 import { attachRuntimeErrors, given, signIn, thenStep, when } from "./support/uat";
 
 const MARIA = "playwright/.auth/maria.json";
@@ -41,20 +42,6 @@ async function closeAuthor(page: Page) {
   await page.context().close();
   const video = page.video();
   if (video) await test.info().attach("author-video", { path: await video.path(), contentType: "video/webm" });
-}
-
-/** «Дано»: людина — схвалювач рівно цього відділу (таблиця відділів у «My profile»). */
-async function approverOnlyOf(page: Page, department: string, who: string) {
-  await page.goto("/profile");
-  const rows = page.getByTestId("profile-departments").getByRole("row");
-  const own = rows.filter({ has: page.getByRole("cell", { name: department, exact: true }) });
-  await expect(own, `ПЕРЕДУМОВА НА ПРОДІ: ${who} — схвалювач відділу «${department}» (призначає адміністратор)`).toHaveCount(1);
-  await expect(own.getByRole("cell").nth(1)).toHaveText("Requester and approver");
-  // Схвалювач лише цього відділу: жодного іншого рядка з роллю схвалювача.
-  await expect(
-    rows.filter({ has: page.getByRole("cell", { name: "Requester and approver", exact: true }) }),
-    `ПЕРЕДУМОВА НА ПРОДІ: ${who} схвалює лише «${department}»`,
-  ).toHaveCount(1);
 }
 
 /** Рядок заявки в таблиці рядків за назвою позиції. */
