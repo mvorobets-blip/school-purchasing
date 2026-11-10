@@ -162,15 +162,27 @@ test.describe("схвалювач Марія (approver-primary@example.test)", (
         await page.getByRole("dialog").getByRole("button", { name: "Return for revision" }).click();
       });
 
+      // Два «Тоді» з окремими кадрами: діалог із повідомленням (кадр знімаємо, поки діалог відкритий — прогін 10.11
+      // закривав його до кадру, і агент слушно не бачив повідомлення) і сторінка після закриття діалогу.
       await thenStep(
         page,
         {
-          clause: "вона бачить повідомлення «Вкажіть причину», а статус заявки лишається «Очікує схвалення».",
-          visible: ["повідомлення «Provide a reason» у діалозі повернення"],
-          hidden: ["статус заявки в базі лишається pending (і на сторінці після закриття діалогу — «Awaiting approval»)"],
+          clause: "вона бачить повідомлення «Вкажіть причину»",
+          visible: ["повідомлення «Provide a reason» у відкритому діалозі «Return for revision»"],
         },
         async () => {
           await expect(page.getByRole("dialog").getByRole("alert")).toHaveText("Provide a reason");
+        },
+      );
+
+      await thenStep(
+        page,
+        {
+          clause: "а статус заявки лишається «Очікує схвалення».",
+          visible: ["після закриття діалогу й оновлення сторінки статус заявки — «Awaiting approval»"],
+          hidden: ["статус заявки в базі лишається pending"],
+        },
+        async () => {
           expect(await requestStatus(id)).toBe("pending");
           await page.keyboard.press("Escape");
           await page.reload();
