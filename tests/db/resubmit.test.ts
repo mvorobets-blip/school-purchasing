@@ -17,11 +17,11 @@ const THREE_LINES: Line[] = [
   { name: "Скріпки", purpose: "Для офісу", quantity: 5, price: "1.00" },
 ];
 
-const submit = async (user = MEMBER_1, lines: Line[] = THREE_LINES) => {
+const submit = async (user = MEMBER_1, lines: Line[] = THREE_LINES, type = "purchasing_department") => {
   const [row] = await t.asUser<{ id: string }>(
     user,
-    "select public.submit_purchase($1, 'purchasing_department', $2::jsonb) as id",
-    [dept["Початкова школа"], JSON.stringify(lines)],
+    "select public.submit_purchase($1, $3, $2::jsonb) as id",
+    [dept["Початкова школа"], JSON.stringify(lines), type],
   );
   return row.id;
 };
@@ -159,7 +159,7 @@ describe("повторне подання поверненої заявки (б�
     }
   });
 
-  it("заявка не «returned» («pending», «approved») — FORBIDDEN, нічого не змінено", async () => {
+  it("заявка не «returned» («pending», «approved», «rejected», «partially_approved») — FORBIDDEN, нічого не змінено", async () => {
     const pending = await submit();
     const pendingBefore = await snapshot(pending);
     await expect(resubmit(MEMBER_1, pending, THREE_LINES)).rejects.toThrow(/FORBIDDEN/);
@@ -171,6 +171,18 @@ describe("повторне подання поверненої заявки (б�
     expect(approvedBefore.request.status).toBe("approved");
     await expect(resubmit(MEMBER_1, approved, THREE_LINES)).rejects.toThrow(/FORBIDDEN/);
     expect(await snapshot(approved)).toEqual(approvedBefore);
+
+    // Дописав розробник за незалежним рев'ю задачі 5: ще два кінцеві статуси.
+    const rejected = await submit();
+    await decide(MARIA, rejected, "reject", "Немає бюджету");
+    const partial = await submit();
+    await t.asUser(MARIA, "select public.decide_purchase($1, 'approve', null, array[2])", [partial]);
+    for (const [id, status] of [[rejected, "rejected"], [partial, "partially_approved"]] as const) {
+      const before = await snapshot(id);
+      expect(before.request.status).toBe(status);
+      await expect(resubmit(MEMBER_1, id, THREE_LINES)).rejects.toThrow(/FORBIDDEN/);
+      expect(await snapshot(id)).toEqual(before);
+    }
   });
 
   it("неіснуюча заявка — FORBIDDEN, як і чужа (не розкриваємо, чи вона є)", async () => {
@@ -206,6 +218,24 @@ describe("повторне подання поверненої заявки (б�
       ]);
     }
     expect(await snapshot(id)).toEqual(before);
+  });
+
+  // Дописав розробник за незалежним рев'ю задачі 5: дозвіл «Самостійна закупівля» — як при першому поданні.
+  it("заявка «Самостійна закупівля», автор втратив дозвіл після повернення — FORBIDDEN, нічого не змінено; з дозволом — подає", async () => {
+    await t.asService("insert into public.employee_permissions (profile_id, permission) values ($1, 'self_purchase')", [MEMBER_1]);
+    const id = await submit(MEMBER_1, THREE_LINES, "self_purchase");
+    await decide(MARIA, id, "return", "Уточніть кількість");
+    await t.asService("delete from public.employee_permissions where profile_id = $1 and permission = 'self_purchase'", [MEMBER_1]);
+    const before = await snapshot(id);
+    try {
+      await expect(resubmit(MEMBER_1, id, THREE_LINES)).rejects.toThrow(/FORBIDDEN/);
+      expect(await snapshot(id)).toEqual(before);
+    } finally {
+      await t.asService("insert into public.employee_permissions (profile_id, permission) values ($1, 'self_purchase')", [MEMBER_1]);
+    }
+    await resubmit(MEMBER_1, id, THREE_LINES);
+    expect((await requestRow(id)).status).toBe("pending");
+    await t.asService("delete from public.employee_permissions where profile_id = $1 and permission = 'self_purchase'", [MEMBER_1]);
   });
 
   it("рядки перевіряються як при першому поданні — відповідний код, заявка лишається «returned» зі старими рядками й одним записом", async () => {

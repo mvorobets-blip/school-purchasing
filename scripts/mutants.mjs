@@ -207,6 +207,12 @@ export const mutants = [
     find: "  if not (private.is_admin() or private.is_member_of(v_request.department_id)) then",
     replace: "  if false then",
   },
+  {
+    id: "S29", kind: "sql", ac: "AC-DEC-07", file: RESUBMIT, tests: [RESUBMIT_DB],
+    what: "resubmit_purchase: автор без дозволу «Самостійна закупівля» подає знову таку заявку (прибрано перевірку дозволу)",
+    find: "  if v_request.purchase_type = 'self_purchase' and not private.is_admin() and not exists (",
+    replace: "  if false and not exists (",
+  },
 ];
 
 // Приклади з демо (інша схема — у вашому репо цих файлів немає, тож не розкоментовуйте як є):

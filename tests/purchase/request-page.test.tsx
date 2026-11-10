@@ -326,6 +326,15 @@ describe("сторінка заявки", () => {
     expect(await render()).not.toContain("Purchase submitted");
   });
 
+  // Дописав розробник за незалежним рев'ю задачі 5: «Тоді» AC-DEC-07 на рівні сторінки (база — tests/db/resubmit.test.ts).
+  it("AC-DEC-07: після повторного подання автор бачить статус «Awaiting approval» і той самий відділ «Початкова школа»", async () => {
+    db.request = { ...db.request, author_id: "u1", status: "pending", department_id: "d1" };
+    const html = await render({ ok: "RESUBMITTED" });
+    expect(html).toMatch(/data-testid="purchase-status"[^>]*>Awaiting approval</);
+    expect(html).toMatch(/Department<\/dt><dd[^>]*>Початкова школа</);
+    expect(html).not.toContain(`/requests/${ID}/edit`);
+  });
+
   it("автор чи інший схвалювач (can_decide_purchase — ні) — без «Reject line» і кнопок рішення", async () => {
     db.canDecide = false;
     const html = await render();
