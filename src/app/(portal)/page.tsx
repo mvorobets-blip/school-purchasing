@@ -1,4 +1,4 @@
-import { Building2, Check, CheckCheck, Clock, ListChecks, Plus, TriangleAlert, X } from "lucide-react";
+import { Building2, Check, CheckCheck, Clock, ListChecks, Plus, RotateCcw, TriangleAlert, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DepartmentRow, RequestRow, SectionCard, StatLink } from "@/components/portal/dashboard";
@@ -38,7 +38,7 @@ export default async function Home() {
     supabase.from("employee_permissions").select("permission").eq("profile_id", user.id),
     supabase
       .from("purchase_requests")
-      .select("id, department_id, purchase_type, status, reject_reason, created_at")
+      .select("id, department_id, purchase_type, status, created_at")
       .eq("author_id", user.id)
       .order("created_at", { ascending: false }),
     getAwaitingDecision(user.id),
@@ -81,10 +81,11 @@ export default async function Home() {
     ...awaiting.requests.slice(0, RECENT).map((r) => r.id),
     ...latestRequests.map((r) => r.id),
   ];
-  const linesRes = shownIds.length
-    ? await supabase.from("purchase_request_lines").select("request_id, position, name").in("request_id", shownIds)
-    : null;
-  const summaries = lineSummaries(linesRes?.data ?? []);
+  // Причини — лише для показаних власних заявок і не адміністратору (він їх на головній не бачить).
+  const shown = await loadShownRows(supabase, shownIds, isAdmin ? [] : ownRequests.slice(0, RECENT).map((r) => r.id));
+  // Помилка запиту позицій чи причин — повідомлення, а не рядки без назв чи без причини (DESIGN.md §6; рев'ю CodeRabbit, PR 61).
+  if (!shown) return <Alert variant="destructive">Could not load data. Refresh the page.</Alert>;
+  const { reasonsOf, summaries } = shown;
   const summary = (id: string) => summaries.get(id) ?? { first: "Purchase", more: 0 };
 
   const header = (action?: React.ReactNode) => (
@@ -246,8 +247,9 @@ export default async function Home() {
       href={`/requests/${r.id}`}
       title={summary(r.id).first}
       more={summary(r.id).more}
-      status={r.status}
-      rejectReason={r.reject_reason}
+      status={reasonsOf.get(r.id)?.status ?? r.status}
+      rejectReason={reasonsOf.get(r.id)?.reject_reason ?? null}
+      returnReason={reasonsOf.get(r.id)?.return_reason ?? null}
       meta={`${deptName.get(r.department_id) ?? "—"} · ${typeLabel(r.purchase_type)} · ${formatSubmitted(r.created_at)}`}
     />
   ));
@@ -333,7 +335,7 @@ export default async function Home() {
   return (
     <>
       {header(newPurchase("default"))}
-      <section aria-label="My requests by status" className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4">
+      <section aria-label="My requests by status" className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
         {ownStatusStats(ownCounts).map((s) => (
           <StatLink
             key={s.status}
@@ -358,7 +360,25 @@ export default async function Home() {
 }
 
 // Іконки лічильників статусів на головній (декоративні: поруч завжди текст статусу).
-const STATUS_ICON = { pending: Clock, approved: Check, partially_approved: CheckCheck, rejected: X, returned: ListChecks } as const;
+// Перші позиції показаних рядків і причини відхилення й повернення показаних власних заявок (рев'ю CodeRabbit, PR 61).
+// select("*"): поки db-deploy не додав нову колонку, сторінка не падає — причини просто ще немає. Статус і причину
+// показаної заявки беремо з одного рядка: якщо заявку вирішили між запитами, рядок не покаже застарілий статус без
+// причини (лічильники — з першого запиту, наздоженуть при оновленні). Помилка будь-якого запиту — null.
+async function loadShownRows(supabase: Awaited<ReturnType<typeof createClient>>, shownIds: string[], recentIds: string[]) {
+  const [linesRes, reasonsRes] = await Promise.all([
+    shownIds.length
+      ? supabase.from("purchase_request_lines").select("request_id, position, name").in("request_id", shownIds)
+      : null,
+    recentIds.length ? supabase.from("purchase_requests").select("*").in("id", recentIds) : null,
+  ]);
+  if (linesRes?.error || reasonsRes?.error) return null;
+  return {
+    reasonsOf: new Map((reasonsRes?.data ?? []).map((r) => [r.id, r])),
+    summaries: lineSummaries(linesRes?.data ?? []),
+  };
+}
+
+const STATUS_ICON = { pending: Clock, approved: Check, partially_approved: CheckCheck, rejected: X, returned: RotateCcw } as const;
 
 function StatusLine({
   icon: Icon,

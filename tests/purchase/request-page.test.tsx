@@ -149,6 +149,34 @@ describe("сторінка заявки", () => {
     expect(html).toContain("Немає бюджету");
   });
 
+  it("AC-DEC-04: автор бачить статус «Returned for revision» і поруч «Return reason» з текстом «Уточніть кількість»", async () => {
+    db.request = { ...db.request, status: "returned", return_reason: "Уточніть кількість" };
+    const html = await render();
+    // Сторінка справді запитує причину повернення з бази.
+    // return_reason — явно або через «*» (сторінка не падає до міграції).
+    expect(selected.purchase_requests).toMatch(/\breturn_reason\b|^\*$/);
+    expect(html).toMatch(/data-testid="purchase-status"[^>]*>Returned for revision</);
+    expect(html).toContain(">Return reason</dt>");
+    expect(html).toMatch(/data-testid="return-reason"[^>]*>Уточніть кількість</);
+    // Причина повернення — поруч зі статусом (у тому самому блоці відомостей), а не в іншому розділі сторінки.
+    const details = html.slice(html.indexOf('data-testid="purchase-status"'), html.indexOf("</dl>"));
+    expect(details).toContain("Уточніть кількість");
+  });
+
+  it("AC-LANG-09: статус «Повернено на доопрацювання» на сторінці заявки підписано текстом «Returned for revision»", async () => {
+    db.request = { ...db.request, status: "returned", return_reason: "Уточніть кількість" };
+    const html = await render();
+    expect(html).toMatch(/data-testid="purchase-status"[^>]*>Returned for revision</);
+    expect(html).not.toContain("Повернено на доопрацювання");
+  });
+
+  it("причину повернення не показано в заявки з іншим статусом", async () => {
+    db.request = { ...db.request, status: "pending", return_reason: "Стара причина" };
+    const html = await render();
+    expect(html).not.toContain("Return reason");
+    expect(html).not.toContain("Стара причина");
+  });
+
   it("«← Назад»: зі списку «Awaiting decision» — туди, інакше — до «My requests»", async () => {
     const fromApprovals = await render({ from: "approvals" });
     expect(fromApprovals).toMatch(/href="\/approvals"[^>]*>.*Awaiting decision/);

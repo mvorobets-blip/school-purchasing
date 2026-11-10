@@ -22,6 +22,7 @@ const OK_TEXT: Record<string, string> = {
   APPROVED: "Request approved.",
   PARTIALLY_APPROVED: "Request partially approved.",
   REJECTED: "Request rejected.",
+  RETURNED: "Request returned for revision.",
 };
 
 // Список для рішення: подані заявки відділів, які людина схвалює, крім власних (AC-APR-01; матриця прав).

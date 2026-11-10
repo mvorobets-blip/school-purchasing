@@ -18,4 +18,26 @@ describe("DecisionButtons", () => {
     expect(html).toMatch(/>Approve</);
     expect(html).not.toContain("Partially approve");
   });
+
+  // Задача 4: «Return for revision» — другорядна дія (outline) з причиною в діалозі; основною лишається «Approve».
+  it("кнопка «Return for revision» — другорядна (outline), основна суцільна кнопка — «Approve»", () => {
+    const html = renderToStaticMarkup(<DecisionButtons requestId={ID} label="PUR-1" />);
+    const buttons = [...html.matchAll(/<button[^>]*>[\s\S]*?<\/button>/g)].map((m) => m[0]);
+    const byText = (text: string) => buttons.find((b) => b.replace(/<[^>]+>/g, "").trim() === text) ?? "";
+    const returnButton = byText("Return for revision");
+    expect(returnButton).not.toBe("");
+    expect(returnButton).toContain("border-input");
+    expect(returnButton).not.toContain("bg-primary");
+    expect(byText("Approve")).toContain("bg-primary");
+    // Суцільна індиго-кнопка — одна на екран (DESIGN.md).
+    expect(buttons.filter((b) => b.includes("bg-primary"))).toHaveLength(1);
+  });
+
+  it("після рефакторингу в ReasonDialog «Reject» лишився незворотною дією (destructive), підписи тригерів різні", () => {
+    const html = renderToStaticMarkup(<DecisionButtons requestId={ID} label="PUR-1" />);
+    const reject = [...html.matchAll(/<button[^>]*>[\s\S]*?<\/button>/g)].map((m) => m[0]).find((b) => b.replace(/<[^>]+>/g, "").trim() === "Reject") ?? "";
+    expect(reject).toContain("border-destructive");
+    expect(html).toContain('aria-label="Return for revision: PUR-1"');
+    expect(html).toContain('aria-label="Reject: PUR-1"');
+  });
 });

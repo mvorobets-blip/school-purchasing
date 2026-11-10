@@ -19,11 +19,12 @@ describe("головна: підрахунки", () => {
 
   // Рев'ю CodeRabbit (PR 60): частково схвалена заявка має власний лічильник на головній.
   it("лічильники власних заявок на головній — зокрема «Partially approved», з текстом і кольором статусу", () => {
-    const stats = ownStatusStats({ pending: 2, approved: 1, rejected: 0, partially_approved: 3, returned: 0 });
+    const stats = ownStatusStats({ pending: 2, approved: 1, rejected: 0, partially_approved: 3, returned: 4 });
     expect(stats.map((s) => [s.label, s.value])).toEqual([
       ["Awaiting approval", 2],
       ["Approved", 1],
       ["Partially approved", 3],
+      ["Returned for revision", 4],
       ["Rejected", 0],
     ]);
     expect(stats.find((s) => s.status === "partially_approved")?.iconClass).toBe("bg-status-partial text-status-partial-foreground");

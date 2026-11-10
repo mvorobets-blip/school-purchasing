@@ -24,6 +24,11 @@ function rejectedPositions(formData: FormData): number[] | null {
 
 const CHANGED = "The request has changed. Refresh the page.";
 
+const DECISIONS: readonly string[] = ["approve", "reject", "return"];
+
+// Код повідомлення на сторінці «Awaiting decision» після рішення (approve — залежить від позначених рядків).
+const OK_CODE: Partial<Record<"approve" | "reject" | "return", string>> = { reject: "REJECTED", return: "RETURNED" };
+
 function errorMessage(error: RpcError): string {
   if (error?.message?.includes("NO_REASON")) return messageFor("NO_REASON");
   if (error?.message?.includes("ALL_LINES_REJECTED")) return messageFor("ALL_LINES_REJECTED");
@@ -40,16 +45,20 @@ function errorMessage(error: RpcError): string {
 // без звернення до бази (AC-APR-06); успіх — назад до списку з повідомленням.
 export async function decidePurchase(
   requestId: string,
-  decision: "approve" | "reject",
+  decision: "approve" | "reject" | "return",
   _prev: DecisionState,
   formData: FormData,
 ): Promise<DecisionState> {
   const user = await getCurrentUser();
   if (!user || !UUID.test(requestId)) return { status: "error", message: messageFor("FORBIDDEN") };
+  // Дію можна викликати напряму з будь-яким рішенням — невідоме не надсилаємо (база теж відмовила б INVALID_DECISION).
+  if (!DECISIONS.includes(decision)) return { status: "error", message: CHANGED };
 
   const reason = String(formData.get("reason") ?? "").trim();
-  if (decision === "reject" && !reason) return { status: "error", message: messageFor("NO_REASON") };
-  if (decision === "reject" && textLength(reason) > REASON_LIMIT) return { status: "error", message: REASON_TOO_LONG };
+  // Відхилення й повернення — лише з причиною (AC-APR-06, AC-DEC-06): без неї до бази не звертаємось.
+  const needsReason = decision !== "approve";
+  if (needsReason && !reason) return { status: "error", message: messageFor("NO_REASON") };
+  if (needsReason && textLength(reason) > REASON_LIMIT) return { status: "error", message: REASON_TOO_LONG };
 
   // Позначені «Reject line» рядки (позиції) — лише для схвалення; усі позначені база відхиляє з ALL_LINES_REJECTED (AC-DEC-01).
   const rejected = decision === "approve" ? rejectedPositions(formData) : [];
@@ -59,13 +68,13 @@ export async function decidePurchase(
   const { error } = await supabase.rpc("decide_purchase", {
     p_request_id: requestId,
     p_decision: decision,
-    p_reason: decision === "reject" ? reason : null,
+    p_reason: needsReason ? reason : null,
     p_rejected_positions: rejected,
   });
   if (error) return { status: "error", message: errorMessage(error) };
 
   revalidatePath("/approvals");
   revalidatePath("/requests");
-  const ok = decision === "reject" ? "REJECTED" : rejected.length > 0 ? "PARTIALLY_APPROVED" : "APPROVED";
+  const ok = OK_CODE[decision] ?? (rejected.length > 0 ? "PARTIALLY_APPROVED" : "APPROVED");
   redirect(`/approvals?ok=${ok}`);
 }

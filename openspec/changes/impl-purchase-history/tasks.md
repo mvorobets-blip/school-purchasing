@@ -50,12 +50,12 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 4. Повернення на доопрацювання — `task/return-for-revision`
 
-- [ ] 4.1 Міграція `<ts>_return_for_revision.sql`: `return_reason`, рішення `return` з обов'язковою причиною.
-- [ ] 4.2 «Return for revision» → `Dialog` з причиною (≤ 500); причина повернення на сторінці заявки поруч зі статусом.
-- [ ] 4.3 Тести: PGlite — AC-DEC-04 (`returned` з причиною «Уточніть кількість»), AC-DEC-06 (без причини — `NO_REASON`,
+- [x] 4.1 Міграція `<ts>_return_for_revision.sql`: `return_reason`, рішення `return` з обов'язковою причиною.
+- [x] 4.2 «Return for revision» → `Dialog` з причиною (≤ 500); причина повернення на сторінці заявки поруч зі статусом.
+- [x] 4.3 Тести: PGlite — AC-DEC-04 (`returned` з причиною «Уточніть кількість»), AC-DEC-06 (без причини — `NO_REASON`,
   статус `pending`), власна заявка й чужий відділ → без змін; дія — «Provide a reason»; сторінка — AC-LANG-09
   («Returned for revision» текстом).
-- [ ] 4.4 Мутанти: прибрати перевірку причини → AC-DEC-06 червоний.
+- [x] 4.4 Мутанти: прибрати перевірку причини → AC-DEC-06 червоний.
   Done when: AC-DEC-04, AC-DEC-06, AC-LANG-09 «реалізовано».
 
 ## 5. Повторне подання — `task/resubmit`
