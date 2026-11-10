@@ -85,7 +85,7 @@
 ## D. Прод і ретро
 
 - `/api/health` після злиття всіх задач: sha `829cbf4` (злиття PR 62), db ok, env production — перевірено 10.11.2026, 22:07 (Київ)
-- Нові ролі й акаунти: схвалювач лише «Primary School» — `approver-primary@example.test`, схвалювач лише «Office» — `approver-office@example.test` (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/supabase/demo-users.json#L33); `accounts.zip` з ними ще не закомічено (останнє оновлення — https://github.com/mvorobets-blip/school-purchasing/pull/41; задача 6.1 у `tasks.md` не позначена) — очікує розробника
+- Нові ролі й акаунти: схвалювач лише «Primary School» — `approver-primary@example.test`, схвалювач лише «Office» — `approver-office@example.test` (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/supabase/demo-users.json#L33); `accounts.zip` оновлено з ними (AES-256, пароль курсу — лише в архіві; `npm run users:demo` створив обидва акаунти на проді, відділи призначив адміністратор) — у цьому PR, задача 6.1
 - `docs/conformance.md`: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/conformance.md#L92 (AC-DEC-01 … AC-HIST-10, рядки 92–99; AC-LANG-09 — #L107), усі 9 — «реалізовано»
 
 ### Ретро: що б ми взяли з фабрики у свій звичайний процес
