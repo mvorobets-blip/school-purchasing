@@ -1,0 +1,127 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-10T19:44:06.372Z",
+  "baseURL": "https://therapy-scheduling-ten.vercel.app",
+  "deployedSha": "a93232bd529974913f1e3ae59e4d59550e1fe5a6",
+  "testsCommit": "74bf2e1fe3b0ed336c8ca4623a56179d50a8505b",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [],
+  "negativeControls": [
+    {
+      "id": "NC-1",
+      "proof": "AC-FRM-14",
+      "title": "NC-1 (AC-FRM-14, навмисно хибне очікування в тесті: інший текст порожнього стану)",
+      "screenshot": "test-results/uat-report-nc/frames/NC-1-then-1.png",
+      "video": "test-results/artifacts/negative-controls-NC-1-AC--aa8a2-ший-текст-порожнього-стану--negative-controls/video.webm",
+      "trace": "test-results/artifacts/negative-controls-NC-1-AC--aa8a2-ший-текст-порожнього-стану--negative-controls/trace.zip",
+      "asserted": false,
+      "vision": {
+        "met": false,
+        "readable": false,
+        "notes": "На кадрі сторінка «My requests» з порожнім станом: білий блок з іконкою і текстом «You have not submitted any requests yet», без таблиці чи рядків заявок. Обидві видимі частини з ac.md збігаються посимвольно з кадром. Вердикт NEEDS-HUMAN, бо критерій у тексті «Тоді» вимагає українського повідомлення «Ви ще не подали жодної заявки», а на екрані англійська; це треба вирішити PM, а не мені."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "My requests",
+          "onPage": true
+        },
+        {
+          "quote": "You have not submitted any requests yet",
+          "onPage": true
+        }
+      ],
+      "verdict": "FAIL",
+      "factoryGate": "FAIL",
+      "rule": "R1: перевірка впала — FAIL завжди, агент не перекриває",
+      "playwrightMs": 8606,
+      "reviewCostUsd": 0.00226,
+      "reviewWallMs": 10481
+    },
+    {
+      "id": "NC-2",
+      "proof": "AC-FRM-14",
+      "title": "NC-2 (AC-FRM-14, текст «Тоді» у вимозі змінено, тест і застосунок — ні)",
+      "screenshot": "test-results/uat-report-nc/frames/NC-2-then-1.png",
+      "video": "test-results/artifacts/negative-controls-NC-2-AC--1d6b3-ено-тест-і-застосунок-—-ні--negative-controls/video.webm",
+      "trace": "test-results/artifacts/negative-controls-NC-2-AC--1d6b3-ено-тест-і-застосунок-—-ні--negative-controls/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": false,
+        "readable": true,
+        "notes": "На кадрі сторінка «My requests» із порожнім станом «You have not submitted any requests yet». Кнопки «Create your first request» немає, лише «New purchase». Через відсутню кнопку критерій не виконано."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "FAIL",
+        "claude-sonnet-5-5": "FAIL"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "My requests",
+          "onPage": true
+        },
+        {
+          "quote": "You have not submitted any requests yet",
+          "onPage": true
+        }
+      ],
+      "verdict": "NEEDS-HUMAN",
+      "factoryGate": "NOT-EARNED",
+      "rule": "R3: перевірки пройшли, агент не погоджується — вирішує людина",
+      "playwrightMs": 4086,
+      "reviewCostUsd": 0.03331,
+      "reviewWallMs": 17905
+    },
+    {
+      "id": "NC-3",
+      "proof": "AC-DEC-06",
+      "title": "NC-3 (AC-DEC-06, навмисно хибне очікування в тесті: інший текст відмови)",
+      "screenshot": "test-results/uat-report-nc/frames/NC-3-then-1.png",
+      "video": "test-results/artifacts/negative-controls-зріз-3-N-fc950--тесті-інший-текст-відмови--negative-controls/video.webm",
+      "trace": "test-results/artifacts/negative-controls-зріз-3-N-fc950--тесті-інший-текст-відмови--negative-controls/trace.zip",
+      "asserted": false,
+      "vision": {
+        "met": false,
+        "readable": false,
+        "notes": "На кадрі видно діалог «Return for revision» з порожнім полем «Reason» і червоним написом «Provide a reason» під ним; фон розмитий. Напис точно збігається з переліком видимих частин, але не з текстом «Вкажіть причину» в основному критерії, тому рішення залишаю за людиною. Статус «Очікує схвалення» на фоні розмитий і не читається, але в переліку видимих частин його немає."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Provide a reason",
+          "onPage": true
+        }
+      ],
+      "verdict": "FAIL",
+      "factoryGate": "FAIL",
+      "rule": "R1: перевірка впала — FAIL завжди, агент не перекриває",
+      "playwrightMs": 14533,
+      "reviewCostUsd": 0.00217,
+      "reviewWallMs": 10187
+    }
+  ],
+  "cleanup": {
+    "at": "2026-11-10T19:43:46.740Z",
+    "deleted": [
+      "uat-261110194253-nc3@example.test"
+    ],
+    "remaining": [],
+    "leftoverRequests": 0
+  }
+}

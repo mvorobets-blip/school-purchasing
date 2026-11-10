@@ -1,4 +1,4 @@
-# QA proof pack: <назва зрізу 3>
+# QA proof pack: зріз 3 — часткове схвалення, повернення й повторне подання, номер, суми й історія заявки
 
 <!--
 Шаблон з koldovsky/2026-quitcode-09-software-factory-hw/materials/templates/proof-pack.template.md (уперше — у WS8).
@@ -9,69 +9,84 @@
 Бонус фабрики: цей файл — база для звіту порівняння «звичайно проти фабрики».
 -->
 
-- Прод-URL: <!-- https://<проєкт>.vercel.app -->
-- Зріз 3: <!-- одне речення «що зможе користувач» — рядок roadmap PM -->
-- Вимоги: <!-- рядок «Вимоги:» з docs/conformance.md (репо PM і дата /requirements-sync) -->
-- Спека: <!-- …/blob/<sha>/openspec/specs/<область>/spec.md -->
-- `/api/health` на момент UAT: <!-- sha і db, напр. «sha 1a2b3c4, db ok, 10.11.2026» -->
+- Прод-URL: https://therapy-scheduling-ten.vercel.app
+- Зріз 3: схвалювач частково схвалює чи повертає заявку, автор виправляє й подає знову; кожна заявка має номер, суми й історію рішень (рядок WS9 roadmap PM — https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/requirements/product.md#L100)
+- Вимоги: https://github.com/ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-10 (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/conformance.md#L32)
+- Спека: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/openspec/specs/approval-decision/spec.md (AC-DEC-01, 04, 06, 07) · https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/openspec/specs/purchase-history/spec.md (AC-HIST-01, 02, 06, 10) · https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/openspec/specs/ui-language/spec.md#L72 (AC-LANG-09)
+- `/api/health` на момент UAT: sha `a93232b`, прогін 10.11.2026, 21:31 (Київ) — шапка звіту https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L3 і `deployedSha` у `manifest.json`; поле `db` звіт не записує
 
 ## Доказ на кожен AC зрізу 3
 
-<!-- Рядок на кожен AC. Рівень: unit / база (PGlite) / e2e. «Здатен упасти»: червоний прогін, убитий мутант Stryker
-     чи SQL-мутант (KILLED) — для відмов обов'язково; для інших — якщо є. Вердикт — остаточний зі звіту UAT (R1–R6). -->
+Позначення: тести — на коміті `829cbf4` (злиття PR 62, `main`); «база» — Vitest + PGlite з міграціями під RLS, «unit» — Vitest (зокрема сторінки з підміненим клієнтом), «e2e» — Playwright на проді. Звіт UAT — `docs/qa/uat/2026-11-10/report.md` (далі «звіт»), у дужках — рядок підсумкової таблиці звіту з вердиктами агента.
 
 | AC | Вид | Тест (рівень, посилання) | Здатен упасти | Специфікація UAT | Вердикт UAT і кадр | PR і SHA злиття |
 |---|---|---|---|---|---|---|
-| AC-…-NN | <!-- відмова (заборонена роль / чужі дані / не увійшов) --> | <!-- база: …/blob/<sha>/tests/db/….test.ts#L<N> --> | <!-- SQL-мутант KILLED, …/pull/N --> | <!-- …/blob/<sha>/tests/e2e/….spec.ts#L<N> --> | <!-- PASS (R6), …/frames/AC-…-then-1.png --> | <!-- …/pull/N, <sha> --> |
-| AC-…-NN | <!-- стан інтерфейсу (порожній стан / помилка) --> | … | … | … | … | … |
-| AC-…-NN | <!-- основний сценарій --> | … | … | … | … | … |
+| AC-DEC-01 | основний сценарій (часткове схвалення) | база: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/partial-approval.test.ts#L68 · unit (сторінка автора): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L262 | SQL-мутанти S18 «усі рядки позначено — все одно частково», S21 «статуси рядків переплутано» — KILLED, https://github.com/mvorobets-blip/school-purchasing/pull/60 (повтор на живій функції — https://github.com/mvorobets-blip/school-purchasing/pull/61) | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L55 | PASS (R6); агент Haiku: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L25 (таблиця #L12); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-DEC-01-then-1.png | https://github.com/mvorobets-blip/school-purchasing/pull/60, `1396c87`; UAT — https://github.com/mvorobets-blip/school-purchasing/pull/62, `829cbf4` |
+| AC-DEC-04 | основний сценарій (повернення з причиною) | база: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/return-for-revision.test.ts#L65 · unit (сторінка автора, причина поруч зі статусом): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L152 | окремого мутанта для AC немає (PR 61: «позитивний сценарій»); відмовні правила того самого `decide_purchase` — S20, S22 KILLED, https://github.com/mvorobets-blip/school-purchasing/pull/61 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L106 | PASS (R6); агент Haiku: FAIL → Sonnet: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L54 (#L13); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-DEC-04-then-1.png | https://github.com/mvorobets-blip/school-purchasing/pull/61, `af26af9`; UAT — PR 62, `829cbf4` |
+| AC-DEC-06 | відмова дії (помилка: повернення без причини) | база: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/return-for-revision.test.ts#L84 · unit (дія): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/decide-purchase.test.ts#L155 | SQL-мутант S22 «повернення без причини проходить» — KILLED, https://github.com/mvorobets-blip/school-purchasing/pull/61; негативний контроль NC-3 (навмисно хибний текст відмови) → FAIL (R1), https://github.com/mvorobets-blip/school-purchasing/pull/62 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L146 | PASS (R6); агент Haiku: NEEDS-HUMAN → Sonnet: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L80 (#L14); кадри https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-DEC-06-then-1.png, https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-DEC-06-then-2.png | https://github.com/mvorobets-blip/school-purchasing/pull/61, `af26af9`; UAT — PR 62, `829cbf4` |
+| AC-DEC-07 | основний сценарій (повторне подання) | база: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/resubmit.test.ts#L90 · unit (сторінка після подання): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L330 | SQL-мутанти S23–S27, S29 (автор, статус «returned», рядки, активність, членство, дозвіл) — KILLED; Stryker `request-view.ts` 57/57, https://github.com/mvorobets-blip/school-purchasing/pull/63 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L257 | PASS (R6); агент Haiku: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L109 (#L15); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-DEC-07-then-1.png | https://github.com/mvorobets-blip/school-purchasing/pull/63, `6c78607`; UAT — PR 62, `829cbf4` |
+| AC-HIST-01 | основний сценарій (номери заявок) | база (порожня база): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/purchase-number.test.ts#L43 · unit (список): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/my-requests-page.test.tsx#L151 | SQL-мутант S12 «номер = max + 1 замість послідовності» — KILLED, https://github.com/mvorobets-blip/school-purchasing/pull/58; Stryker `number.ts` 2/2 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L317 | PASS (R6); агент Haiku: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L214 (#L19); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-HIST-01-then-1.png (на проді `PUR-66`, `PUR-67` — див. «Не перевірено») | https://github.com/mvorobets-blip/school-purchasing/pull/58, `94fed6b`; UAT — PR 62, `829cbf4` |
+| AC-HIST-02 | основний сценарій (суми) | unit: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/money.test.ts#L7 · unit (сторінка, «Sum, USD» і «Total»): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L203 | Stryker `src/lib/purchase/money.ts` — 16/16 вбито (100 %), https://github.com/mvorobets-blip/school-purchasing/pull/58 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L372 | PASS (R6); агент Haiku: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L238 (#L20); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-HIST-02-then-1.png | https://github.com/mvorobets-blip/school-purchasing/pull/58, `94fed6b`; UAT — PR 62, `829cbf4` |
+| AC-HIST-06 | основний сценарій (запис «Подано» в історії) | база: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/request-history.test.ts#L75 · unit (дата й час America/New_York): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/date.test.ts#L7 · unit (сторінка): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L229 | SQL-мутант S17 «тригер подання не пише подію» — KILLED; Stryker `date.ts` 9/9, https://github.com/mvorobets-blip/school-purchasing/pull/59 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L408 | PASS (R6); агент Haiku: FAIL → Sonnet: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L266 (#L21); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-HIST-06-then-1.png | https://github.com/mvorobets-blip/school-purchasing/pull/59, `d169864`; UAT — PR 62, `829cbf4` |
+| AC-HIST-10 | відмова (чужі дані: схвалювач іншого відділу за прямим посиланням) | база: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/request-history.test.ts#L105 · unit (сторінка, «Not enough permissions»): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L238 | SQL-мутанти S15 «політика подій без перевірки видимості», S16 «request_history віддає будь-кому» — KILLED, https://github.com/mvorobets-blip/school-purchasing/pull/59 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L467 | PASS (R6); агент Haiku: FAIL → Sonnet: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L291 (#L22); кадр https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-HIST-10-then-1.png | https://github.com/mvorobets-blip/school-purchasing/pull/59, `d169864`; UAT — PR 62, `829cbf4` |
+| AC-LANG-09 | стан інтерфейсу (статус текстом, а не лише кольором) | unit (бейдж): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/status.test.ts#L18 · unit (список): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/my-requests-page.test.tsx#L79 · unit (сторінка заявки): https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/purchase/request-page.test.tsx#L166 | Stryker `src/lib/purchase/status.ts` — 16/16 (100 %), https://github.com/mvorobets-blip/school-purchasing/pull/60 | https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/purchase-history.spec.ts#L193 | PASS (R6) для списку й сторінки заявки; агент Haiku: PASS — звіт https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L319 (#L23); кадри https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-LANG-09-then-1.png, https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/frames/AC-LANG-09-then-2.png; «в історії» — у «Не перевірено» | https://github.com/mvorobets-blip/school-purchasing/pull/60, `1396c87` (підпис і токен) і https://github.com/mvorobets-blip/school-purchasing/pull/61, `af26af9` (закрито AC); UAT — PR 62, `829cbf4` |
 
 ## Не перевірено
 
-<!-- Чесно: що НЕ доведено і чому. Порожньо — лише якщо справді все доведено (тоді «немає»).
-     FAIL і NEEDS-HUMAN тут не ховаємо: вони — у таблиці вище з вердиктом. -->
-
 | AC чи частина | Чому не перевірено | Що зроблено замість | Ризик на проді |
 |---|---|---|---|
-| <!-- AC-…-NN «що не змінилося» --> | <!-- напр. AC пише в базу, безпечного прибирання немає --> | <!-- тест бази …#L<N>, перевірено вручну 10.11 --> | <!-- … --> |
+| AC-LANG-09 «в історії» | у WS9 записів історії про рішення немає (історія містить лише «Submitted»); за відповіддю PM на https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/75 «в історії» перевіряється в зрізі, де ці записи з'являться (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/requirements/49-interfeis-zastosunku-angliiskoiu.md#L46). Агент UAT цю частину прямо не оцінював (звіт, розділ AC-LANG-09) | список і сторінка заявки — unit і UAT (рядок AC-LANG-09 вище) | низький: нових статусів в історії зараз не показано; коли з'являться записи рішень — потрібен тест і UAT |
+| AC-HIST-01 «немає жодної закупівлі» → «PUR-1» і «PUR-2» буквально на проді | на проді вже є заявки, номери глобальні; за відповіддю PM на https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/73 на проді — дві поспіль подані заявки `PUR-n`, `PUR-(n+1)` | буквальні `PUR-1`, `PUR-2` — тест бази на порожній базі (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/db/purchase-number.test.ts#L43) і SQL-мутант S12; на проді — `PUR-66`, `PUR-67` (кадр AC-HIST-01) | низький |
+| Приймання PM (усі 9 AC) | у звіті UAT поля «Рішення PM» не заповнено (☐ приймаю · ☐ відхилення, напр. https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L52); публічних коментарів PM про приймання зрізу 3 не знайдено | вердикти конвеєра — PASS 12 з 12 (R6) | невідомий до приймання PM |
 
 ## A. Вимоги й спека
 
-- `/requirements-sync` — PR «Оновлення вимог»: <!-- …/pull/N (і після уточнень PM: …/pull/M або «Вимоги актуальні», дата) -->
-- Спека `add-<зріз3>` і план — PR «Специфікація»: <!-- …/pull/N -->
-- Зміна `clarify-<зріз3>` після уточнень: <!-- …/pull/N або «PM AC не змінював» -->
-- Питання PM: <!-- https://github.com/<pm>/<team-slug>-spec/issues/N, … або «питань не було» -->
+- `/requirements-sync` — PR «Оновлення вимог»: https://github.com/mvorobets-blip/school-purchasing/pull/53 (знімок 2026-11-05: зріз 3 скорочено до 9 AC); після уточнень PM — https://github.com/mvorobets-blip/school-purchasing/pull/55 (знімок 2026-11-06, відповіді на #73–#75) і https://github.com/mvorobets-blip/school-purchasing/pull/64 (знімок 2026-11-10, відповідь PM на #76; тексти AC не змінено)
+- Спека `add-purchase-history` — PR «Специфікація»: https://github.com/mvorobets-blip/school-purchasing/pull/56; план `impl-purchase-history`: https://github.com/mvorobets-blip/school-purchasing/pull/57
+- Зміна `clarify-<зріз3>` після уточнень: PM AC не змінював — відповіді на #73–#76 лише в «Припущеннях» і «Журналі змін» PM (PR 55, PR 64); окремої зміни `clarify-*` для зрізу 3 немає
+- Питання PM: https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/73, https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/74, https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/75 (наші, журнал — https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/spec-reading.md#L160); https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/76 (AC-HIST-01, поставив інший учасник команди) — відповідь PM підтягнуто в PR 64
 
 ## B. Реалізація
 
 | PR «Реалізація» | Задача з `tasks.md` | AC | Відповіді на знахідки CodeRabbit | `db-deploy` |
 |---|---|---|---|---|
-| <!-- …/pull/N --> | <!-- 1. … --> | <!-- AC-…-NN, AC-…-NN --> | <!-- усі: виправлено / аргумент у треді --> | <!-- …/actions/runs/N --> |
+| https://github.com/mvorobets-blip/school-purchasing/pull/58 | 1. Номер заявки, суми рядків і межі | AC-HIST-01, AC-HIST-02 | https://github.com/mvorobets-blip/school-purchasing/pull/58#issuecomment-6709261557 | https://github.com/mvorobets-blip/school-purchasing/actions/runs/42388261896 (success) |
+| https://github.com/mvorobets-blip/school-purchasing/pull/59 | 2. Історія заявки | AC-HIST-06, AC-HIST-10 | два раунди: https://github.com/mvorobets-blip/school-purchasing/pull/59#issuecomment-6710311475, https://github.com/mvorobets-blip/school-purchasing/pull/59#issuecomment-6711185643 | https://github.com/mvorobets-blip/school-purchasing/actions/runs/42477747865 (success) |
+| https://github.com/mvorobets-blip/school-purchasing/pull/60 | 3. Часткове схвалення | AC-DEC-01 | https://github.com/mvorobets-blip/school-purchasing/pull/60#issuecomment-6721844493 | https://github.com/mvorobets-blip/school-purchasing/actions/runs/42486570756 (success) |
+| https://github.com/mvorobets-blip/school-purchasing/pull/61 | 4. Повернення на доопрацювання | AC-DEC-04, AC-DEC-06, AC-LANG-09 | чотири раунди: https://github.com/mvorobets-blip/school-purchasing/pull/61#issuecomment-6726250263, https://github.com/mvorobets-blip/school-purchasing/pull/61#issuecomment-6726576515, https://github.com/mvorobets-blip/school-purchasing/pull/61#issuecomment-6762887671, https://github.com/mvorobets-blip/school-purchasing/pull/61#issuecomment-6764588423 | https://github.com/mvorobets-blip/school-purchasing/actions/runs/42798545939 (success) |
+| https://github.com/mvorobets-blip/school-purchasing/pull/63 | 5. Повторне подання | AC-DEC-07 | https://github.com/mvorobets-blip/school-purchasing/pull/63#issuecomment-6768849317 (inline-зауважень немає, pre-merge) | https://github.com/mvorobets-blip/school-purchasing/actions/runs/42828284541 (success) |
+| https://github.com/mvorobets-blip/school-purchasing/pull/62 | 6. UAT зрізу 3 (без міграцій) | усі 9 (UAT) | https://github.com/mvorobets-blip/school-purchasing/pull/62#issuecomment-6777618260 | https://github.com/mvorobets-blip/school-purchasing/actions/runs/42891657339 (success) |
 
-- Ворота на `main` (`quality`): <!-- …/actions/runs/N -->
-- Мутації: <!-- Stryker до → після, SQL-мутації (npm run mutation:sql -- --markdown) — посилання на PR з виводом -->
+- Ворота на `main` (`quality`): https://github.com/mvorobets-blip/school-purchasing/actions/runs/42891657283 (коміт `829cbf4`, success)
+- Мутації: SQL-мутації (`npm run mutation:sql`) — 14/14 (PR 58) → 17/17 (PR 59) → 21/21 (PR 60) → 23/23 (PR 61) → 29/29 (PR 63), усі KILLED; мутанти зрізу 3 — S12, S15–S18, S21–S27, S29 (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/scripts/mutants.mjs#L100). Stryker (100 % на кожному новому чи зміненому доменному файлі): `money.ts` 16/16 і `number.ts` 2/2 (PR 58), `date.ts` 9/9 (PR 59), `status.ts` 16/16 (PR 60), `dashboard.ts` 34/34 (PR 61), `request-view.ts` 63 % → 100 % (57/57, PR 63)
 
 ## C. UAT на проді
 
-- Звіт: <!-- …/blob/<sha>/docs/qa/uat/<YYYY-MM-DD>/report.md -->
-- Відео: <!-- вкладення в описі PR …/pull/N -->
-- Рецензент: <!-- моделі зі звіту і вартість прогону -->
-- Негативний контроль: <!-- NC-1 (npm run uat:nc): що навмисно хибне, вердикт FAIL, …/pull/N -->
-- Дані: <!-- «лише читання» або «@writes: uat-<запуск>@example.test, рядок «Прибирання» зі звіту» -->
+- Звіт: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md (застосунок `a93232b`, тести `task/uat-slice3` @ `b1bb4a8`; PASS 12 з 12 — 9 AC зрізу 3 і повтор AC-FRM-08, 14, 15 зрізу 2)
+- Відео: https://github.com/mvorobets-blip/school-purchasing/pull/62#issuecomment-6777577345 (прогін на чистому дереві, `b1bb4a8`)
+- Рецензент: `claude-haiku-5-5`, суперечки → `claude-sonnet-5-5`; $0.2570 за розбір (ціни API) — https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L6
+- Негативний контроль: NC-3 — AC-DEC-06 з навмисно іншим текстом відмови (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/negative-controls.spec.ts#L95), вердикт FAIL (R1); разом NC-1 → FAIL (R1), NC-2 → NEEDS-HUMAN (R3) — звіт `npm run uat:nc` `docs/qa/uat/2026-11-10/negative-controls/report.md` (згенерований, без змін; кадри поруч), відео — коментар PR 62 вище. Тести NC-прогону — `74bf2e1`: від `b1bb4a8` він відрізняється лише закоміченим звітом UAT (`git diff --stat b1bb4a8 74bf2e1` — лише `docs/qa/uat/2026-11-10/**`)
+- Дані: `@writes` — автори заявок синтетичні `uat-<прогін>-<AC>@example.test`; «Прибирання»: видалено 9, лишилось 0, рядків 0 — https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L7
 
 ### Приймання PM
 
-<!-- Оцінки 0–3 — у таблиці приймання PM (її адресу сюди не пишемо). Тут — публічні коментарі PM. -->
-
 | AC | Рішення PM | Посилання |
 |---|---|---|
-| AC-…-NN | <!-- ✅ / ❌ → issue / NEEDS-HUMAN → … --> | <!-- коментар-підпис або issue «Відхилення від вимог» і «Виправлено: …» --> |
+| AC-DEC-01 | очікує приймання PM | — |
+| AC-DEC-04 | очікує приймання PM | — |
+| AC-DEC-06 | очікує приймання PM | — |
+| AC-DEC-07 | очікує приймання PM | — |
+| AC-HIST-01 | очікує приймання PM | — |
+| AC-HIST-02 | очікує приймання PM | — |
+| AC-HIST-06 | очікує приймання PM | — |
+| AC-HIST-10 | очікує приймання PM | — |
+| AC-LANG-09 | очікує приймання PM | — |
 
 ## D. Прод і ретро
 
-- `/api/health` після злиття всіх задач: <!-- sha і db -->
-- Нові ролі й акаунти: <!-- роль — адреса@example.test; accounts.zip …/blob/<sha>/accounts.zip -->
-- `docs/conformance.md`: <!-- …/blob/<sha>/docs/conformance.md -->
+- `/api/health` після злиття всіх задач: sha `829cbf4` (злиття PR 62), db ok, env production — перевірено 10.11.2026, 22:07 (Київ)
+- Нові ролі й акаунти: схвалювач лише «Primary School» — `approver-primary@example.test`, схвалювач лише «Office» — `approver-office@example.test` (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/supabase/demo-users.json#L33); `accounts.zip` з ними ще не закомічено (останнє оновлення — https://github.com/mvorobets-blip/school-purchasing/pull/41; задача 6.1 у `tasks.md` не позначена) — очікує розробника
+- `docs/conformance.md`: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/conformance.md#L92 (AC-DEC-01 … AC-HIST-10, рядки 92–99; AC-LANG-09 — #L107), усі 9 — «реалізовано»
 
 ### Ретро: що б ми взяли з фабрики у свій звичайний процес
 
