@@ -88,7 +88,8 @@ export default async function Home() {
     shownIds.length
       ? supabase.from("purchase_request_lines").select("request_id, position, name").in("request_id", shownIds)
       : null,
-    recentIds.length ? supabase.from("purchase_requests").select("*").in("id", recentIds) : null,
+    // Адміністратор власних заявок на головній не бачить — причини йому не потрібні (рев'ю CodeRabbit, PR 61).
+    !isAdmin && recentIds.length ? supabase.from("purchase_requests").select("*").in("id", recentIds) : null,
   ]);
   // Помилка запиту позицій чи причин — повідомлення, а не рядки без назв чи без причини (DESIGN.md §6; рев'ю CodeRabbit, PR 61).
   if (linesRes?.error || reasonsRes?.error) {

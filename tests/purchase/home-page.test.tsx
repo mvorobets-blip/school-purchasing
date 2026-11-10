@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withUser } from "../support/current-user";
 
 // Головна (server component) з підміненим клієнтом Supabase: рядки власних заявок, їхні статуси й причини і помилки
-// запитів позицій та причин. Регресійні тести без AC ID (рев'ю CodeRabbit, PR 61).
+// запитів позицій та причин (рев'ю CodeRabbit, PR 61). Тести помилок і запитів — регресійні, без AC ID.
 const ID = "11111111-1111-4111-8111-111111111111";
 const OWN = { id: ID, department_id: "d1", purchase_type: "purchasing_department", status: "pending", created_at: "2026-11-05T19:32:00Z" };
 const db: {
@@ -11,7 +11,10 @@ const db: {
   fresh: Record<string, unknown>[];
   linesError: boolean;
   reasonsError: boolean;
-} = { own: [], fresh: [], linesError: false, reasonsError: false };
+  role: string;
+} = { own: [], fresh: [], linesError: false, reasonsError: false, role: "requester" };
+// id, передані в .in(…) запиту причин (select("*")) — кожен запит окремо.
+const reasonQueries: unknown[][] = [];
 
 const BOOM = { data: null, error: { message: "boom" } };
 
@@ -45,7 +48,10 @@ function query(table: string) {
       filters[column] = value;
       return builder;
     },
-    in: () => builder,
+    in: (_column: string, values: unknown[]) => {
+      if (table === "purchase_requests" && columns === "*") reasonQueries.push(values);
+      return builder;
+    },
     order: () => builder,
     range: () => builder,
     limit: () => builder,
@@ -60,7 +66,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => withUser({ id: "u1", role: "requester", isActive: true }, { from: query }),
+  createClient: async () => withUser({ id: "u1", role: db.role, isActive: true }, { from: query }),
 }));
 
 const { default: Home } = await import("@/app/(portal)/page");
@@ -72,9 +78,11 @@ describe("головна: останні власні заявки", () => {
     db.fresh = [{ ...OWN, reject_reason: null, return_reason: null }];
     db.linesError = false;
     db.reasonsError = false;
+    db.role = "requester";
+    reasonQueries.length = 0;
   });
 
-  it("заявку повернули між запитами — рядок показує статус і причину з одного запиту", async () => {
+  it("AC-LANG-09: заявку повернули між запитами — рядок показує статус і причину з одного запиту", async () => {
     db.fresh = [{ ...OWN, status: "returned", reject_reason: null, return_reason: "Уточніть кількість" }];
     const html = await render();
     expect(html).toContain("Папір А4");
@@ -94,5 +102,21 @@ describe("головна: останні власні заявки", () => {
     const html = await render();
     expect(html).toContain("Could not load data. Refresh the page.");
     expect(html).not.toContain(">Purchase<");
+  });
+
+  it("причини запитує лише для трьох показаних заявок, а не для всіх власних", async () => {
+    const ids = ["a", "b", "c", "d"].map((x) => `${x.repeat(8)}-1111-4111-8111-111111111111`);
+    db.own = ids.map((id) => ({ ...OWN, id }));
+    db.fresh = [];
+    await render();
+    expect(reasonQueries).toEqual([ids.slice(0, 3)]);
+  });
+
+  it("адміністратор: причин власних заявок не запитує, помилка цього запиту не ховає огляд", async () => {
+    db.role = "admin";
+    db.reasonsError = true;
+    const html = await render();
+    expect(reasonQueries).toEqual([]);
+    expect(html).not.toContain("Could not load data. Refresh the page.");
   });
 });
