@@ -28,5 +28,15 @@
     "email": "pm-admin@example.test",
     "full_name": "PM Demo Admin",
     "role": "admin"
+  },
+  {
+    "email": "approver-primary@example.test",
+    "full_name": "Марія Демо-Схвалювач",
+    "role": "requester"
+  },
+  {
+    "email": "approver-office@example.test",
+    "full_name": "Петро Демо-Офіс",
+    "role": "requester"
   }
 ]

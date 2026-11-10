@@ -17,6 +17,9 @@ const ROLES = {
   author: "member1@example.test",
   requester: "pm-requester@example.test",
   requester2: "member2@example.test",
+  // Зріз 3 (WS9): Марія — схвалювач лише «Primary School»; Петро — схвалювач лише «Office» (design.md impl-purchase-history).
+  maria: "approver-primary@example.test",
+  petro: "approver-office@example.test",
 } as const;
 
 for (const [role, email] of Object.entries(ROLES)) {

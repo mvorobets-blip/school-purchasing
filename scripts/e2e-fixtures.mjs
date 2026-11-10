@@ -2,7 +2,9 @@
 // npm run e2e:fixtures — дані для e2e на ОДНОРАЗОВОМУ локальному стеку Supabase (.github/workflows/e2e.yml): та сама
 // картина, що на проді для специфікацій tests/e2e/purchase.spec.ts (див. шапку файлу й tests/e2e/auth.setup.ts):
 //   відділ «Primary School»: member1 і pm-requester — заявники, не схвалювачі; у member1 — заявка «Awaiting approval»;
-//   відділ «Secondary school»: member2 — заявник без жодної заявки.
+//   відділ «Secondary school»: member2 — заявник без жодної заявки;
+//   зріз 3 (tests/e2e/purchase-history.spec.ts): approver-primary — схвалювач лише «Primary School» (Марія),
+//   approver-office — схвалювач лише «Office» (Петро).
 // supabase/seed.sql цього не створює: користувачі з'являються лише після npm run users:demo.
 // Скрипт ВСТАНОВЛЮЄ саме цю картину (зокрема is_approver: false), а не доповнює її: він лише для одноразового стеку —
 // на будь-якій адресі, крім localhost / 127.0.0.1, відмовляється працювати (прод-базу не чіпає). Повторний запуск
@@ -45,14 +47,15 @@ async function department(name) {
   return must(await admin.from("departments").insert({ name }).select("id").single(), `створення відділу ${name}`).id;
 }
 
-async function requester(departmentId, profile) {
+async function member(departmentId, profile, isApprover) {
   must(
     await admin
       .from("department_members")
-      .upsert({ department_id: departmentId, profile_id: profile, is_approver: false }, { onConflict: "department_id,profile_id" }),
+      .upsert({ department_id: departmentId, profile_id: profile, is_approver: isApprover }, { onConflict: "department_id,profile_id" }),
     "членство у відділі",
   );
 }
+const requester = (departmentId, profile) => member(departmentId, profile, false);
 
 const pendingOf = async (author, departmentId) =>
   must(
@@ -65,10 +68,15 @@ const secondary = await department("Secondary school");
 const member1 = await profileId("member1@example.test");
 const pmRequester = await profileId("pm-requester@example.test");
 const member2 = await profileId("member2@example.test");
+const office = await department("Office");
+const maria = await profileId("approver-primary@example.test");
+const petro = await profileId("approver-office@example.test");
 
 await requester(primary, member1);
 await requester(primary, pmRequester);
 await requester(secondary, member2);
+await member(primary, maria, true);
+await member(office, petro, true);
 
 // «Дано» AC-FRM-14: у member2 немає жодної заявки — перевіряємо, а не припускаємо (стек міг бути не свіжим).
 const member2Requests = must(await admin.from("purchase_requests").select("id").eq("author_id", member2), "заявки member2");
@@ -91,4 +99,4 @@ if (!(await pendingOf(member1, primary)).length) {
   );
 }
 
-console.log("e2e-fixtures: відділи «Primary School» і «Secondary school», членства й заявка member1 — готово.");
+console.log("e2e-fixtures: відділи «Primary School», «Secondary school» і «Office», членства, схвалювачі й заявка member1 — готово.");

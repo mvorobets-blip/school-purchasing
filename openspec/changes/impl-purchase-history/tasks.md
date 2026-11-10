@@ -72,7 +72,7 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 - [ ] 6.1 `supabase/demo-users.json`: `approver-primary@example.test`, `approver-office@example.test`; розробник
   запускає `npm run users:demo` і призначає відділи; `accounts.zip` — новий (пароль курсу вводить розробник).
-- [ ] 6.2 Тест UAT на кожен із 9 AC у `tests/e2e/*.spec.ts` (нові ролі в `auth.setup.ts`; AC, що пишуть дані, —
+- [x] 6.2 Тест UAT на кожен із 9 AC у `tests/e2e/*.spec.ts` (нові ролі в `auth.setup.ts`; AC, що пишуть дані, —
   `@writes`, `uatEmail()`, `deleteUatUsers`); розробник запускає `npm run uat` і `npm run uat:nc`.
 - [ ] 6.3 Звіт UAT у `docs/qa/uat/<дата>/`; proof pack — рядок на кожен із 9 AC (тест, доказ падіння, UAT, PR + SHA);
   archive `impl-purchase-history` в останньому PR зрізу.

@@ -16,7 +16,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * on delete cascade (інакше Auth відповідає «Database error deleting user»). У демо: leave_requests.employee_id.
  * Якщо таких таблиць немає (або всі FK — cascade), лишіть порожнім.
  */
-const OWNED_ROWS: { table: string; column: string }[] = [];
+// Наші: події історії, де синтетичний користувач — дійова особа (actor_id, restrict), і його заявки (author_id,
+// restrict; рядки й події заявки — cascade). Порядок важливий: спершу події, потім заявки.
+const OWNED_ROWS: { table: string; column: string }[] = [
+  { table: "purchase_request_events", column: "actor_id" },
+  { table: "purchase_requests", column: "author_id" },
+];
 
 /** Лише такі адреси прибирання має право видалити: uat-<run>[-<суфікс>]@example.test. */
 export const UAT_EMAIL = /^uat-[0-9a-z-]+@example\.test$/;
@@ -108,4 +113,59 @@ export async function deleteUatUsers(onlyEmail?: string): Promise<CleanupResult>
     `${JSON.stringify({ at: new Date().toISOString(), scope: onlyEmail ?? "uat-*", deleted, remaining, leftoverRequests })}\n`,
   );
   return { deleted, remaining, leftoverRequests };
+}
+
+/** Синтетичний автор UAT: новий uat-*@example.test з іменем, заявник відділу department (не схвалювач). */
+export type UatAuthor = { id: string; email: string; password: string; fullName: string };
+
+export async function createAuthor(department: string, suffix = "author"): Promise<UatAuthor> {
+  const supabase = adminClient();
+  const email = uatEmail(suffix);
+  const password = randomPassword();
+  const fullName = `UAT Author ${process.env.UAT_RUN ?? "manual"}`;
+  const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
+  if (error) throw error;
+  const id = data.user.id;
+  const { error: profileError } = await supabase.from("profiles").update({ full_name: fullName }).eq("id", id);
+  if (profileError) throw profileError;
+  const { data: depts, error: deptError } = await supabase.from("departments").select("id").ilike("name", department);
+  if (deptError) throw deptError;
+  if (depts.length !== 1) throw new Error(`ПЕРЕДУМОВА НА ПРОДІ: має бути рівно один відділ «${department}»`);
+  const { error: memberError } = await supabase
+    .from("department_members")
+    .insert({ department_id: depts[0].id, profile_id: id, is_approver: false });
+  if (memberError) throw memberError;
+  return { id, email, password, fullName };
+}
+
+/** Подати закупівлю від імені автора — так само, як застосунок (rpc submit_purchase, ключ publishable). id заявки. */
+export async function submitAs(
+  author: UatAuthor,
+  department: string,
+  lines: { name: string; purpose: string; quantity: string; price: string }[],
+): Promise<string> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!key) throw new Error("Для подання від імені автора потрібен NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (.env.local)");
+  const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error: signInError } = await client.auth.signInWithPassword({ email: author.email, password: author.password });
+  if (signInError) throw signInError;
+  const { data: depts, error: deptError } = await client.from("departments").select("id").ilike("name", department);
+  if (deptError) throw deptError;
+  // Рівно один відділ із такою назвою — інакше rpc отримав би не той відділ чи порожній id (рев'ю CodeRabbit, PR 62).
+  if (depts?.length !== 1) throw new Error(`ПЕРЕДУМОВА НА ПРОДІ: має бути рівно один відділ «${department}»`);
+  const { data, error } = await client.rpc("submit_purchase", {
+    p_department_id: depts[0].id,
+    p_purchase_type: "purchasing_department",
+    p_lines: lines,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+/** Статус заявки в базі (секретний ключ): «не змінився» перевіряємо незалежно від сторінки. */
+export async function requestStatus(id: string): Promise<string> {
+  const { data, error } = await adminClient().from("purchase_requests").select("status").eq("id", id).single();
+  if (error) throw error;
+  return data.status as string;
 }
