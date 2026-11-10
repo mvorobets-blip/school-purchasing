@@ -64,8 +64,9 @@
 
 - Звіт: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md (застосунок `a93232b`, тести `task/uat-slice3` @ `b1bb4a8`; PASS 12 з 12 — 9 AC зрізу 3 і повтор AC-FRM-08, 14, 15 зрізу 2)
 - Відео: https://github.com/mvorobets-blip/school-purchasing/pull/62#issuecomment-6777577345 (прогін на чистому дереві, `b1bb4a8`)
+- Історія прогонів 10.11 (вердикти не редагувались; детально — опис https://github.com/mvorobets-blip/school-purchasing/pull/62): рецензент спершу не запустився (прострочений вхід `claude`); у наступному прогоні AC-DEC-06 — NEEDS-HUMAN через ваду тесту (кадр «Тоді» знято після закриття діалогу; виправлено `a6cf82e`); далі — порожні відео HIST-01/02/06 (виправлено) і позначка «+ незакомічені зміни» (локальний `fallow-baseline.txt`); остаточний звіт вище — прогін на чистому дереві після рев'ю CodeRabbit
 - Рецензент: `claude-haiku-5-5`, суперечки → `claude-sonnet-5-5`; $0.2570 за розбір (ціни API) — https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L6
-- Негативний контроль: NC-3 — AC-DEC-06 з навмисно іншим текстом відмови (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/negative-controls.spec.ts#L95), вердикт FAIL (R1); разом NC-1 → FAIL (R1), NC-2 → NEEDS-HUMAN (R3) — звіт `npm run uat:nc` `docs/qa/uat/2026-11-10/negative-controls/report.md` (згенерований, без змін; кадри поруч), відео — коментар PR 62 вище. Тести NC-прогону — `74bf2e1`: від `b1bb4a8` він відрізняється лише закоміченим звітом UAT (`git diff --stat b1bb4a8 74bf2e1` — лише `docs/qa/uat/2026-11-10/**`)
+- Негативний контроль: NC-3 — AC-DEC-06 з навмисно іншим текстом відмови (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/tests/e2e/negative-controls.spec.ts#L95), вердикт FAIL (R1); разом NC-1 → FAIL (R1), NC-2 → NEEDS-HUMAN (R3) — звіт `npm run uat:nc` https://github.com/mvorobets-blip/school-purchasing/blob/5aecb61/docs/qa/uat/2026-11-10/negative-controls/report.md#L12 (згенерований, без змін; кадри поруч), відео — коментар PR 62 вище. Тести NC-прогону — `74bf2e1`: від `b1bb4a8` він відрізняється лише закоміченим звітом UAT (`git diff --stat b1bb4a8 74bf2e1` — лише `docs/qa/uat/2026-11-10/**`)
 - Дані: `@writes` — автори заявок синтетичні `uat-<прогін>-<AC>@example.test`; «Прибирання»: видалено 9, лишилось 0, рядків 0 — https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/qa/uat/2026-11-10/report.md#L7
 
 ### Приймання PM
@@ -84,8 +85,8 @@
 
 ## D. Прод і ретро
 
-- `/api/health` після злиття всіх задач: sha `829cbf4` (злиття PR 62), db ok, env production — перевірено 10.11.2026, 22:07 (Київ)
-- Нові ролі й акаунти: схвалювач лише «Primary School» — `approver-primary@example.test`, схвалювач лише «Office» — `approver-office@example.test` (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/supabase/demo-users.json#L33); `accounts.zip` оновлено з ними (AES-256, пароль курсу — лише в архіві; `npm run users:demo` створив обидва акаунти на проді, відділи призначив адміністратор) — у цьому PR, задача 6.1
+- `/api/health` після злиття всіх задач: sha `829cbf4` (злиття PR 62), db ok, env production — перевірено 10.11.2026, 22:07 (Київ); після злиття цього PR — перевірити ще раз із новим SHA `main`
+- Нові ролі й акаунти: схвалювач лише «Primary School» — `approver-primary@example.test`, схвалювач лише «Office» — `approver-office@example.test` (https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/supabase/demo-users.json#L33); `accounts.zip` оновлено з ними (https://github.com/mvorobets-blip/school-purchasing/blob/bb9b654/accounts.zip; AES-256, пароль курсу — лише в архіві; `npm run users:demo` створив обидва акаунти на проді, відділи призначив адміністратор) — у цьому PR, задача 6.1
 - `docs/conformance.md`: https://github.com/mvorobets-blip/school-purchasing/blob/829cbf4/docs/conformance.md#L92 (AC-DEC-01 … AC-HIST-10, рядки 92–99; AC-LANG-09 — #L107), усі 9 — «реалізовано»
 
 ### Ретро: що б ми взяли з фабрики у свій звичайний процес
