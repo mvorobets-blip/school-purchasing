@@ -32,11 +32,11 @@
   {
     "email": "approver-primary@example.test",
     "full_name": "Марія Демо-Схвалювач",
-    "role": "requester"
+    "role": "approver"
   },
   {
     "email": "approver-office@example.test",
     "full_name": "Петро Демо-Офіс",
-    "role": "requester"
+    "role": "approver"
   }
 ]
