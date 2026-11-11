@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // npm run users:demo — створює синтетичних користувачів із supabase/demo-users.json через Admin API
 // і ставить їм роль у public.profiles. Ідемпотентно: наявних користувачів не дублює, а оновлює
-// їм пароль, ім'я та роль.
+// їм пароль, ім'я та роль. Роль admin — з JSON; requester / approver — за правилом бази (схвалює хоча б один
+// відділ — approver), як private.sync_role, щоб повторний запуск не розходився з членством (scripts/lib/demo-role.mjs).
 //
 // Потрібні змінні (npm run users:demo читає .env.local через `node --env-file`):
 //   NEXT_PUBLIC_SUPABASE_URL  — адреса проєкту;
@@ -13,6 +14,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { ROLES, demoRole } from "./lib/demo-role.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const secretKey = process.env.SUPABASE_SECRET_KEY;
@@ -41,8 +43,8 @@ for (const u of users) {
     console.error(`Лише синтетичні адреси *@example.test: "${u.email}" у supabase/demo-users.json.`);
     process.exit(1);
   }
-  if (!u.role) {
-    console.error(`Для ${u.email} не вказано role.`);
+  if (!ROLES.includes(u.role)) {
+    console.error(`Для ${u.email} role має бути одна з: ${ROLES.join(", ")}.`);
     process.exit(1);
   }
 }
@@ -89,14 +91,24 @@ for (const u of users) {
       throw error;
     }
 
+    // requester / approver рахує база за членством у відділах — повторюємо її правило (private.sync_role).
+    const { count, error: memberError } = await supabase
+      .from("department_members")
+      .select("profile_id", { count: "exact", head: true })
+      .eq("profile_id", id)
+      .eq("is_approver", true);
+    if (memberError) throw memberError;
+    const role = demoRole(u.role, (count ?? 0) > 0);
+
     // Профіль створює тригер on_auth_user_created; upsert робить крок ідемпотентним
     // і ставить роль (колонку role змінює лише service_role — див. міграцію).
     const { error: profileError } = await supabase
       .from("profiles")
-      .upsert({ id, email: u.email, full_name: u.full_name ?? null, role: u.role }, { onConflict: "id" });
+      .upsert({ id, email: u.email, full_name: u.full_name ?? null, role }, { onConflict: "id" });
     if (profileError) throw profileError;
 
-    console.log(`✔ ${u.email} — ${action}, роль ${u.role}`);
+    const note = role === u.role ? "" : ` (у demo-users.json — ${u.role}; роль рахує база за членством у відділах)`;
+    console.log(`✔ ${u.email} — ${action}, роль ${role}${note}`);
   } catch (e) {
     failed++;
     console.error(`✖ ${u.email}: ${e.message ?? e}`);
