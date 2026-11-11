@@ -54,7 +54,11 @@
   security`; `revoke all … from anon, authenticated`; `grant select` лише `authenticated`; політика `select`: активний
   користувач і `exists` заявки (RLS заявки — автор, схвалювач відділу, адміністратор) — AC-HIST-10; `insert`, `update`,
   `delete` — без `grant` і політики: історія не редагується.
-- `private.submit_purchase` пише подію `submitted`; наявним заявкам — подія з `created_at` і автором (backfill).
+- Подію `submitted` першого подання пише тригер `purchase_requests_submitted_event` (`after insert` на
+  `purchase_requests`, `private.add_submitted_event`, `security definer`) — у тій самій транзакції, що й заявка;
+  `private.submit_purchase` не перевизначаємо (рев'ю CodeRabbit, PR 59: так подію не загубить і заявка, подана старою
+  функцією під час міграції). Повторне подання (задача 5) пише подію в самій `private.resubmit_purchase`. Наявним
+  заявкам — подія з `created_at` і автором (backfill без дублікатів).
 - `private.request_history(p_request_id)` повертає записи з ім'ям учасника (без імені — email), лише якщо заявку видно
   (як `private.request_author_names`) — AC-HIST-06.
 - Порядок записів — `created_at`, потім `id`; коли з'являться події рішень (після WS9), кілька подій в одній транзакції

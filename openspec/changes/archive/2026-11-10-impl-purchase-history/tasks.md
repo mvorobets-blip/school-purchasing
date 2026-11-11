@@ -70,11 +70,11 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 6. UAT, proof pack, прод — `task/uat-slice3`
 
-- [ ] 6.1 `supabase/demo-users.json`: `approver-primary@example.test`, `approver-office@example.test`; розробник
+- [x] 6.1 `supabase/demo-users.json`: `approver-primary@example.test`, `approver-office@example.test`; розробник
   запускає `npm run users:demo` і призначає відділи; `accounts.zip` — новий (пароль курсу вводить розробник).
 - [x] 6.2 Тест UAT на кожен із 9 AC у `tests/e2e/*.spec.ts` (нові ролі в `auth.setup.ts`; AC, що пишуть дані, —
   `@writes`, `uatEmail()`, `deleteUatUsers`); розробник запускає `npm run uat` і `npm run uat:nc`.
-- [ ] 6.3 Звіт UAT у `docs/qa/uat/<дата>/`; proof pack — рядок на кожен із 9 AC (тест, доказ падіння, UAT, PR + SHA);
+- [x] 6.3 Звіт UAT у `docs/qa/uat/<дата>/`; proof pack — рядок на кожен із 9 AC (тест, доказ падіння, UAT, PR + SHA);
   archive `impl-purchase-history` в останньому PR зрізу.
   Done when: AC-DEC-01, AC-DEC-04, AC-DEC-06, AC-DEC-07, AC-HIST-01, AC-HIST-02, AC-HIST-06, AC-HIST-10, AC-LANG-09 —
   «реалізовано» з вердиктом UAT; proof pack без порожніх рядків.
