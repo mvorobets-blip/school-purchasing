@@ -221,12 +221,7 @@ export const mutants = [
     find: "  if not found or not private.is_approver_of(v_request.department_id) then",
     replace: "  if not found then",
   },
-  {
-    id: "S31", kind: "sql", ac: "AC-APR-04", file: PURCHASE, tests: ["tests/db/approval.test.ts", PARTIAL_DB, RETURN_DB],
-    what: "is_approver_of: заявник відділу (не схвалювач) вважається схвалювачем (прибрано «and m.is_approver»)",
-    find: "where m.department_id = p_department_id and m.profile_id = (select auth.uid()) and m.is_approver\n",
-    replace: "where m.department_id = p_department_id and m.profile_id = (select auth.uid())\n",
-  },
+  // «Не схвалювач» (заявник того ж відділу) — уже S10 (is_approver_of без m.is_approver); тут його не дублюємо.
   {
     id: "S32", kind: "sql", ac: "повторне рішення (технічне, без AC)", file: RETURN, tests: ["tests/db/approval.test.ts", PARTIAL_DB, RETURN_DB],
     what: "decide_purchase: вже вирішену чи повернену заявку вирішують знову (прибрано NOT_PENDING)",
