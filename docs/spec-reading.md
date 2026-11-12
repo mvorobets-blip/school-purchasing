@@ -165,6 +165,12 @@ ValiaBihun/2026-quitcode-dream-team#73–75); скорочення зрізу д
 | Q2 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/74 — вигляд запису «Подано» (ім'я, дата й час, без імені) | я + скіл `spec-clarify` | A | припущення в ValiaBihun/2026-quitcode-dream-team#64; текст AC не змінено |
 | Q3 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/75 — AC-LANG-09 «в історії», коли записів рішень у WS9 немає | я + скіл `spec-clarify` | A | припущення в ValiaBihun/2026-quitcode-dream-team#49; текст AC не змінено |
 
+| Q4 | https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/76 — AC-HIST-01: коли заявка отримує номер `PUR-N` і чи допустима прогалина між номерами | колега з команди (не я); прочитано після знімка 2026-11-06 | B | припущення в ValiaBihun/2026-quitcode-dream-team#64 (знімок 2026-11-10, PR https://github.com/mvorobets-blip/school-purchasing/pull/64): прогалини допустимі, номер не повторюється; текст AC не змінено, зміна `clarify-*` не потрібна. Наш номер видає `nextval` у `submit_purchase`, тож невдала вставка лишає прогалину — це в межах припущення (зауваження PM 12, приймання 12.11) |
+
+Знімок вимог після спеки — 2026-11-10 (PR https://github.com/mvorobets-blip/school-purchasing/pull/64, лише відповідь на
+#76); `proposal.md` архівованої зміни `add-purchase-history` лишає знімок 2026-11-06, на якому її написано. Слід
+`spec-review` зрізу 3 — розділ `## spec-review` в описі PR https://github.com/mvorobets-blip/school-purchasing/pull/56.
+
 Не дублювали наявні ValiaBihun/2026-quitcode-dream-team#65–69 (суми при «Частково схвалено», що змінює автор, записи
 історії, номер після повторного подання, кількість AC у WS9): їхні відповіді вже в «Припущеннях» PM.
 

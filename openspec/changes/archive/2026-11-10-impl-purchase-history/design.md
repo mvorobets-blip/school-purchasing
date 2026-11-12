@@ -91,14 +91,23 @@
 
 ## Auth
 
-- Без змін у схемі авторизації: `src/proxy.ts` лише перенаправляє гостя на `/login`; кожна сторінка й дія —
-  `getCurrentUser()` (`getClaims()` + `profiles`), ніколи `getSession()` (ADR 0003).
-- Нові й змінені Server Actions (`decidePurchase` з позначеними рядками й рішенням `return`, `resubmitPurchase`):
-  `getCurrentUser()` — до будь-якого `rpc` (правило AGENTS.md); права, що залежать від даних (схвалювач відділу,
-  автор, статус), перевіряє функція бази в тій самій транзакції. Admin-клієнт не потрібен.
-- Акаунти для UAT і приймання — нові синтетичні (погоджено): `approver-primary@example.test` (роль «Марія»,
-  «Primary School») і `approver-office@example.test` (роль «Петро», лише «Office») у `supabase/demo-users.json`;
-  `npm run users:demo` запускає розробник; відділи призначає адміністратор.
+- Без змін у схемі авторизації (AC-HIST-10, AC-DEC-01, AC-DEC-04, AC-DEC-07): `src/proxy.ts` лише перенаправляє
+  гостя на `/login`; кожна сторінка й дія — `getCurrentUser()` (`getClaims()` + `profiles`), ніколи `getSession()`
+  (ADR 0003).
+- Нові й змінені Server Actions (`decidePurchase` з позначеними рядками й рішенням `return` — AC-DEC-01, AC-DEC-04,
+  AC-DEC-06; `resubmitPurchase` — AC-DEC-07): `getCurrentUser()` — до будь-якого `rpc` (правило AGENTS.md); права,
+  що залежать від даних (схвалювач відділу, автор, статус), перевіряє функція бази в тій самій транзакції.
+  Admin-клієнт не потрібен.
+- Швидкої відмови за роллю в Server Action навмисно немає (уточнено за зауваженням PM 11, приймання 12.11): дія
+  перевіряє лише вхід і активність (`!user` → «Not enough permissions»), а роль — ні, бо `profiles.role = approver`
+  означає «схвалювач хоча б одного відділу», а не відділу саме цієї заявки (AC-HIST-10, AC-APR-03), і адміністратор
+  теж може бути схвалювачем. Перевірка за роллю в TS дублювала б `private.is_approver_of` і могла б із нею
+  розійтися; єдине джерело правди — функція бази, її доводять тести PGlite і мутанти S30, S31
+  (`docs/qa/mutation/sql-2026-11-12.md`). Відповідь людині та сама — «Not enough permissions».
+- Акаунти для UAT і приймання (AC-DEC-01, AC-DEC-04, AC-DEC-06, AC-HIST-10) — нові синтетичні (погоджено):
+  `approver-primary@example.test` (роль «Марія», «Primary School») і `approver-office@example.test` (роль «Петро»,
+  лише «Office») у `supabase/demo-users.json`; `npm run users:demo` запускає розробник; відділи призначає
+  адміністратор; роль requester / approver рахує база (`private.sync_role`, PR 66).
 
 ## Відкладено (рев'ю задачі 5)
 

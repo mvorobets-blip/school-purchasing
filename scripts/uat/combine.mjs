@@ -22,6 +22,15 @@ export const RULES = {
 };
 const FACTORY = { PASS: "PASS", FAIL: "FAIL", "NEEDS-HUMAN": "NOT-EARNED" };
 
+/** Причина вердикту Haiku: його нотатка й частини «Тоді», які він не зарахував (не «met»). */
+export function haikuReasonOf(v) {
+  if (!v) return "вердикту немає (рецензент не відповів за схемою)";
+  const parts = (v.then_parts ?? [])
+    .filter((p) => p.status !== "met")
+    .map((p) => `«${p.part}» — ${p.status}${p.quoted_text ? ` («${p.quoted_text}»)` : ""}`);
+  return [v.notes, ...parts].filter(Boolean).join("; ") || "без пояснення";
+}
+
 function loadReview(dir, model) {
   const file = path.join(dir, `review.${model}.json`);
   return existsSync(file) ? readJson(file) : null;
@@ -64,6 +73,9 @@ export function combineCase(dir) {
     agent: v,
     agentModel: final?.model ?? null,
     agentVerdicts: { [HAIKU]: haiku?.out?.structured_output?.verdict ?? null, [SONNET]: sonnet?.out?.structured_output?.verdict ?? null },
+    // Чому Haiku не сказав PASS (зауваження PM 6, приймання 12.11): нотатка й частини «Тоді», які він не зарахував.
+    // Без цього після суперечки у звіті лишався тільки вердикт Sonnet, а причина Haiku губилась разом із test-results/.
+    haikuReason: sonnet ? haikuReasonOf(haiku?.out?.structured_output) : null,
     escalated: Boolean(sonnet),
     quotes,
     frames,

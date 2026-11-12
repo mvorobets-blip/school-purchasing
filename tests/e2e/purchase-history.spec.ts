@@ -245,6 +245,22 @@ test.describe("схвалювач Марія (approver-primary@example.test)", (
             await expect(own.getByTestId("purchase-status").first()).toHaveText("Returned for revision");
           },
         );
+
+        // Зауваження PM 3 (приймання 12.11): «Partially approved» на сторінці заявки — у цьому ж тесті, а не лише в AC-DEC-01.
+        await when("заявку «Частково схвалено» показано на сторінці заявки", async () => {
+          await own.goto(`/requests/${partial}`);
+        });
+        await thenStep(
+          own,
+          {
+            clause: "статус підписано текстом «Partially approved», а не лише кольором.",
+            visible: ["статус заявки текстом «Partially approved»"],
+            hidden: ["«в історії» — записів рішень у WS9 немає (відповідь PM на ValiaBihun/2026-quitcode-dream-team#75)"],
+          },
+          async () => {
+            await expect(own.getByTestId("purchase-status").first()).toHaveText("Partially approved");
+          },
+        );
       } finally {
         await closeAuthor(own);
       }
@@ -466,12 +482,24 @@ test.describe("схвалювач Петро (approver-office@example.test)", ()
   test(
     "AC-HIST-10: Петро («Office») відкриває заявку «Primary School» за прямим посиланням — «Not enough permissions», історії немає, статус не змінився",
     { tag: ["@uat", "@writes"], annotation: { type: "ac", description: "AC-HIST-10" } },
-    async ({ page }) => {
+    async ({ page, browser }) => {
       let id = "";
       await given("Петро схвалює лише відділ «Офіс», заявка відділу «Початкова школа» з історією рішень", async () => {
         await approverOnlyOf(page, OFFICE, "approver-office@example.test");
         id = await submitAs(await createAuthor(PRIMARY, "hist10"), PRIMARY, THREE_LINES.slice(0, 1));
-        expect(await requestStatus(id)).toBe("pending");
+        // Зауваження PM 2 (приймання 12.11): заявка має не лише подію «Submitted», а й рішення — Марія (схвалювач
+        // «Primary School») повертає її з причиною. Окремої події рішення в історії WS9 немає (відповідь PM на #75).
+        const maria = await (await browser.newContext({ storageState: MARIA })).newPage();
+        try {
+          await maria.goto(`/requests/${id}`);
+          await maria.getByRole("button", { name: /^Return for revision:/ }).click();
+          await maria.getByRole("dialog").getByLabel("Reason").fill("Уточніть кількість");
+          await maria.getByRole("dialog").getByRole("button", { name: "Return for revision" }).click();
+          await maria.waitForURL((url) => url.pathname === "/approvals");
+        } finally {
+          await maria.context().close();
+        }
+        expect(await requestStatus(id)).toBe("returned");
       });
 
       await when("Петро відкриває історію цієї заявки за прямим посиланням", async () => {
@@ -483,7 +511,7 @@ test.describe("схвалювач Петро (approver-office@example.test)", ()
         {
           clause: "він бачить повідомлення «Недостатньо прав», історії не показано, а статус заявки не змінився.",
           visible: ["повідомлення «Not enough permissions»", "немає розділу «History» і даних заявки — лише картка відмови"],
-          hidden: ["статус заявки в базі лишається pending"],
+          hidden: ["статус заявки в базі лишається returned — той, що поставило рішення Марії"],
         },
         async () => {
           const card = page.getByRole("main").getByRole("alert");
@@ -491,7 +519,8 @@ test.describe("схвалювач Петро (approver-office@example.test)", ()
           await expect(page.getByTestId("request-history")).toHaveCount(0);
           await expect(page.getByRole("main").getByRole("table")).toHaveCount(0);
           await expect(page.getByRole("main")).not.toContainText("History");
-          expect(await requestStatus(id)).toBe("pending");
+          await expect(page.getByRole("main")).not.toContainText("Уточніть кількість");
+          expect(await requestStatus(id)).toBe("returned");
         },
       );
     },
