@@ -69,6 +69,22 @@ describe("суми заявки", () => {
       expect(() => lineSumCents(bad, "1.00")).toThrow(/Not a decimal/);
     }
   });
+
+  // Рев'ю: numeric із Supabase приходить як number, а String(n) дає експонентний запис для n < 1e-6 і n ≥ 1e21
+  // (String(1e-7) === "1e-7"). Такі кількості можуть лишитися в старих рядках зрізу 2 — читаємо їх точно.
+  it("експонентний запис числа читається точно: 1e-7 × 20.00 = 0, 2e-3 × 1000.00 = 2.00, 1e21 × 1.00 = 1e23 центів", () => {
+    expect(String(1e-7)).toBe("1e-7");
+    expect(lineSumCents(1e-7, "20.00")).toBe(BigInt(0));
+    expect(lineSumCents("2e-3", "1000.00")).toBe(BigInt(200));
+    expect(lineSumCents(1e21, "1.00")).toBe(BigInt("100000000000000000000000"));
+    expect(formatCents(lineSumCents(1.5e-5, "100000.00"))).toBe("1.50");
+  });
+
+  it("експонентний запис не відкриває дорогу сміттю: «abc», «-1», «1e» — помилка", () => {
+    for (const bad of ["abc", "-1", "1e"]) {
+      expect(() => lineSumCents(bad, "1.00")).toThrow(/Not a decimal/);
+    }
+  });
 });
 
 describe("номер заявки", () => {

@@ -130,4 +130,32 @@ describe("loadRequestView", () => {
     answers[Q.author] = { data: null, error: null };
     expect(await loadRequestView(client, ID)).toMatchObject({ status: "ok", authorName: "—" });
   });
+
+  // Рев'ю: автор (request_author_names) запитується разом з рядками, відділом, історією й can_decide_purchase в одному
+  // Promise.all, а не окремо перед ними — сторінка не чекає зайвий мережевий обмін.
+  it("автор запитується паралельно з рядками, відділом, історією й can_decide_purchase — усі п'ять стартують до відповіді автора", async () => {
+    const AUTHOR_RESOLVED = "відповідь автора";
+    const slowAuthorClient = {
+      from,
+      rpc: (fn: string, args: unknown) => {
+        const key = `rpc ${fn} ${JSON.stringify(args)}`;
+        if (fn !== "request_author_names") return Promise.resolve(answer(key));
+        const res = answer(key);
+        // Відповідь автора — лише в наступній макрозадачі: до неї встигають стартувати всі запити одного Promise.all.
+        return new Promise<Res>((resolve) =>
+          setTimeout(() => {
+            asked.push(AUTHOR_RESOLVED);
+            resolve(res);
+          }, 0),
+        );
+      },
+    } as unknown as Parameters<typeof loadRequestView>[0];
+
+    expect(await loadRequestView(slowAuthorClient, ID)).toMatchObject({ status: "ok", authorName: "Андрій Демо-Перший" });
+    const resolvedAt = asked.indexOf(AUTHOR_RESOLVED);
+    expect(resolvedAt).toBeGreaterThan(-1);
+    const startedBefore = asked.slice(0, resolvedAt);
+    expect(startedBefore.sort()).toEqual([Q.author, Q.decide, Q.dept, Q.history, Q.lines, Q.request].sort());
+  });
 });
+
