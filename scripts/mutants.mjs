@@ -213,6 +213,34 @@ export const mutants = [
     find: "  if v_request.purchase_type = 'self_purchase' and not private.is_admin() and not exists (",
     replace: "  if false and not exists (",
   },
+  // ── Відмови private.decide_purchase (жива версія — RETURN): чужий відділ, не схвалювач, вже вирішена ───────────
+  // Зауваження PM 1 (приймання 12.11, PR 62): для цих відмов SQL-мутантів не було — тести бази вже були.
+  {
+    id: "S30", kind: "sql", ac: "AC-APR-03", file: RETURN, tests: ["tests/db/approval.test.ts", PARTIAL_DB, RETURN_DB],
+    what: "decide_purchase: схвалювач іншого відділу вирішує заявку (прибрано is_approver_of із перевірки FORBIDDEN)",
+    find: "  if not found or not private.is_approver_of(v_request.department_id) then",
+    replace: "  if not found then",
+  },
+  // «Не схвалювач» (заявник того ж відділу) — уже S10 (is_approver_of без m.is_approver); тут його не дублюємо.
+  {
+    id: "S32", kind: "sql", ac: "повторне рішення (технічне, без AC)", file: RETURN, tests: ["tests/db/approval.test.ts", PARTIAL_DB, RETURN_DB],
+    what: "decide_purchase: вже вирішену чи повернену заявку вирішують знову (прибрано NOT_PENDING)",
+    find: "  if v_request.status <> 'pending' then\n    raise exception 'NOT_PENDING';\n  end if;\n",
+    replace: "",
+  },
+  // ── AC-DEC-04: повернення з причиною — статус «returned» і саме ця причина ───────────────────────────────────
+  {
+    id: "S33", kind: "sql", ac: "AC-DEC-04", file: RETURN, tests: [RETURN_DB],
+    what: "decide_purchase: повернення лишає заявку «pending» (статус «returned» не ставиться)",
+    find: "set status = 'returned', return_reason = v_reason,",
+    replace: "set status = 'pending', return_reason = v_reason,",
+  },
+  {
+    id: "S34", kind: "sql", ac: "AC-DEC-04", file: RETURN, tests: [RETURN_DB],
+    what: "decide_purchase: повернення зберігає не ту причину, яку вказав схвалювач",
+    find: "set status = 'returned', return_reason = v_reason,",
+    replace: "set status = 'returned', return_reason = 'Повернено',",
+  },
 ];
 
 // Приклади з демо (інша схема — у вашому репо цих файлів немає, тож не розкоментовуйте як є):

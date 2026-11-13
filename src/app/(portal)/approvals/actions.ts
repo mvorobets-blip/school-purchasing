@@ -40,6 +40,17 @@ function errorMessage(error: RpcError): string {
   return "Could not save the decision. Try again.";
 }
 
+// Перевірки, які дія робить сама, — до будь-якого rpc (AGENTS.md); null — можна йти далі.
+function entryRefusal(user: Awaited<ReturnType<typeof getCurrentUser>>, requestId: string, decision: string): string | null {
+  if (!user || !UUID.test(requestId)) return messageFor("FORBIDDEN");
+  // Заявник не вирішує жодної заявки (AC-APR-04). approver і admin (адміністратор теж буває схвалювачем) — до бази:
+  // відділ саме цієї заявки, авторство й статус перевіряє private.decide_purchase.
+  if (user.role !== "approver" && user.role !== "admin") return messageFor("FORBIDDEN");
+  // Дію можна викликати напряму з будь-яким рішенням — невідоме не надсилаємо (база теж відмовила б INVALID_DECISION).
+  if (!DECISIONS.includes(decision)) return CHANGED;
+  return null;
+}
+
 // Рішення схвалювача. Права (схвалювач відділу, не автор, статус «Очікує схвалення», причина для відхилення) перевіряє
 // private.decide_purchase у базі: дію можна викликати напряму (AC-APR-03, 04, 05). Порожня причина — «Provide a reason»
 // без звернення до бази (AC-APR-06); успіх — назад до списку з повідомленням.
@@ -49,10 +60,8 @@ export async function decidePurchase(
   _prev: DecisionState,
   formData: FormData,
 ): Promise<DecisionState> {
-  const user = await getCurrentUser();
-  if (!user || !UUID.test(requestId)) return { status: "error", message: messageFor("FORBIDDEN") };
-  // Дію можна викликати напряму з будь-яким рішенням — невідоме не надсилаємо (база теж відмовила б INVALID_DECISION).
-  if (!DECISIONS.includes(decision)) return { status: "error", message: CHANGED };
+  const refusal = entryRefusal(await getCurrentUser(), requestId, decision);
+  if (refusal) return { status: "error", message: refusal };
 
   const reason = String(formData.get("reason") ?? "").trim();
   // Відхилення й повернення — лише з причиною (AC-APR-06, AC-DEC-06): без неї до бази не звертаємось.

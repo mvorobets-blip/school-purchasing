@@ -5,6 +5,8 @@ import { withUser } from "../support/current-user";
 // (права в базі перевіряє tests/db/approval.test.ts).
 const rpcResult = { error: null as null | { code?: string; message?: string } };
 const rpcCalls: unknown[] = [];
+// Роль поточного користувача (з profiles); beforeEach повертає "approver".
+const currentUser = { role: "approver" };
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -15,7 +17,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () =>
     withUser(
-      { id: "u1", role: "approver", isActive: true },
+      { id: "u1", role: currentUser.role, isActive: true },
       {
         rpc: async (...args: unknown[]) => {
           rpcCalls.push(args);
@@ -47,6 +49,28 @@ describe("дія decidePurchase", () => {
   beforeEach(() => {
     rpcResult.error = null;
     rpcCalls.length = 0;
+    currentUser.role = "approver";
+  });
+
+  // Правило AGENTS.md: роль з profiles дія перевіряє сама, до будь-якого rpc; відділ — функція бази.
+  it("AC-APR-04: заявник (role requester) схвалює, відхиляє з причиною чи повертає з причиною — «Not enough permissions», до бази не звертаємось", async () => {
+    currentUser.role = "requester";
+    const cases = [
+      ["approve", form()],
+      ["reject", form("Немає бюджету")],
+      ["return", form("Уточніть кількість")],
+    ] as const;
+    for (const [decision, fd] of cases) {
+      expect(await decidePurchase(REQUEST, decision, idle, fd)).toEqual({ status: "error", message: "Not enough permissions" });
+    }
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("адміністратор (role admin) — рішення йде в базу: адміністратор може бути й схвалювачем відділу", async () => {
+    currentUser.role = "admin";
+    await expect(decidePurchase(REQUEST, "approve", idle, form())).rejects.toThrow("REDIRECT /approvals?ok=APPROVED");
+    expect(rpcCalls).toHaveLength(1);
+    expect(rpcArgs(rpcCalls[0]).fn).toBe("decide_purchase");
   });
 
   it("AC-APR-06: відхилення без причини — «Provide a reason», до бази не звертаємось", async () => {

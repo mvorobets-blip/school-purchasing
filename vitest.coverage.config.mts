@@ -13,6 +13,7 @@ import base from "./vitest.config.mjs";
 // Загальний відсоток (у демо ≈32 %) не поріг: сторінки й server actions доводять тести бази (PGlite) та e2e, а не Vitest.
 // Наші файли, що на 02.11.2026 тримають 90/85/90/90 (npm run coverage:summary). Поза списком: purchase/awaiting
 // (гілки 73 %) — додати, коли тести його піднімуть; utils (лише реекспорт cn для shadcn/ui, 0 рядків для покриття).
+// 12.11.2026 додано файли зрізу 3 purchase/money, number, request-view — 100 % (зауваження PM 4, приймання 12.11).
 const FLOORED: string[] = [
   "health",
   "theme",
@@ -26,7 +27,10 @@ const FLOORED: string[] = [
   "purchase/dashboard",
   "purchase/date",
   "purchase/form",
+  "purchase/money",
+  "purchase/number",
   "purchase/pagination",
+  "purchase/request-view",
   "purchase/status",
 ];
 // Фігурні дужки glob розкриваються лише з комою всередині, тож один файл пишемо без них.

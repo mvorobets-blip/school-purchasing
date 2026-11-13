@@ -18,7 +18,8 @@ export function ownStatusStats(counts: StatusCounts): { status: PurchaseStatus; 
   return OWN_STATUSES.map((status) => ({ status, label: STATUS_LABEL[status], iconClass: STATUS_CLASS[status], value: counts[status] }));
 }
 
-// Номерів заявок у зрізі немає (PM: «Поза межами»), тож заявку впізнають за першою позицією: «Папір А4 + 2 more».
+// Номер PUR-n є з WS9 (AC-HIST-01), але головна його не показує (DESIGN.md, «Головна»: без сум і номерів), тож заявку
+// тут впізнають за першою позицією: «Папір А4 + 2 more».
 export type LineSummary = { first: string; more: number };
 
 export function lineSummaries(

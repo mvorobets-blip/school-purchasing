@@ -121,7 +121,13 @@ export function report(rows = combine(), { out } = {}) {
       ...(a.error ? ["**Перевірка впала:**", "", "```", a.error, "```", ""] : []),
       r.agent ? `**Агент (${r.agentModel}, ${r.agent.verdict}):** ${r.agent.notes}` : "**Агент:** вердикту немає",
       "",
-      ...(r.escalated ? [`Haiku сказав ${r.agentVerdicts[HAIKU] ?? "—"}, тож розбір повторив Sonnet; рішення агента — за Sonnet.`, ""] : []),
+      ...(r.escalated
+        ? [
+            `Haiku сказав ${r.agentVerdicts[HAIKU] ?? "—"}, тож розбір повторив Sonnet; рішення агента — за Sonnet.`,
+            ...(r.haikuReason ? [`Чому Haiku: ${r.haikuReason}`] : []),
+            "",
+          ]
+        : []),
       ...(r.agent?.defects?.length ? ["**Агент бачить вади:**", ...r.agent.defects.map((d) => `- ${d}`), ""] : []),
       ...(r.quotes.length
         ? ["**Цитати агента, звірені зі сторінкою (aria):**", ...r.quotes.map((q) => `- «${q.quote}» — ${q.onPage ? "є на сторінці" : "НЕМАЄ на сторінці"}`), ""]

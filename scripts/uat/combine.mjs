@@ -22,6 +22,26 @@ export const RULES = {
 };
 const FACTORY = { PASS: "PASS", FAIL: "FAIL", "NEEDS-HUMAN": "NOT-EARNED" };
 
+/**
+ * Чому Haiku спричинив суперечку (та сама умова, що isDispute у review.mjs): не PASS — нотатка й частини «Тоді», які він
+ * не зарахував; PASS — його «met»-цитати, яких немає на сторінці (aria), або те, що цитат немає зовсім.
+ */
+export function haikuReasonOf(v, aria) {
+  if (!v) return "вердикту немає (рецензент не відповів за схемою)";
+  if (v.verdict === "PASS") {
+    const quoted = (v.then_parts ?? [])
+      .filter((p) => p.observable === "visible" && p.status === "met")
+      .flatMap((p) => p.quoted_text.split(";").map((q) => q.trim()).filter(Boolean));
+    if (!quoted.length) return "PASS без жодної цитати зі сторінки";
+    const missing = quoted.filter((q) => !quoteInAria(q, aria));
+    return missing.length ? `PASS, але цитат немає на сторінці: ${missing.map((q) => `«${q}»`).join(", ")}` : "без пояснення";
+  }
+  const parts = (v.then_parts ?? [])
+    .filter((p) => p.status !== "met")
+    .map((p) => `«${p.part}» — ${p.status}${p.quoted_text ? ` («${p.quoted_text}»)` : ""}`);
+  return [v.notes, ...parts].filter(Boolean).join("; ") || "без пояснення";
+}
+
 function loadReview(dir, model) {
   const file = path.join(dir, `review.${model}.json`);
   return existsSync(file) ? readJson(file) : null;
@@ -64,6 +84,11 @@ export function combineCase(dir) {
     agent: v,
     agentModel: final?.model ?? null,
     agentVerdicts: { [HAIKU]: haiku?.out?.structured_output?.verdict ?? null, [SONNET]: sonnet?.out?.structured_output?.verdict ?? null },
+    // Чому Haiku не сказав PASS (зауваження PM 6, приймання 12.11): нотатка й частини «Тоді», які він не зарахував.
+    // Без цього після суперечки у звіті лишався тільки вердикт Sonnet, а причина Haiku губилась разом із test-results/.
+    // Лише коли Sonnet запущено як ескалацію після Haiku в тому самому прогоні (escalatedFrom пише review.mjs); після
+    // прогону з --model Sonnet файл Haiku лишається зі старого прогону, і його причина тут не стосується.
+    haikuReason: sonnet?.escalatedFrom === HAIKU && haiku ? haikuReasonOf(haiku.out?.structured_output, aria) : null,
     escalated: Boolean(sonnet),
     quotes,
     frames,

@@ -23,8 +23,10 @@ merge; CodeRabbit (або `/code-review high`) з відповіддю на ко
 
 ## 2. Історія «Submitted» і доступ до неї — `task/request-history`
 
-- [x] 2.1 Міграція `<ts>_request_history.sql`: `purchase_request_events` (RLS, лише `select`), подія в `submit_purchase`,
-  backfill, `private.request_history` з ім'ям чи email.
+- [x] 2.1 Міграція `<ts>_request_history.sql`: `purchase_request_events` (RLS, лише `select`), подію «submitted» пише
+  тригер `purchase_requests_submitted_event` (`private.add_submitted_event`, після `insert` заявки), а не
+  `submit_purchase`, як планували (PR 59; уточнено за зауваженням PM 8, приймання 12.11); backfill,
+  `private.request_history` з ім'ям чи email.
 - [x] 2.2 Розділ «History» на сторінці заявки: «Submitted · <ім'я> · 05.11.2026, 14:32» (`America/New_York`, 24 год,
   без позначки поясу — #74); `src/lib/purchase/date.ts` — `formatSubmittedAt`.
 - [x] 2.3 Тести: PGlite — AC-HIST-10 (схвалювач іншого відділу: подій 0, статус не змінився; прямий `insert`/`update`
