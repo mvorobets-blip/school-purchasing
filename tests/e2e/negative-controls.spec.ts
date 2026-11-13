@@ -23,7 +23,7 @@ const WRONG_MESSAGE = "You have no requests yet";
 // справжнього тесту відрізняються рівно одним навмисним місцем (NC-1 — текст у твердженні, NC-2 — ac-text).
 const HIDDEN = ["списку заявок немає: жодного рядка заявки (data-testid=\"request-row\") і таблиці «my-requests»"];
 const givenNoRequests = (page: Page) =>
-  given("працівник 3 без жодної поданої заявки", async () => {
+  given("працівник 3 без жодної заявки", async () => {
     await page.goto("/");
     await expect(page.getByRole("main").getByTestId("no-requests")).toHaveText(NO_REQUESTS);
   });
@@ -64,7 +64,7 @@ test(
       {
         type: "ac-text",
         description:
-          "AC-FRM-14: Дано працівник 3 без жодної поданої заявки. Коли він відкриває сторінку «Мої заявки». Тоді він бачить повідомлення «You have no requests yet» і кнопку «Create your first request», а списку заявок немає.",
+          "AC-FRM-14: Дано працівник 3 без жодної заявки. Коли він відкриває сторінку «Мої заявки». Тоді він бачить повідомлення «You have no requests yet» і кнопку «Create your first request», а списку заявок немає.",
       },
     ],
   },

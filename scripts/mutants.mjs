@@ -264,6 +264,18 @@ export const mutants = [
     replace: "  update public.department_members set auto_approve = false\n  where department_id = p_department_id and profile_id = p_profile_id;",
   },
   {
+    id: "S41", kind: "sql", ac: "AC-ORG-06", file: MEMBERS, tests: [ORG_DB],
+    what: "set_auto_approve вмикає автосхвалення в усіх відділах працівника (прибрано фільтр відділу)",
+    find: "  set auto_approve = p_value\n  where department_id = p_department_id and profile_id = p_profile_id;",
+    replace: "  set auto_approve = p_value\n  where profile_id = p_profile_id;",
+  },
+  {
+    id: "S42", kind: "sql", ac: "AC-ORG-15", file: MEMBERS, tests: [ORG_DB],
+    what: "remove_requester лишає рядок членства з автосхваленням (delete замінено на скидання лише схвалення)",
+    find: "  delete from public.department_members\n  where department_id = p_department_id and profile_id = p_profile_id;",
+    replace: "  update public.department_members set is_approver = false\n  where department_id = p_department_id and profile_id = p_profile_id;",
+  },
+  {
     id: "S40", kind: "sql", ac: "права адміністратора на членство (без AC)", file: MEMBERS, tests: [ORG_DB],
     what: "set_approver може викликати не адміністратор (прибрано is_admin)",
     find: "create or replace function private.set_approver(p_department_id uuid, p_profile_id uuid, p_value boolean)\nreturns void\nlanguage plpgsql\nsecurity definer\nset search_path = ''\nas $$\nbegin\n  if not private.is_admin() then",
