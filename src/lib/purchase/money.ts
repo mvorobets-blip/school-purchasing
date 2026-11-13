@@ -6,11 +6,16 @@ type Amount = number | string;
 
 // Десяткове число з бази (numeric приходить і як number, і як string) — точно: ціле значення й кількість знаків після
 // крапки, без арифметики з рухомою комою.
+// Число з бази JS друкує з експонентою, коли воно < 1e-6 чи ≥ 1e21 («1e-7», «1e+21»); такі кількості можуть лишитись у
+// рядках зрізу 2 (тоді база вимагала лише > 0). Експоненту зсуваємо в scale — точно, без рухомої коми (/code-review WS9).
 function decimal(value: Amount): { digits: bigint; scale: number } {
-  const match = /^(\d+)(?:\.(\d*))?$/.exec(String(value).trim());
+  const match = /^(\d+)(?:\.(\d*))?(?:e([+-]\d+))?$/i.exec(String(value).trim());
   if (!match) throw new Error(`Not a decimal: ${value}`);
   const fraction = match[2] ?? "";
-  return { digits: BigInt(match[1] + fraction), scale: fraction.length };
+  const digits = BigInt(match[1] + fraction);
+  // JS друкує експоненту завжди зі знаком («1e-7», «1e+21»), тож знак обов'язковий. Від'ємний scale — ціле число з нулями.
+  const scale = fraction.length - Number(match[3] ?? 0);
+  return { digits: digits * pow10(Math.max(0, -scale)), scale: Math.max(0, scale) };
 }
 
 const TEN = BigInt(10);

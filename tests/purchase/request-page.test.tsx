@@ -226,6 +226,15 @@ describe("сторінка заявки", () => {
     expect(html).toMatch(/Total[\s\S]*?>0\.30</);
   });
 
+  // Рев'ю: старий рядок зрізу 2 з кількістю 1e-7 (String(1e-7) === "1e-7") не ламає сторінку — сума 0.00.
+  it("старий рядок з кількістю 1e-7 (експонентний запис числа) — сторінка відкривається, сума рядка й «Total» 0.00", async () => {
+    db.lines = [{ position: 1, name: "Скріпки", purpose: "Офіс", quantity: 1e-7, price: 20 }];
+    const html = await render();
+    const cells = [...html.matchAll(/<td[^>]*>([^<]*)<\/td>/g)].map((m) => m[1]);
+    expect(cells).toContain("0.00");
+    expect(html).toMatch(/Total[\s\S]*?>0\.00</);
+  });
+
   it("AC-HIST-06: розділ «History» із записом «Submitted · PM Demo Requester · 05.11.2026, 14:32»", async () => {
     const html = await render();
     expect(rpcCalls).toContainEqual({ fn: "request_history", args: { p_request_id: ID } });

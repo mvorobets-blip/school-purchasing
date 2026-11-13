@@ -38,8 +38,9 @@ export async function loadRequestView(supabase: Client, id: string): Promise<Req
 
   // Автор — ім'я, без імені в профілі — email, і лише якщо заявку дозволено бачити (private.request_author_names;
   // AC-APR-08, 09); ролі, відділів і дозволів автора сторінка не читає (AC-APR-10).
-  const authorRes = await supabase.rpc("request_author_names", { p_request_ids: [id] });
-  const [linesRes, deptRes, historyRes, decideRes] = await Promise.all([
+  // Разом з рештою запитів, а не перед ними: вони незалежні (/code-review WS9 — на один послідовний запит менше).
+  const [authorRes, linesRes, deptRes, historyRes, decideRes] = await Promise.all([
+    supabase.rpc("request_author_names", { p_request_ids: [id] }),
     supabase
       .from("purchase_request_lines")
       .select("position, name, purpose, quantity, price, status")
