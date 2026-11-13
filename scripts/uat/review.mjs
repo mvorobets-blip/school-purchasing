@@ -88,7 +88,9 @@ async function reviewCase(caseDir, { model, escalate }) {
   const line = (r) => `${id} [${r.model}] → ${verdictOf(r)?.verdict ?? "БЕЗ ВЕРДИКТУ"}; $${r.out.total_cost_usd ?? "?"}; ${r.wallMs} мс`;
   console.log(line(first));
   if (escalate && model !== SONNET && isDispute(caseDir, first)) {
-    const second = await runClaude(caseDir, SONNET);
+    // escalatedFrom — ознака, що Sonnet запущено саме як ескалацію після цієї моделі (combine.mjs бере звідси причину Haiku;
+    // рев'ю CodeRabbit, PR 67). Вивід звіту лише; правила R1–R6 не змінено.
+    const second = { ...(await runClaude(caseDir, SONNET)), escalatedFrom: model };
     save(second);
     console.log(`${line(second)} (суперечка → Sonnet)`);
   } else if (model !== SONNET) {
