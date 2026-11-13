@@ -108,7 +108,7 @@ describe("сторінка заявки", () => {
     for (const key of Object.keys(selected)) delete selected[key];
   });
 
-  it("AC-FRM-08: заявки немає у відповіді бази (чужа) — «Недостатньо прав» без даних", async () => {
+  it("сторінка заявки з моком: порожня відповідь бази (чужа заявка) — картка «Недостатньо прав» без даних (правило доводить тест бази tests/db/purchase.test.ts)", async () => {
     db.request = null;
     const html = await render();
     expect(html).toContain(messageFor("FORBIDDEN"));

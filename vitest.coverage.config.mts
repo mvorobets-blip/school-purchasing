@@ -14,16 +14,15 @@ import base from "./vitest.config.mjs";
 // Наші файли, що на 02.11.2026 тримають 90/85/90/90 (npm run coverage:summary). Поза списком: purchase/awaiting
 // (гілки 73 %) — додати, коли тести його піднімуть; utils (лише реекспорт cn для shadcn/ui, 0 рядків для покриття).
 // 12.11.2026 додано файли зрізу 3 purchase/money, number, request-view — 100 % (зауваження PM 4, приймання 12.11).
+// 13.11.2026 прибрано org/roles і org/membership: це TS-модель правил ролей, застосунок її функцій не викликає (окрім ROLE_LABEL і типів); правила доводить база — tests/db/org-roles.test.ts і мутанти S35–S40 (відгук викладача на WS8, пункт 1).
 const FLOORED: string[] = [
   "health",
   "theme",
   "org/access",
   "org/current-user",
   "org/departments",
-  "org/membership",
   "org/messages",
   "org/permissions",
-  "org/roles",
   "purchase/dashboard",
   "purchase/date",
   "purchase/form",

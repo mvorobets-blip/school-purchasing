@@ -61,7 +61,7 @@ describe("дія submitPurchase", () => {
     expect(rpcCalls).toHaveLength(0);
   });
 
-  it("AC-FRM-15: рядок лише з назвою — «Fill in all line fields», рядок іде в базу, відділ і тип лишаються", async () => {
+  it("дія з моком: відповідь бази INVALID_LINE на рядок лише з назвою — «Fill in all line fields», відділ і тип лишаються (правило доводить тест бази tests/db/purchase.test.ts)", async () => {
     rpcResult.error = { code: "P0001", message: "INVALID_LINE" };
     const state = await submitPurchase(idle, form({ "name.1": "Папір А4" }));
     expect(state).toEqual({
