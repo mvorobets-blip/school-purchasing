@@ -27,6 +27,10 @@ const RETURN = "supabase/migrations/20261106193244_return_for_revision.sql";
 const RETURN_DB = "tests/db/return-for-revision.test.ts";
 const RESUBMIT = "supabase/migrations/20261106194622_resubmit_purchase.sql";
 const RESUBMIT_DB = "tests/db/resubmit.test.ts";
+// Зріз 1 (ORG): тригер ролей private.sync_role і функції членства (жива версія — без пізніших create or replace).
+const SETUP = "supabase/migrations/20261021213618_department_setup.sql";
+const MEMBERS = "supabase/migrations/20261021231637_department_members_functions.sql";
+const ORG_DB = "tests/db/org-roles.test.ts";
 
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
@@ -227,6 +231,55 @@ export const mutants = [
     what: "decide_purchase: вже вирішену чи повернену заявку вирішують знову (прибрано NOT_PENDING)",
     find: "  if v_request.status <> 'pending' then\n    raise exception 'NOT_PENDING';\n  end if;\n",
     replace: "",
+  },
+  // ── Ролі й членство зрізу 1 (ORG): доводить база, а не TS-модель (відгук викладача на WS8, пункт 1) ───────────
+  {
+    id: "S35", kind: "sql", ac: "AC-ORG-05", file: SETUP, tests: [ORG_DB],
+    what: "тригер членства не перераховує роль (прибрано виклик private.sync_role для нового рядка)",
+    find: "  else\n    perform private.sync_role(new.profile_id);\n",
+    replace: "  else\n",
+  },
+  {
+    id: "S36", kind: "sql", ac: "AC-ORG-11", file: SETUP, tests: [ORG_DB],
+    what: "sync_role перезаписує роль admin на approver / requester (прибрано «p.role <> 'admin'»)",
+    find: "  where p.id = p_profile_id and p.role <> 'admin';",
+    replace: "  where p.id = p_profile_id;",
+  },
+  {
+    id: "S37", kind: "sql", ac: "AC-ORG-02", file: MEMBERS, tests: [ORG_DB],
+    what: "set_approver: призначення не заявника не відхиляється (прибрано NOT_REQUESTER)",
+    find: "  set is_approver = p_value\n  where department_id = p_department_id and profile_id = p_profile_id;\n  if not found and p_value then",
+    replace: "  set is_approver = p_value\n  where department_id = p_department_id and profile_id = p_profile_id;\n  if false then",
+  },
+  {
+    id: "S38", kind: "sql", ac: "AC-ORG-33", file: MEMBERS, tests: [ORG_DB],
+    what: "set_auto_approve: автосхвалення не заявнику не відхиляється (прибрано NOT_REQUESTER)",
+    find: "  set auto_approve = p_value\n  where department_id = p_department_id and profile_id = p_profile_id;\n  if not found and p_value then",
+    replace: "  set auto_approve = p_value\n  where department_id = p_department_id and profile_id = p_profile_id;\n  if false then",
+  },
+  {
+    id: "S39", kind: "sql", ac: "AC-ORG-03", file: MEMBERS, tests: [ORG_DB],
+    what: "remove_requester лишає рядок членства зі схваленням (delete замінено на скидання лише автосхвалення)",
+    find: "  delete from public.department_members\n  where department_id = p_department_id and profile_id = p_profile_id;",
+    replace: "  update public.department_members set auto_approve = false\n  where department_id = p_department_id and profile_id = p_profile_id;",
+  },
+  {
+    id: "S41", kind: "sql", ac: "AC-ORG-06", file: MEMBERS, tests: [ORG_DB],
+    what: "set_auto_approve вмикає автосхвалення в усіх відділах працівника (прибрано фільтр відділу)",
+    find: "  set auto_approve = p_value\n  where department_id = p_department_id and profile_id = p_profile_id;",
+    replace: "  set auto_approve = p_value\n  where profile_id = p_profile_id;",
+  },
+  {
+    id: "S42", kind: "sql", ac: "AC-ORG-15", file: MEMBERS, tests: [ORG_DB],
+    what: "remove_requester лишає рядок членства з автосхваленням (delete замінено на скидання лише схвалення)",
+    find: "  delete from public.department_members\n  where department_id = p_department_id and profile_id = p_profile_id;",
+    replace: "  update public.department_members set is_approver = false\n  where department_id = p_department_id and profile_id = p_profile_id;",
+  },
+  {
+    id: "S40", kind: "sql", ac: "права адміністратора на членство (без AC)", file: MEMBERS, tests: [ORG_DB],
+    what: "set_approver може викликати не адміністратор (прибрано is_admin)",
+    find: "create or replace function private.set_approver(p_department_id uuid, p_profile_id uuid, p_value boolean)\nreturns void\nlanguage plpgsql\nsecurity definer\nset search_path = ''\nas $$\nbegin\n  if not private.is_admin() then",
+    replace: "create or replace function private.set_approver(p_department_id uuid, p_profile_id uuid, p_value boolean)\nreturns void\nlanguage plpgsql\nsecurity definer\nset search_path = ''\nas $$\nbegin\n  if false then",
   },
   // ── AC-DEC-04: повернення з причиною — статус «returned» і саме ця причина ───────────────────────────────────
   {

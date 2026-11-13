@@ -128,13 +128,13 @@ test.describe("працівник 3 (member2@example.test)", () => {
   test.use({ storageState: REQUESTER2 });
 
   test(
-    "AC-FRM-14: працівник без жодної поданої заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
+    "AC-FRM-14: працівник без жодної заявки відкриває «My requests» — «You have not submitted any requests yet», списку немає",
     { tag: ["@uat"], annotation: { type: "ac", description: "AC-FRM-14" } },
     async ({ page }) => {
       // Передумову перевіряємо на іншій сторінці, ніж «Тоді»: головна сама рахує власні заявки (src/app/(portal)/page.tsx);
       // без жодної — порожній стан замість карток-лічильників. Це той самий доступ до даних (RLS, author_id), лише інший
       // запит і сторінка: повністю незалежну перевірку дав би лише секретний ключ, якого UAT не має.
-      await given("працівник 3 без жодної поданої заявки", async () => {
+      await given("працівник 3 без жодної заявки", async () => {
         await page.goto("/");
         await expect(
           page.getByRole("main").getByTestId("no-requests"),
