@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { messageFor } from "@/lib/org/messages";
 import { REASON_LIMIT } from "@/lib/purchase/form";
 import { decidePurchase, type DecisionState } from "./actions";
 
@@ -125,7 +126,7 @@ export function DecisionButtons({
         <ReasonDialog requestId={requestId} label={label} decision="reject" />
       </div>
       {approveState.status === "error" ? (
-        <Alert variant={approveState.message === "Not enough permissions" ? "default" : "destructive"} data-testid="decision-message">
+        <Alert variant={approveState.message === messageFor("FORBIDDEN") ? "default" : "destructive"} data-testid="decision-message">
           {approveState.message}
         </Alert>
       ) : null}
