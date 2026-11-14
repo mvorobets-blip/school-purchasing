@@ -10,10 +10,12 @@
 - [ ] 1.1 ADR `docs/decisions/0004-ai-feature-openrouter.md` з шаблону набору; залежності з точними версіями:
   `ai@7.0.162 @openrouter/ai-sdk-provider@3.1.0 zod@4.6.7 server-only@0.0.1`; скрипти `eval`, `ai:models`, `ai:quota`.
 - [ ] 1.2 Файли набору: `src/lib/ai/{models,openrouter}.ts`, `tests/ai-key.test.ts`, `evals/`, `scripts/{free-models,quota}.mjs`,
-  `vitest.eval.config.mts`; `.env.example` — назва `OPENROUTER_API_KEY`.
+  `vitest.eval.config.mts`; `.env.example` — назва `OPENROUTER_API_KEY`; `tests/fixtures/golden/recorded.json` — заглушки набору
+  (позначені як заглушки; замінюються справжніми записами в задачі 3, як у walkthrough WS10, крок 4).
 - [ ] 1.3 `tests/fixtures/golden/cases.json` — 10 кейсів PM з #70 (`expected` — з таблиці PM, `rubric` — словами PM).
 - [ ] 1.4 Перевірка: `npm test` зелений без ключа, `npm run ai:models` — моделі ланцюжка існують.
-  Done when: AC-AI-05 (немає ключа → `null`, без виклику) доведено тестом обгортки; `tests/ai-key.test.ts` зелений.
+  Done when: AC-AI-05 (частково: немає ключа → `null`, без виклику моделі) доведено тестом обгортки; `tests/ai-key.test.ts`
+  зелений; 429 і повідомлення для людини — задача 2.5.
 
 ## 2. Помічник у формі — `task/ai-line-assistant`
 
@@ -23,13 +25,14 @@
 - [ ] 2.4 UI у `purchase-form.tsx`: поле опису, кнопка, стани й повідомлення (`src/lib/ai/messages.ts`); рядок у форму.
 - [ ] 2.5 Тести: golden офлайн з AC ID (`tests/golden.test.ts`), збої (429, 429 у 200, таймаут, не за схемою, немає ключа),
   ін'єкція, «дія нічого не пише»; форма — очікування (AC-AI-03) і заповнення рядка (AC-AI-01).
-  Done when: AC-AI-01, AC-AI-02, AC-AI-03, AC-AI-04, AC-AI-05, AC-AI-06 «реалізовано» в `docs/conformance.md`.
+  Done when: AC-AI-01, AC-AI-02, AC-AI-03, AC-AI-04, AC-AI-05, AC-AI-06 «реалізовано» в `docs/conformance.md`: збої, ін'єкція,
+  форма — тестами з мок-моделлю; golden cases — реплей заглушок набору (справжні записи — задача 3).
 
 ## 3. Живий eval і записи — `task/ai-eval`
 
 - [ ] 3.1 Людина: `npm run ai:quota`, потім `RECORD=1 npm run eval` (не в добу приймання PM).
 - [ ] 3.2 Звіт `evals/reports/<дата й час>.md` і `recorded.json` без заглушок; кожен FAIL — рядок пояснення.
-  Done when: AC-AI-01, AC-AI-02, AC-AI-06 — golden cases на справжніх записах; звіт на SHA.
+  Done when: AC-AI-01, AC-AI-02, AC-AI-06 — golden cases реплеять справжні записи `RECORD=1` (заглушок немає); звіт на SHA.
 
 ## 4. Прод і UAT — `task/ai-uat`
 
