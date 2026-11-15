@@ -1,0 +1,50 @@
+{
+  "GC-01": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"ok\",\"name\":\"Папір А4\",\"purpose\":\"Для друку\",\"quantity\":3,\"price\":20}"
+  },
+  "GC-05": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"ok\",\"name\":\"Степлерні скоби\",\"purpose\":null,\"quantity\":2.5,\"price\":4}"
+  },
+  "GC-06": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"ok\",\"name\":\"Папір\",\"purpose\":null,\"quantity\":0,\"price\":20}"
+  },
+  "GC-07": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"ok\",\"name\":\"Папка\",\"purpose\":null,\"quantity\":4,\"price\":-5}"
+  },
+  "GC-08": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"off_topic\",\"name\":null,\"purpose\":null,\"quantity\":null,\"price\":null}"
+  },
+  "GC-09": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"off_topic\",\"name\":null,\"purpose\":null,\"quantity\":null,\"price\":null}"
+  },
+  "GC-13": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"ok\",\"name\":\"Крейда\",\"purpose\":\"Для уроків\",\"quantity\":2,\"price\":5}"
+  },
+  "GC-14": {
+    "modelId": "placeholder (hand-written, not a model answer)",
+    "recordedAt": "2026-11-15",
+    "promptVersion": "line-v1",
+    "text": "{\"status\":\"ok\",\"name\":\"Маркер для дошки\",\"purpose\":\"Для дошки\",\"quantity\":4,\"price\":1.5}"
+  }
+}
