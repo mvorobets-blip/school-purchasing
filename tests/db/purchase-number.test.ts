@@ -65,6 +65,22 @@ describe("номер заявки (база)", () => {
     expect(await numberOf(c)).toBe(last + 1);
   });
 
+  it("задовга назва чи мета рядка (> 200) — відмова *_length до видачі номера: номер не «згорає», наступна заявка — max + 1", async () => {
+    const [{ id: a }] = await submit([LINE]);
+    const last = await numberOf(a);
+    const before = await requestCount();
+    await expect(submit([{ ...LINE, name: "А".repeat(201) }])).rejects.toThrow(/purchase_request_lines_name_length/);
+    await expect(submit([{ ...LINE, purpose: "Б".repeat(201) }])).rejects.toThrow(/purchase_request_lines_purpose_length/);
+    expect(await requestCount()).toBe(before);
+    const [{ id: b }] = await submit([LINE]);
+    expect(await numberOf(b)).toBe(last + 1);
+  });
+
+  it("назва й мета рівно 200 символів — заявку подано (межа включна)", async () => {
+    const [{ id }] = await submit([{ ...LINE, name: "А".repeat(200), purpose: "Б".repeat(200) }]);
+    expect(await numberOf(id)).toBeGreaterThan(0);
+  });
+
   it("номер обов'язковий і унікальний: прямий insert service role з наявним номером відхилено", async () => {
     const [{ id }] = await submit([LINE]);
     const taken = await numberOf(id);

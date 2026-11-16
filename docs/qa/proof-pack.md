@@ -165,3 +165,16 @@
 | номер `PUR-n` «згорає», якщо подання падає на перевірці довжини рядка (тригер після `nextval`) | лише прямим викликом дії (форма обмежує 200 символів); прийнято PM як зауваження 12, записано в «Не перевірено» | перевірка `char_length` у `private.validate_purchase_lines` до `nextval` — міграція, тест бази, мутант |
 | `private.request_history` повторює умову видимості з політики RLS `purchase_requests_select_visible` | рефакторинг RLS основної таблиці напередодні здачі — ризик без зміни поведінки | спільний `private.can_see_request(id)` для політики й функції — міграція, тести AC-HIST-10, AC-FRM-08 |
 | однаковий регулярний вираз UUID у шести файлах | лише чистота коду | `isUuid()` у `src/lib` |
+
+**Закрито 16.11** (гілка `task/ws9-tech-debt`; таблицю вище лишаємо як запис рішення на час здачі WS9):
+
+- номер не «згорає» — міграція `supabase/migrations/20261116115831_validate_line_text_before_number.sql`: межа 200
+  символів назви й мети в `private.validate_purchase_lines` до `nextval` (та сама помилка 23514 для застосунку);
+  тест бази `tests/db/purchase-number.test.ts` (спершу червоний: номер стрибав на 2), SQL-мутанти S43, S44;
+- одна умова видимості — міграція `supabase/migrations/20261116120217_shared_request_visibility.sql`:
+  `private.can_see_request(author, department)` для політики `purchase_requests_select_visible`,
+  `private.request_history` і ще одного повтору, знайденого при виправленні, — `private.request_author_names`;
+  поведінка та сама (усі 118 тестів бази зелені), мутанти S1, S16 переведено на нову функцію, нові S45, S46;
+- `isUuid()` — `src/lib/uuid.ts` замість шести копій виразу, тест `tests/uuid.test.ts`.
+
+SQL-мутанти після змін: 45 з 45 вбито (100 %).

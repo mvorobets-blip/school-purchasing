@@ -5,11 +5,10 @@ import { redirect } from "next/navigation";
 import { canAccessSettings } from "@/lib/org/access";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 // Зміни членства — лише через RPC (private.* перевіряє адміністратора ще раз); роль після змін рахує тригер бази.
 // Результат повертаємо в адресі (?ok= / ?error=), щоб сторінка показала повідомлення без клієнтського стану.
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type RpcError = { code?: string; message?: string } | null;
 
@@ -35,7 +34,7 @@ async function run(departmentId: string, call: () => PromiseLike<{ error: RpcErr
 
 function ids(departmentId: string, profileId: FormDataEntryValue | null): { departmentId: string; profileId: string } {
   const p = String(profileId ?? "");
-  if (!UUID.test(departmentId) || !UUID.test(p)) redirect(`/admin/departments/${departmentId}?error=UNKNOWN`);
+  if (!isUuid(departmentId) || !isUuid(p)) redirect(`/admin/departments/${departmentId}?error=UNKNOWN`);
   return { departmentId, profileId: p };
 }
 

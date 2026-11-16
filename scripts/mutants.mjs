@@ -17,6 +17,12 @@ const PURCHASE_DB = "tests/db/purchase.test.ts";
 // Жива версія private.submit_purchase з WS9 (номер заявки) і private.validate_purchase_lines (перевірка рядків).
 const LIMITS = "supabase/migrations/20261106162407_request_number_and_line_limits.sql";
 const NUMBER_DB = "tests/db/purchase-number.test.ts";
+// Жива версія private.validate_purchase_lines (create or replace поверх LIMITS): межа довжини назви й мети до nextval
+// (технічний борг WS9). Мутанти перевірки рядків — тут: стара версія в LIMITS уже не виконується.
+const LINES = "supabase/migrations/20261116115831_validate_line_text_before_number.sql";
+// Одна умова «кому видно заявку» (технічний борг WS9): private.can_see_request — для політики purchase_requests,
+// private.request_history і private.request_author_names. Мутанти видимості — тут: старі тексти вже не виконуються.
+const VISIBILITY = "supabase/migrations/20261116120217_shared_request_visibility.sql";
 const HISTORY = "supabase/migrations/20261106184819_request_history.sql";
 const HISTORY_DB = "tests/db/request-history.test.ts";
 const PARTIAL_DB = "tests/db/partial-approval.test.ts";
@@ -35,9 +41,9 @@ const ORG_DB = "tests/db/org-roles.test.ts";
 export const mutants = [
   // ── AC-FRM-08: заявник того ж відділу не бачить чужої закупівлі, статус не змінюється ────────────────────────
   {
-    id: "S1", kind: "sql", ac: "AC-FRM-08", file: PURCHASE, tests: [PURCHASE_DB],
-    what: "політика purchase_requests_select_visible: будь-який активний користувач бачить усі заявки",
-    find: "      author_id = (select auth.uid())\n      or (select private.is_admin())\n      or (select private.is_approver_of(department_id))",
+    id: "S1", kind: "sql", ac: "AC-FRM-08", file: VISIBILITY, tests: [PURCHASE_DB],
+    what: "private.can_see_request: будь-який активний користувач бачить усі заявки",
+    find: "      p_author_id = (select auth.uid())\n      or (select private.is_admin())\n      or private.is_approver_of(p_department_id)",
     replace: "      true",
   },
   {
@@ -66,37 +72,37 @@ export const mutants = [
   },
   // ── AC-FRM-15: рядок, де не заповнено назву, мету, кількість чи ціну, — INVALID_LINE, закупівлю не подано ─────
   {
-    id: "S4", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
+    id: "S4", kind: "sql", ac: "AC-FRM-15", file: LINES, tests: [PURCHASE_DB],
     what: "submit_purchase: перевірку порожніх полів рядка прибрано повністю",
     find: "    if coalesce(btrim(v_line ->> 'name'), '') = ''\n      or coalesce(btrim(v_line ->> 'purpose'), '') = ''\n      or coalesce(btrim(v_line ->> 'quantity'), '') = ''\n      or coalesce(btrim(v_line ->> 'price'), '') = '' then",
     replace: "    if false then",
   },
   {
-    id: "S5", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
+    id: "S5", kind: "sql", ac: "AC-FRM-15", file: LINES, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню назву рядка не перевіряємо",
     find: "    if coalesce(btrim(v_line ->> 'name'), '') = ''\n      or coalesce(btrim(v_line ->> 'purpose'), '') = ''",
     replace: "    if coalesce(btrim(v_line ->> 'purpose'), '') = ''",
   },
   {
-    id: "S6", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
+    id: "S6", kind: "sql", ac: "AC-FRM-15", file: LINES, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню мету рядка не перевіряємо",
     find: "\n      or coalesce(btrim(v_line ->> 'purpose'), '') = ''",
     replace: "",
   },
   {
-    id: "S7", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
+    id: "S7", kind: "sql", ac: "AC-FRM-15", file: LINES, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню кількість рядка не перевіряємо",
     find: "\n      or coalesce(btrim(v_line ->> 'quantity'), '') = ''",
     replace: "",
   },
   {
-    id: "S8", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
+    id: "S8", kind: "sql", ac: "AC-FRM-15", file: LINES, tests: [PURCHASE_DB],
     what: "submit_purchase: порожню ціну рядка не перевіряємо",
     find: "\n      or coalesce(btrim(v_line ->> 'price'), '') = '' then",
     replace: " then",
   },
   {
-    id: "S9", kind: "sql", ac: "AC-FRM-15", file: LIMITS, tests: [PURCHASE_DB],
+    id: "S9", kind: "sql", ac: "AC-FRM-15", file: LINES, tests: [PURCHASE_DB],
     what: "submit_purchase: мета з самих пробілів вважається заповненою (без btrim)",
     find: "      or coalesce(btrim(v_line ->> 'purpose'), '') = ''",
     replace: "      or coalesce(v_line ->> 'purpose', '') = ''",
@@ -110,13 +116,13 @@ export const mutants = [
   },
   // ── Межі рядків (припущення PM у вимозі 64; регресійні тести без AC ID) ─────────────────────────────────────
   {
-    id: "S13", kind: "sql", ac: "межа кількості (вимога 64)", file: LIMITS, tests: [NUMBER_DB, PURCHASE_DB],
+    id: "S13", kind: "sql", ac: "межа кількості (вимога 64)", file: LINES, tests: [NUMBER_DB, PURCHASE_DB],
     what: "validate_purchase_lines: дробова кількість (1.5) і нуль проходять — лише > 0",
     find: "or v_quantity < 1 or v_quantity <> trunc(v_quantity)",
     replace: "or v_quantity <= 0",
   },
   {
-    id: "S14", kind: "sql", ac: "межа ціни (вимога 64)", file: LIMITS, tests: [NUMBER_DB, PURCHASE_DB],
+    id: "S14", kind: "sql", ac: "межа ціни (вимога 64)", file: LINES, tests: [NUMBER_DB, PURCHASE_DB],
     what: "validate_purchase_lines: від'ємна ціна проходить",
     find: "or v_price < 0 or round(v_price, 2)",
     replace: "or round(v_price, 2)",
@@ -129,10 +135,22 @@ export const mutants = [
     replace: "    and true",
   },
   {
-    id: "S16", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],
-    what: "private.request_history: історію з іменами віддає будь-якому активному користувачу",
-    find: "      r.author_id = (select auth.uid())\n      or (select private.is_admin())\n      or private.is_approver_of(r.department_id)",
-    replace: "      true",
+    id: "S16", kind: "sql", ac: "AC-HIST-10", file: VISIBILITY, tests: [HISTORY_DB],
+    what: "private.request_history: історію з іменами віддає без перевірки видимості заявки",
+    find: "    and private.can_see_request(r.author_id, r.department_id)\n  order by",
+    replace: "  order by",
+  },
+  {
+    id: "S45", kind: "sql", ac: "AC-FRM-08", file: VISIBILITY, tests: [PURCHASE_DB],
+    what: "політика purchase_requests_select_visible: лише «активний», без автора, відділу й адміністратора",
+    find: "  using (private.can_see_request(author_id, department_id));",
+    replace: "  using ((select private.is_active_user()));",
+  },
+  {
+    id: "S46", kind: "sql", ac: "AC-APR-10", file: VISIBILITY, tests: ["tests/db/approval.test.ts"],
+    what: "private.request_author_names: ім'я автора віддає без перевірки видимості заявки",
+    find: "    and private.can_see_request(r.author_id, r.department_id);",
+    replace: ";",
   },
   // ── AC-HIST-06: подання пише запис «Подано» ──────────────────────────────────────────────────────────────────
   {
@@ -172,6 +190,18 @@ export const mutants = [
     what: "тригер меж: назва з 201 символу проходить",
     find: "  if char_length(new.name) > 200 then",
     replace: "  if char_length(new.name) > 201 then",
+  },
+  {
+    id: "S43", kind: "sql", ac: "номер не «згорає» (технічний борг WS9)", file: LINES, tests: [NUMBER_DB],
+    what: "validate_purchase_lines: межу довжини назви не перевіряємо — відмова лише від тригера після nextval",
+    find: "    if char_length(btrim(v_line ->> 'name')) > 200 then",
+    replace: "    if false then",
+  },
+  {
+    id: "S44", kind: "sql", ac: "номер не «згорає» (технічний борг WS9)", file: LINES, tests: [NUMBER_DB],
+    what: "validate_purchase_lines: межу довжини мети не перевіряємо — відмова лише від тригера після nextval",
+    find: "    if char_length(btrim(v_line ->> 'purpose')) > 200 then",
+    replace: "    if false then",
   },
   // ── AC-DEC-06: повернення без причини не зберігається ────────────────────────────────────────────────────────
   {

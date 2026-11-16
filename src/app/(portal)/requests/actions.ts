@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
 import { hasTooLongLine, isTextLengthError, LINE_TOO_LONG, parseLines } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 export type SubmitPurchaseState = {
   status: "idle" | "error";
@@ -15,8 +16,6 @@ export type SubmitPurchaseState = {
 };
 
 type RpcError = { code?: string; message?: string } | null;
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function errorMessage(error: RpcError): string {
   if (error?.code === "42501" || error?.message?.includes("FORBIDDEN")) return messageFor("FORBIDDEN");
@@ -93,7 +92,7 @@ export async function resubmitPurchase(
   const prepared = await prepare(formData);
   if ("error" in prepared) return prepared.error;
   // Неможливий id (підроблена форма) — та сама відмова, що й для чужої заявки, без звернення до бази.
-  if (!UUID.test(requestId)) return { status: "error", message: messageFor("FORBIDDEN"), ...prepared.keep };
+  if (!isUuid(requestId)) return { status: "error", message: messageFor("FORBIDDEN"), ...prepared.keep };
   const { keep, lines } = prepared;
 
   const supabase = await createClient();

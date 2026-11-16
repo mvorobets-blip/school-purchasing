@@ -7,8 +7,7 @@ import { PURCHASE_TYPE_LABEL, type PurchaseType } from "@/lib/purchase/form";
 import { formatRequestNumber } from "@/lib/purchase/number";
 import { createClient } from "@/lib/supabase/server";
 import { PurchaseForm } from "../../new/purchase-form";
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from "@/lib/uuid";
 
 // Виправлення поверненої заявки (AC-DEC-07): та сама форма, що «New purchase», заповнена рядками заявки; відділ і тип
 // не змінюються (#66). Відкрити може лише автор заявки «Returned for revision»; іншим — «Not enough permissions» без
@@ -25,7 +24,7 @@ export default async function EditRequestPage({ params }: PageProps<"/requests/[
       backLabel="Back to my requests"
     />
   );
-  if (!UUID.test(id)) return forbidden;
+  if (!isUuid(id)) return forbidden;
 
   const supabase = await createClient();
   const { data: request, error } = await supabase
