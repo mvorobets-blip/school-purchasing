@@ -3,7 +3,7 @@ import { MESSAGES } from "@/lib/org/messages";
 import { AI_TEXT } from "./messages";
 import { LINE_INSTRUCTIONS, wrapDocument } from "./prompts/line";
 import { checkLine, looksLikeInjection, type FormLine } from "./rules";
-import { LineSuggestionSchema } from "./schema";
+import { LineSuggestionSchema, type LineSuggestion } from "./schema";
 
 // Чиста функція: модель передають параметром (застосунок — src/lib/ai/openrouter.ts, тести — MockLanguageModelV4).
 // Без process.env і без "server-only", тож її імпортують тести й живий eval. Модель нічого не пише: результат лише
@@ -33,7 +33,7 @@ export async function proposeLine(text: string, model: LanguageModel | null, opt
   if (looksLikeInjection(text)) return { state: "injection", message: AI_TEXT.injection };
   if (!text.trim()) return failed();
 
-  let suggestion;
+  let suggestion: LineSuggestion;
   let modelId: string;
   try {
     const result = await generateText({
@@ -49,7 +49,13 @@ export async function proposeLine(text: string, model: LanguageModel | null, opt
     suggestion = result.output;
     modelId = result.response.modelId;
   } catch (error) {
-    return classifyFailure(error);
+    // Модель відповіла JSON у Markdown-огорожі (```json … ```) — розбираємо сам JSON і перевіряємо тією самою схемою;
+    // відповідь не за схемою лишається збоєм (AC-AI-04).
+    const noObject = NoObjectGeneratedError.isInstance(error) ? error : null;
+    const recovered = noObject ? parseFenced(noObject.text) : null;
+    if (!recovered) return classifyFailure(error);
+    suggestion = recovered;
+    modelId = noObject?.response?.modelId ?? "unknown";
   }
 
   if (suggestion.status === "off_topic") return { state: "off_topic", message: AI_TEXT.offTopic, modelId };
@@ -63,6 +69,17 @@ export async function proposeLine(text: string, model: LanguageModel | null, opt
     return { state: "invalid", issue: checked.issue, message, modelId };
   }
   return { state: "line", line: checked.line, modelId };
+}
+
+function parseFenced(text: string | undefined): LineSuggestion | null {
+  const body = text?.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
+  if (!body) return null;
+  try {
+    const parsed = LineSuggestionSchema.safeParse(JSON.parse(body));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 // Збій моделі → стан для людини: ліміт (429, зокрема 429 у тілі відповіді HTTP 200) — AC-AI-05; таймаут, відповідь не за

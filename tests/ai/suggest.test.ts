@@ -222,3 +222,16 @@ describe("заголовки запиту до OpenRouter", () => {
     for (const name of names) expect(name).toMatch(/^[\x20-\x7e]+$/);
   });
 });
+
+describe("відповідь моделі в Markdown-огорожі", () => {
+  it("JSON в ```json …``` (так відповіла nemotron у живому прогоні 16.11, GC-05) — розібрано й перевірено схемою", async () => {
+    const fenced = '```json\n{"status":"ok","name":"Степлерні скоби","purpose":null,"quantity":2.5,"price":4}\n```';
+    const result = await proposeLine("Треба 2,5 коробки степлерних скоб по 4 долари", replay(fenced));
+    expect(result).toMatchObject({ state: "invalid", issue: "quantity" });
+  });
+
+  it("огорожа з JSON не за схемою — однаково «Could not get a suggestion…»", async () => {
+    const result = await proposeLine(PAPER, replay('```json\n{"status":"ok","category":"dragons"}\n```'));
+    expect(result).toMatchObject({ state: "failed", message: AI_TEXT.failed });
+  });
+});

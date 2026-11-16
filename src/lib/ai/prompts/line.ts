@@ -1,9 +1,16 @@
 // Промпт помічника рядків закупівлі (зріз 4). Після КОЖНОЇ зміни інструкцій чи схеми — LINE_PROMPT_VERSION + 1:
 // записи tests/fixtures/golden/recorded.json з іншою версією тест вважає застарілими (RECORD=1 npm run eval).
+import lineExamples from "./line-examples.json";
+
 // Інструкції — англійською (як увесь код інтерфейсу, AC-LANG-01); відповідь модель пише мовою опису (українською).
-export const LINE_PROMPT_VERSION = "line-v1";
+// line-v2 (16.11): приклади з line-examples.json, правило стандартного українського правопису назви, «без Markdown».
+export const LINE_PROMPT_VERSION = "line-v2";
 
 const MAX_INPUT = 1000;
+
+const EXAMPLES = lineExamples.examples
+  .map((e) => `Text: ${e.text}\nAnswer: ${JSON.stringify(e.answer)}`)
+  .join("\n\n");
 
 export const LINE_INSTRUCTIONS = `You are the assistant of a school purchasing portal. An employee describes ONE purchase in free text
 (in Ukrainian), and you propose ONE purchase line: item name, purpose, quantity, unit price in US dollars.
@@ -28,7 +35,15 @@ Answer with JSON only, with the fields: status, name, purpose, quantity, price.
     null if there is no quantity;
   - price — the unit price as written (comma → dot: 1,50 → 1.5; "minus 5" → -5); never correct it; null if there is no
     price.
-Do not invent anything: what is not in the text is null. Exactly one line, even if several items are mentioned.`;
+Do not invent anything: what is not in the text is null. Exactly one line, even if several items are mentioned.
+
+Language of name and purpose: standard Ukrainian spelling of the noun used in the text, put into the nominative case
+(keep the same word and root as in the text; do not translate into or spell like Russian).
+Output format: the bare JSON object only — no Markdown, no code fences, no comments.
+
+Examples (they are not the employee's text):
+
+${EXAMPLES}`;
 
 // Недовірений текст — між межами; теги-межі з самого тексту вирізаємо (інакше текст міг би «закрити» межу даних
 // зсередини), довжину обмежуємо.
