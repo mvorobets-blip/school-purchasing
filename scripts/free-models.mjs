@@ -21,7 +21,7 @@ try {
 } catch (error) {
   fail(`немає з'єднання з OpenRouter (${error instanceof Error ? error.name : "помилка"})`);
 }
-if (!res.ok) fail(`GET ${URL} → HTTP ${res.status}`);
+if (!res.ok) fail(`OpenRouter повернув HTTP ${res.status} для GET ${URL}`);
 let data;
 try {
   ({ data } = await res.json());
@@ -31,16 +31,19 @@ try {
 if (!Array.isArray(data)) fail("у відповіді немає списку моделей (формат змінився?)");
 
 const isZero = (v) => v === undefined || v === null || Number(v) === 0;
+// Елемент без рядкового id (формат змінився, порожній обʼєкт) — пропускаємо, а не падаємо з необробленим винятком.
 const rows = data
+  .filter((m) => m && typeof m === "object" && typeof m.id === "string")
   .filter((m) => m.id.endsWith(":free") || (isZero(m.pricing?.prompt) && isZero(m.pricing?.completion)))
   .map((m) => {
-    const sp = m.supported_parameters ?? [];
+    const list = (v) => (Array.isArray(v) ? v : []);
+    const sp = list(m.supported_parameters);
     return {
       id: m.id,
       // Нульова ціна без суфікса :free (stealth-моделі, генерація музики тощо) — не плутати з безкоштовними LLM.
       note: m.id.endsWith(":free") ? "" : "ціна 0, але без :free — перевірте опис",
       context: m.context_length ?? m.top_provider?.context_length ?? null,
-      input: (m.architecture?.input_modalities ?? []).join("+"),
+      input: list(m.architecture?.input_modalities).join("+"),
       tools: sp.includes("tools"),
       SO: sp.includes("structured_outputs"),
       RF: sp.includes("response_format"),
