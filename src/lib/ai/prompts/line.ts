@@ -4,7 +4,9 @@ import lineExamples from "./line-examples.json";
 
 // Інструкції — англійською (як увесь код інтерфейсу, AC-LANG-01); відповідь модель пише мовою опису (українською).
 // line-v2 (16.11): приклади з line-examples.json, правило стандартного українського правопису назви, «без Markdown».
-export const LINE_PROMPT_VERSION = "line-v2";
+// line-v3 (16.11): «той самий корінь» штовхав модель писати «Папер» з «паперу» (на проді — GC-01, AC-AI-01): у
+// називному відмінку голосний кореня може змінюватися (і ↔ е, і ↔ о) — правило й приклад «дроту → Дріт» (не golden).
+export const LINE_PROMPT_VERSION = "line-v3";
 
 const MAX_INPUT = 1000;
 
@@ -37,8 +39,10 @@ Answer with JSON only, with the fields: status, name, purpose, quantity, price.
     price.
 Do not invent anything: what is not in the text is null. Exactly one line, even if several items are mentioned.
 
-Language of name and purpose: standard Ukrainian spelling of the noun used in the text, put into the nominative case
-(keep the same word and root as in the text; do not translate into or spell like Russian).
+Language of name and purpose: standard Ukrainian spelling of the noun used in the text, put into the dictionary form
+(nominative). Keep the same word, but do not copy the root letter by letter: in Ukrainian the vowel of the last syllable
+often changes between the nominative and other cases, so write the dictionary form, never a form that does not exist
+(see the wire example below). Do not translate into or spell like Russian.
 Output format: the bare JSON object only — no Markdown, no code fences, no comments.
 
 Examples (they are not the employee's text):
