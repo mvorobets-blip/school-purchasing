@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { markedLineFields, suggestedLineKey, withMarkedSuggestion, withSuggestedLine } from "@/lib/purchase/form";
+import { markedLineFields, needsSuggestedHint, suggestedLineKey, withMarkedSuggestion, withSuggestedLine } from "@/lib/purchase/form";
 
 // Пропозиція помічника AI у рядки форми (зріз 4, відповідь PM на #82): перший порожній рядок — заповнити, інакше — додати в кінець.
 const suggested = { name: "Папір А4", purpose: "Для друку", quantity: "3", price: "20.00" };
@@ -18,6 +18,13 @@ describe("поле, якого в описі немає (відповідь PM �
     const [line] = withMarkedSuggestion([blank], noPrice);
     expect(markedLineFields({ ...line, price: "1.50" }, false)).toEqual([]);
     expect(markedLineFields(noPrice, false)).toEqual([]);
+  });
+
+  it("AC-AI-01: під рядком пропозиції з порожнім полем — підказка (для aria-describedby); поле заповнено — підказки немає", () => {
+    const [line] = withMarkedSuggestion([blank], noPrice);
+    expect(needsSuggestedHint(line)).toBe(true);
+    expect(needsSuggestedHint({ ...line, price: "1.50" })).toBe(false);
+    expect(needsSuggestedHint({ ...noPrice, key: 3 } as never)).toBe(false);
   });
 
   it("AC-AI-01: друга пропозиція не знімає позначку з першої — обидва порожні поля позначено", () => {

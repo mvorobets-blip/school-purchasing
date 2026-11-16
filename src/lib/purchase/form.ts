@@ -144,6 +144,15 @@ export function markedLineFields(line: PurchaseLine & { suggested?: boolean }, a
   return afterError ? [...empty, ...invalidNumberFields(line)] : empty;
 }
 
+// Підказка під рядком пропозиції з порожніми полями (відповідь PM на #79): червона рамка без пояснення нічого не каже
+// читачу екрана (DESIGN.md §7 — помилка поля пов'язана з полем через aria-describedby). Власний текст у тоні PM: у
+// таблиці #49 його немає (незалежне рев'ю PR 76).
+export const SUGGESTED_MISSING_HINT = "The description did not include these values. Fill them in before submitting.";
+
+// Чи показувати підказку під рядком: рядок від помічника, і в ньому ще є порожні поля.
+export const needsSuggestedHint = (line: PurchaseLine & { suggested?: boolean }) =>
+  Boolean(line.suggested) && emptyLineFields(line).length > 0;
+
 // Пропозиція помічника в рядки форми з позначкою suggested на рядку, куди вона лягла. Ключ і рядки — з того самого
 // актуального стану (функціональне оновлення), тож позначка не губиться, якщо людина змінила форму під час очікування
 // чи попросила ще одну пропозицію.

@@ -1,4 +1,5 @@
 import injectionPatterns from "./injection-patterns.json";
+import { invalidNumberFields } from "@/lib/purchase/form";
 import type { LineSuggestion } from "./schema";
 
 // Правила, які перевіряє КОД, а не лише промпт (зріз 4): модель пропонує, сервер перевіряє.
@@ -9,8 +10,20 @@ import type { LineSuggestion } from "./schema";
 // звичайний опис покупки (навіть «інструкція до принтера») сюди не потрапляє. Шаблони — дані в injection-patterns.json.
 const INJECTION_PATTERNS: readonly RegExp[] = injectionPatterns.patterns.map((p) => new RegExp(p, "iu"));
 
+// Перед перевіркою текст нормалізуємо (незалежне рев'ю PR 76): NFKC зводить повноширинні й стилізовані літери до
+// звичайних, \p{Cf} прибирає невидимі символи (zero-width space, м'який перенос), а схожі кирилично-латинські літери
+// перевіряємо в обидва боки. Це звужує обхід, а не гарантує: другий рубіж — статус injection у відповіді моделі.
+const TO_LATIN = new Map(Object.entries(injectionPatterns.homoglyphs));
+const TO_CYRILLIC = new Map([...TO_LATIN].map(([cyr, lat]) => [lat, cyr]));
+const fold = (text: string, map: ReadonlyMap<string, string>) => [...text].map((ch) => map.get(ch) ?? ch).join("");
+
+function variants(text: string): string[] {
+  const clean = text.normalize("NFKC").replace(/\p{Cf}/gu, "");
+  return [clean, fold(clean, TO_LATIN), fold(clean, TO_CYRILLIC)];
+}
+
 export function looksLikeInjection(text: string): boolean {
-  return INJECTION_PATTERNS.some((re) => re.test(text));
+  return variants(text).some((v) => INJECTION_PATTERNS.some((re) => re.test(v)));
 }
 
 export type FormLine = { name: string; purpose: string; quantity: string; price: string };
@@ -22,13 +35,17 @@ export function checkLine(
 ): { kind: "line"; line: FormLine } | { kind: "invalid"; issue: "quantity" | "price" } {
   if (s.quantity !== null && !(Number.isInteger(s.quantity) && s.quantity >= 1)) return { kind: "invalid", issue: "quantity" };
   if (s.price !== null && !(Number.isFinite(s.price) && s.price >= 0)) return { kind: "invalid", issue: "price" };
-  return {
-    kind: "line",
-    line: {
-      name: s.name?.trim() ?? "",
-      purpose: s.purpose?.trim() ?? "",
-      quantity: s.quantity === null ? "" : String(s.quantity),
-      price: s.price === null ? "" : s.price.toFixed(2),
-    },
+  const line: FormLine = {
+    name: s.name?.trim() ?? "",
+    purpose: s.purpose?.trim() ?? "",
+    quantity: s.quantity === null ? "" : s.quantity.toFixed(0),
+    // Ціну округлюємо до центів так само, як колонка numeric(12, 2) у базі (форма показує те, що збережеться).
+    price: s.price === null ? "" : s.price.toFixed(2),
   };
+  // Верхні межі — ті самі, що у формі й у базі (private.validate_purchase_lines): кількість до 2 147 483 647, ціна
+  // менша за 10 000 000 000 після округлення. Окремого правила тут не тримаємо — та сама функція, що позначає поля форми.
+  const bad = invalidNumberFields(line);
+  if (bad.includes("quantity")) return { kind: "invalid", issue: "quantity" };
+  if (bad.includes("price")) return { kind: "invalid", issue: "price" };
+  return { kind: "line", line };
 }

@@ -44,13 +44,15 @@ const rateLimit = () =>
     statusCode: 429,
   });
 
-// Модель, що не відповідає, доки її не перерве abortSignal (тайм-аут).
-function silent() {
+// Модель, що не відповідає, доки її не перерве abortSignal (тайм-аут). seen.aborted — чи перервав її саме сигнал:
+// без нього тест пройшов би й тоді, коли тайм-аут не під'єднано (модель сама «впала» б через 5 с).
+function silent(seen: { aborted: boolean } = { aborted: false }) {
   return new MockLanguageModelV4({
     doGenerate: async ({ abortSignal }) => {
       await new Promise((resolve, reject) => {
         const t = setTimeout(resolve, 5_000);
         abortSignal?.addEventListener("abort", () => {
+          seen.aborted = true;
           clearTimeout(t);
           reject(abortSignal.reason);
         });
@@ -80,9 +82,14 @@ describe("тексти помічника", () => {
 
 describe("proposeLine: збої моделі", () => {
   it("AC-AI-04: модель не відповідає довше за тайм-аут — «Could not get a suggestion. Fill in the lines manually», рядка немає", async () => {
-    const result = await proposeLine(PAPER, silent(), { timeoutMs: 50, maxRetries: 0 });
+    const seen = { aborted: false };
+    const started = Date.now();
+    const result = await proposeLine(PAPER, silent(seen), { timeoutMs: 50, maxRetries: 0 });
     expect(result).toMatchObject({ state: "failed", message: AI_TEXT.failed });
     expect(result).not.toHaveProperty("line");
+    // Перервав саме тайм-аут (сигнал), і швидко — а не модель сама через 5 с.
+    expect(seen.aborted).toBe(true);
+    expect(Date.now() - started).toBeLessThan(1_000);
   });
 
   it("відповідь не за схемою — «Could not get a suggestion…», рядка немає", async () => {

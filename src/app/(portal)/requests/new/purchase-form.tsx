@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +15,9 @@ import {
   isLineError,
   LINE_TEXT_LIMIT,
   markedLineFields,
+  needsSuggestedHint,
   submitBlocked,
+  SUGGESTED_MISSING_HINT,
   type LineField,
   type Option,
   type PurchaseLine,
@@ -26,6 +28,17 @@ import { LineAssistant } from "./line-assistant";
 
 // suggested — рядок заповнив помічник AI: його порожні поля позначено (відповідь PM на #79).
 type Line = PurchaseLine & { key: number; suggested?: boolean };
+
+// Останнє значення для обробників, що живуть довше за рендер: дія помічника викликає onLine з рендеру, у якому її
+// запустили, тож «edited()» інакше записав би стару відповідь «Submit», і її повідомлення лишилося б на екрані
+// (незалежне рев'ю PR 76).
+function useLatest<T>(value: T) {
+  const ref = useRef(value);
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  return ref;
+}
 const blankLine = (key: number): Line => ({ key, name: "", purpose: "", quantity: "", price: "" });
 
 const initialState = (departments: Option[], types: Option[]): SubmitPurchaseState => ({
@@ -73,7 +86,8 @@ export function PurchaseForm({
   const markEmpty = isError && isLineError(state.message);
   const blocked = forbidden && submitBlocked(state, { departmentId, purchaseType });
 
-  const edited = () => setEditedAfter(state);
+  const latestState = useLatest(state);
+  const edited = () => setEditedAfter(latestState.current);
   const updateLine = (key: number, field: LineField, value: string) => {
     edited();
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, [field]: value } : l)));
@@ -189,6 +203,8 @@ export function PurchaseForm({
           </h2>
           {lines.map((line, index) => {
             const wrong = new Set(markedLineFields(line, markEmpty));
+            const hint = needsSuggestedHint(line);
+            const hintId = `suggested-hint-${line.key}`;
             const field = (name: LineField, label: string, extra: React.ComponentProps<typeof Input> = {}) => (
               <div className={name === "name" || name === "purpose" ? "flex flex-col gap-2 sm:col-span-2" : "flex flex-col gap-2"}>
                 <Label htmlFor={`${name}-${line.key}`}>{label}</Label>
@@ -198,6 +214,7 @@ export function PurchaseForm({
                   value={line[name]}
                   onChange={(e) => updateLine(line.key, name, e.target.value)}
                   aria-invalid={wrong.has(name) || undefined}
+                  aria-describedby={wrong.has(name) && hint ? hintId : undefined}
                   {...extra}
                 />
               </div>
@@ -209,6 +226,11 @@ export function PurchaseForm({
                   {field("purpose", "Purpose", { maxLength: LINE_TEXT_LIMIT })}
                   {field("quantity", "Quantity", { ...numberField, step: "any", inputMode: "numeric" })}
                   {field("price", "Price", { ...numberField, step: "0.01" })}
+                  {hint ? (
+                    <p id={hintId} className="text-sm text-muted-foreground sm:col-span-2">
+                      {SUGGESTED_MISSING_HINT}
+                    </p>
+                  ) : null}
                   {lines.length > 1 ? (
                     <Button
                       type="button"

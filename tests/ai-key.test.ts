@@ -23,7 +23,7 @@ const srcFiles = walk(path.join(root, "src")).map((abs) => ({
 
 describe("перевірка ключа: OPENROUTER_API_KEY лише на сервері", () => {
   it("імпорт обгортки з ключем поза серверним кодом падає (server-only)", async () => {
-    // Тому чиста функція proposeDraft отримує модель параметром, а не імпортує src/lib/ai/openrouter.ts.
+    // Тому чиста функція proposeLine отримує модель параметром, а не імпортує src/lib/ai/openrouter.ts.
     await expect(import("@/lib/ai/openrouter")).rejects.toThrow(/Server Component/);
   });
 
