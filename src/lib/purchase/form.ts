@@ -137,14 +137,22 @@ export function withSuggestedLine<T extends PurchaseLine & { key: number }>(line
   return [...lines, { ...suggested, key }];
 }
 
-// Які поля рядка позначити (aria-invalid): після помилки «Submit» — порожні й неможливі; у рядку, який щойно заповнив
-// помічник AI, — порожні (відповідь PM на #79). Позначка зникає, щойно людина заповнила поле.
-export function markedLineFields(
-  line: PurchaseLine & { key: number },
-  mark: { afterError: boolean; suggestedKey: number | null },
-): LineField[] {
-  const empty = mark.afterError || line.key === mark.suggestedKey ? emptyLineFields(line) : [];
-  return mark.afterError ? [...empty, ...invalidNumberFields(line)] : empty;
+// Які поля рядка позначити (aria-invalid): після помилки «Submit» — порожні й неможливі; у рядку, який заповнив
+// помічник AI (suggested), — порожні (відповідь PM на #79). Позначка зникає, щойно людина заповнила поле.
+export function markedLineFields(line: PurchaseLine & { suggested?: boolean }, afterError: boolean): LineField[] {
+  const empty = afterError || line.suggested ? emptyLineFields(line) : [];
+  return afterError ? [...empty, ...invalidNumberFields(line)] : empty;
+}
+
+// Пропозиція помічника в рядки форми з позначкою suggested на рядку, куди вона лягла. Ключ і рядки — з того самого
+// актуального стану (функціональне оновлення), тож позначка не губиться, якщо людина змінила форму під час очікування
+// чи попросила ще одну пропозицію.
+export function withMarkedSuggestion<T extends PurchaseLine & { key: number; suggested?: boolean }>(
+  lines: readonly T[],
+  suggested: PurchaseLine,
+): (PurchaseLine & { key: number; suggested?: boolean })[] {
+  const key = suggestedLineKey(lines);
+  return withSuggestedLine(lines, suggested).map((l) => (l.key === key ? { ...l, suggested: true } : l));
 }
 
 // Куди ляже пропозиція: ключ першого порожнього рядка, інакше — новий ключ (max + 1). Форма позначає в цьому рядку поля,

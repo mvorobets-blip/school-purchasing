@@ -111,7 +111,7 @@ describe("дія requestLineSuggestion", () => {
     expect(dbCalls).toEqual([]);
   });
 
-  it("автор-схвалювач (role approver) теж отримує пропозицію для власної форми", async () => {
+  it("AC-AI-01: автор-схвалювач (role approver) теж отримує пропозицію для власної форми", async () => {
     state.user = { id: "u2", role: "approver", isActive: true };
     expect(await requestLineSuggestion(idle, form(PAPER))).toMatchObject({ status: "done", result: { state: "line" } });
   });

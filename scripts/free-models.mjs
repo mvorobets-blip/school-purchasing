@@ -10,12 +10,25 @@ import { existsSync, readFileSync } from "node:fs";
 const URL = "https://openrouter.ai/api/v1/models";
 const MODELS_FILE = "src/lib/ai/models.ts";
 
-const res = await fetch(URL);
-if (!res.ok) {
-  console.error(`GET ${URL} → HTTP ${res.status}`);
+// Збій мережі, невалідний JSON чи інший формат відповіді — зрозуміле повідомлення й код 1, а не необроблений виняток.
+const fail = (why) => {
+  console.error(`ai:models — ${why}`);
   process.exit(1);
+};
+let res;
+try {
+  res = await fetch(URL);
+} catch (error) {
+  fail(`немає з'єднання з OpenRouter (${error instanceof Error ? error.name : "помилка"})`);
 }
-const { data } = await res.json();
+if (!res.ok) fail(`GET ${URL} → HTTP ${res.status}`);
+let data;
+try {
+  ({ data } = await res.json());
+} catch {
+  fail("відповідь OpenRouter — не JSON");
+}
+if (!Array.isArray(data)) fail("у відповіді немає списку моделей (формат змінився?)");
 
 const isZero = (v) => v === undefined || v === null || Number(v) === 0;
 const rows = data
@@ -58,7 +71,13 @@ console.table(
 
 // Звірка з ланцюжком у коді (лише рядки ID з `:free`, знайдені в тексті файлу).
 if (existsSync(MODELS_FILE)) {
-  const chain = [...readFileSync(MODELS_FILE, "utf8").matchAll(/"([a-z0-9._-]+\/[a-z0-9._-]+:free)"/gi)].map((m) => m[1]);
+  let source = "";
+  try {
+    source = readFileSync(MODELS_FILE, "utf8");
+  } catch {
+    fail(`не вдалося прочитати ${MODELS_FILE}`);
+  }
+  const chain = [...source.matchAll(/"([a-z0-9._-]+\/[a-z0-9._-]+:free)"/gi)].map((m) => m[1]);
   const known = new Set(rows.map((r) => r.id));
   const gone = [...new Set(chain)].filter((id) => !known.has(id));
   if (gone.length) {

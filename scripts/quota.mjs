@@ -27,7 +27,13 @@ if (!res.ok) {
   process.exit(1);
 }
 
-const body = await res.json();
+let body;
+try {
+  body = await res.json();
+} catch {
+  console.error("ai:quota — відповідь OpenRouter — не JSON (обрив чи збій постачальника). Спробуйте пізніше.");
+  process.exit(1);
+}
 const q = body?.data?.free_model_daily_requests;
 if (!q || typeof q.remaining !== "number") {
   console.error("ai:quota — у відповіді немає free_model_daily_requests (формат змінився?).");

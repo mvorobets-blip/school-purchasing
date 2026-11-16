@@ -33,11 +33,12 @@ export async function proposeLine(text: string, model: LanguageModel | null, opt
   return "state" in answer ? answer : interpret(answer.suggestion, answer.modelId);
 }
 
-// Перевірки до виклику моделі: немає ключа — «недоступний сьогодні» (технічний запасний шлях, не AC); вказівки в описі —
-// одразу відмова (AC-AI-06), тож «ігноруй інструкції» не дає рядка з жодною моделлю; порожній опис — збій без виклику.
+// Перевірки до виклику моделі: вказівки в описі — одразу відмова (AC-AI-06) за будь-якого стану, зокрема без ключа, тож
+// «ігноруй інструкції» не дає рядка з жодною моделлю; немає ключа — «недоступний сьогодні» (технічний запасний шлях,
+// не AC); порожній опис — збій без виклику.
 function precheck(text: string, model: LanguageModel | null): SuggestResult | null {
-  if (!model) return unavailable();
   if (looksLikeInjection(text)) return { state: "injection", message: AI_TEXT.injection };
+  if (!model) return unavailable();
   return text.trim() ? null : failed();
 }
 

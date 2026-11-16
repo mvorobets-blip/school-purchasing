@@ -14,6 +14,26 @@ import { requestLineSuggestion, type SuggestActionState } from "./suggest-action
 
 const DESCRIPTION_LIMIT = 1000;
 const idle: SuggestActionState = { status: "idle" };
+const callFailed: SuggestActionState = { status: "done", result: { state: "failed", message: AI_TEXT.failed } };
+
+// Один запит пропозиції з форми помічника. Якщо сам виклик дії впав (мережа, збій завантаження профілю), показуємо
+// «Could not get a suggestion. Fill in the lines manually» (як AC-AI-04), а не Error Boundary: форма лишається для
+// ручного введення. Рядок — у форму закупівлі через onLine; нічого не подаємо.
+export async function suggestLine(
+  prev: SuggestActionState,
+  formData: FormData,
+  onLine: (line: FormLine) => void,
+  request: typeof requestLineSuggestion = requestLineSuggestion,
+): Promise<SuggestActionState> {
+  let next: SuggestActionState;
+  try {
+    next = await request(prev, formData);
+  } catch {
+    return callFailed;
+  }
+  if (next.status === "done" && next.result.state === "line") onLine(next.result.line);
+  return next;
+}
 
 // Стан помічника під кнопкою (AC-AI-02…06): поки чекаємо — «Looking for lines…» (role=status, AC-AI-03); відмова,
 // вказівки в описі, межі, збої — повідомлення дослівно; рядок — без повідомлення (він уже у формі). Нейтральний Alert:
@@ -71,11 +91,10 @@ export function DescriptionField({ value, onChange }: { value: string; onChange:
 // Опис — керований стан, тож він лишається в полі під час і після відповіді (AC-AI-03).
 export function LineAssistant({ onLine }: { onLine: (line: FormLine) => void }) {
   const [description, setDescription] = useState("");
-  const [state, action, pending] = useActionState(async (prev: SuggestActionState, formData: FormData) => {
-    const next = await requestLineSuggestion(prev, formData);
-    if (next.status === "done" && next.result.state === "line") onLine(next.result.line);
-    return next;
-  }, idle);
+  const [state, action, pending] = useActionState(
+    (prev: SuggestActionState, formData: FormData) => suggestLine(prev, formData, onLine),
+    idle,
+  );
 
   return (
     <form action={action} className="max-w-2xl" data-testid="line-assistant">

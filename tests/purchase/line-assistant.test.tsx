@@ -1,7 +1,7 @@
 // Помічник рядків у формі нової закупівлі: стан очікування, кнопка й повідомлення. Лише розмітка: дію не викликаємо.
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
-import { AssistantStatus, DescriptionField, SuggestButton } from "@/app/(portal)/requests/new/line-assistant";
+import { describe, expect, it, vi } from "vitest";
+import { AssistantStatus, DescriptionField, SuggestButton, suggestLine } from "@/app/(portal)/requests/new/line-assistant";
 import { AI_TEXT } from "@/lib/ai/messages";
 import type { SuggestResult } from "@/lib/ai/suggest";
 import { MESSAGES } from "@/lib/org/messages";
@@ -89,5 +89,23 @@ describe("AssistantStatus і SuggestButton", () => {
   it("відмова дії — видно «Not enough permissions»", () => {
     const html = renderToStaticMarkup(<AssistantStatus pending={false} result={null} forbidden={MESSAGES.FORBIDDEN} />);
     expect(text(html)).toContain(MESSAGES.FORBIDDEN);
+  });
+});
+
+describe("suggestLine — виклик дії з форми помічника", () => {
+  const idle = { status: "idle" } as const;
+  const line = { name: "Папір А4", purpose: "Для друку", quantity: "3", price: "20.00" };
+
+  it("сам виклик дії впав (мережа, профіль) — «Could not get a suggestion. Fill in the lines manually», рядка немає", async () => {
+    const onLine = vi.fn();
+    const state = await suggestLine(idle, new FormData(), onLine, () => Promise.reject(new Error("network")));
+    expect(state).toEqual({ status: "done", result: { state: "failed", message: AI_TEXT.failed } });
+    expect(onLine).not.toHaveBeenCalled();
+  });
+
+  it("пропозиція рядка — рядок передано у форму рівно один раз", async () => {
+    const onLine = vi.fn();
+    await suggestLine(idle, new FormData(), onLine, async () => ({ status: "done", result: { state: "line", line, modelId: "m" } }));
+    expect(onLine).toHaveBeenCalledExactlyOnceWith(line);
   });
 });
