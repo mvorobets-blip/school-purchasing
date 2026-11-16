@@ -15,11 +15,20 @@ const MODEL_WAIT = 20_000; // помічник чекає модель до 15 �
 
 test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
-test.use({ storageState: REQUESTER });
+// Вище за типові 800 px: кадр «Тоді» (знімок вікна, не всієї сторінки) має вмістити розділ «Lines» повністю —
+// інакше агент-рецензент не може підтвердити «рядків не додано» (прогін UAT 16.11 15:47, NEEDS-HUMAN).
+test.use({ storageState: REQUESTER, viewport: { width: 1280, height: 1400 } });
 
+// «My requests» рахуємо в ОКРЕМІЙ вкладці того ж входу: основна сторінка лишається на формі, тож кадр «Тоді» показує
+// запропонований рядок, а не список заявок (прогін UAT 16.11 15:47: кадр знято після переходу на /requests).
 const myRequestsCount = async (page: Page) => {
-  await page.goto("/requests");
-  return page.getByTestId("request-row").count();
+  const tab = await page.context().newPage();
+  try {
+    await tab.goto("/requests");
+    return await tab.getByTestId("request-row").count();
+  } finally {
+    await tab.close();
+  }
 };
 
 async function describeAndSuggest(page: Page, description: string) {
@@ -49,8 +58,11 @@ test(
       page,
       {
         clause: "він бачить один рядок: назва «Папір А4», мета «Для друку», кількість 3, ціна 20.00, а закупівлю ще не подано.",
-        visible: ["у формі один рядок: назва містить «Папір», мета містить «друк», кількість 3, ціна 20.00"],
-        hidden: ["у «My requests» стільки ж заявок, скільки до пропозиції (закупівлю не подано)"],
+        visible: [
+          "форма «New purchase»: у розділі «Lines» рівно один рядок — Item містить «Папір», Purpose містить «друк», Quantity 3, Price 20.00 (браузер з українською локаллю може показати «20,00»)",
+          "в полі «Purchase description» лишився опис «Треба 3 пачки паперу А4 для друку, по 20 доларів»",
+        ],
+        hidden: ["у «My requests» стільки ж заявок, скільки до пропозиції (закупівлю не подано) — рахує тест в окремій вкладці"],
       },
       async () => {
         await expect(page.getByLabel("Item")).toHaveCount(1);
@@ -83,7 +95,10 @@ test(
       page,
       {
         clause: "він бачить повідомлення «Я допомагаю лише із закупівлями», а рядків у формі не додано.",
-        visible: ["повідомлення «I can only help with purchases»", "у формі лише порожній рядок"],
+        visible: [
+          "повідомлення «I can only help with purchases» — англійський текст для «Я допомагаю лише із закупівлями» з таблиці PM ValiaBihun/2026-quitcode-dream-team#49 (інтерфейс англійською)",
+          "у розділі «Lines» рівно один рядок, і всі його поля (Item, Purpose, Quantity, Price) порожні; нижче — лише «Add line» і «Submit»",
+        ],
       },
       async () => {
         await expect(page.getByTestId("assistant-message")).toHaveText(OFF_TOPIC, { timeout: MODEL_WAIT });
