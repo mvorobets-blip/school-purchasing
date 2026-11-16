@@ -61,3 +61,4 @@
 - 2026-11-06 — уточнено припущення до AC-HIST-01 (нумерація на проді) і AC-HIST-06 (формат запису «Подано»); тексти AC не змінено — питання https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/73, https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/74
 
 - 2026-11-09 — додано припущення: номер може видаватися при створенні чернетки, прогалини між номерами допустимі; тексти AC не змінено — питання https://github.com/ValiaBihun/2026-quitcode-dream-team/issues/76
+
