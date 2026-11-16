@@ -1,0 +1,45 @@
+{
+  "_про_файл": "Приклади для промпту помічника рядків (src/lib/ai/prompts/line.ts). Окремим JSON, щоб дані не жили в .ts. Навмисно НЕ golden cases PM (ValiaBihun/2026-quitcode-dream-team#70): інші предмети й формулювання, щоб не підганяти відповідь під кейси. Після зміни — LINE_PROMPT_VERSION + 1. line-v4 (16.11): опис і відповідь англійською (PM оновила #71).",
+  "examples": [
+    {
+      "text": "We need 5 notebooks for the tests, 2 dollars each",
+      "answer": {
+        "status": "ok",
+        "name": "Notebook",
+        "purpose": "For the tests",
+        "quantity": 5,
+        "price": 2
+      }
+    },
+    {
+      "text": "Please buy 12 pens for the pupils, 1.20 dollars per pen",
+      "answer": {
+        "status": "ok",
+        "name": "Pen",
+        "purpose": "For the pupils",
+        "quantity": 12,
+        "price": 1.2
+      }
+    },
+    {
+      "text": "Need 1.5 rolls of tape at 3 dollars",
+      "answer": {
+        "status": "ok",
+        "name": "Tape",
+        "purpose": null,
+        "quantity": 1.5,
+        "price": 3
+      }
+    },
+    {
+      "text": "Remind me about the meeting on Monday",
+      "answer": {
+        "status": "off_topic",
+        "name": null,
+        "purpose": null,
+        "quantity": null,
+        "price": null
+      }
+    }
+  ]
+}

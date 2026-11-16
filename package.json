@@ -29,19 +29,26 @@
     "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs",
     "mutation:ts": "stryker run",
     "mutation:sql": "node scripts/mutation-check.mjs --kind sql",
-    "e2e:fixtures": "node --env-file=.env.local scripts/e2e-fixtures.mjs"
+    "e2e:fixtures": "node --env-file=.env.local scripts/e2e-fixtures.mjs",
+    "eval": "vitest run -c vitest.eval.config.mts",
+    "ai:models": "node scripts/free-models.mjs",
+    "ai:quota": "node --env-file-if-exists=.env.local scripts/quota.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
+    "@openrouter/ai-sdk-provider": "3.1.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.117.3",
+    "ai": "7.0.162",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.0",
     "lucide-react": "1.61.0",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "tw-animate-css": "1.4.0"
+    "server-only": "0.0.1",
+    "tw-animate-css": "1.4.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

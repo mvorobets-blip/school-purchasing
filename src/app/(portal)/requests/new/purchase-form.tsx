@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,42 +10,63 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { messageFor } from "@/lib/org/messages";
 import {
-  emptyLineFields,
   initialDepartment,
-  invalidNumberFields,
   isBlockedNumberKey,
   isLineError,
   LINE_TEXT_LIMIT,
+  markedLineFields,
+  needsSuggestedHint,
   submitBlocked,
+  SUGGESTED_MISSING_HINT,
   type LineField,
   type Option,
   type PurchaseLine,
+  withMarkedSuggestion,
 } from "@/lib/purchase/form";
 import { resubmitPurchase, submitPurchase, type SubmitPurchaseState } from "../actions";
+import { LineAssistant } from "./line-assistant";
 
-type Line = PurchaseLine & { key: number };
+// suggested — рядок заповнив помічник AI: його порожні поля позначено (відповідь PM на #79).
+type Line = PurchaseLine & { key: number; suggested?: boolean };
+
+// Останнє значення для обробників, що живуть довше за рендер: дія помічника викликає onLine з рендеру, у якому її
+// запустили, тож «edited()» інакше записав би стару відповідь «Submit», і її повідомлення лишилося б на екрані
+// (незалежне рев'ю PR 76).
+function useLatest<T>(value: T) {
+  const ref = useRef(value);
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  return ref;
+}
 const blankLine = (key: number): Line => ({ key, name: "", purpose: "", quantity: "", price: "" });
+
+const initialState = (departments: Option[], types: Option[]): SubmitPurchaseState => ({
+  status: "idle",
+  message: "",
+  departmentId: initialDepartment(departments),
+  purchaseType: types[0]?.value ?? "",
+});
+
 
 // Форма закупівлі: відділи й типи — лише за правами (AC-FRM-01, AC-FRM-03); одне поле на рядок, великі зони натискання
 // (PM «Вигляд і тон»). Усі поля керовані: React після кожного подання скидає некеровані поля форми, а введене має
 // лишатися після помилки (AC-FRM-06; DESIGN.md §6). Помилка — над формою; після «Fill in all line fields» порожні поля
 // підсвічено (AC-FRM-15); після «Not enough permissions» «Submit» вимкнено, доки не змінено відділ чи тип.
 // resubmit — повторне подання поверненої заявки (AC-DEC-07): рядки заповнено з заявки, відділ і тип заблоковано (#66).
+// assistant — помічник AI над формою нової закупівлі (зріз 4, AC-AI-01…06); у повторному поданні його немає.
 export function PurchaseForm({
   departments,
   types,
   resubmit,
+  assistant = false,
 }: {
   departments: Option[];
   types: Option[];
   resubmit?: { requestId: string; lines: readonly PurchaseLine[] };
+  assistant?: boolean;
 }) {
-  const initial: SubmitPurchaseState = {
-    status: "idle",
-    message: "",
-    departmentId: initialDepartment(departments),
-    purchaseType: types[0]?.value ?? "",
-  };
+  const initial = initialState(departments, types);
   const action = resubmit ? resubmitPurchase.bind(null, resubmit.requestId) : submitPurchase;
   const locked = Boolean(resubmit);
   const [state, formAction, pending] = useActionState(action, initial);
@@ -65,7 +86,8 @@ export function PurchaseForm({
   const markEmpty = isError && isLineError(state.message);
   const blocked = forbidden && submitBlocked(state, { departmentId, purchaseType });
 
-  const edited = () => setEditedAfter(state);
+  const latestState = useLatest(state);
+  const edited = () => setEditedAfter(latestState.current);
   const updateLine = (key: number, field: LineField, value: string) => {
     edited();
     setLines((ls) => ls.map((l) => (l.key === key ? { ...l, [field]: value } : l)));
@@ -82,168 +104,182 @@ export function PurchaseForm({
     },
   } as const;
 
+  // Пропозиція помічника (AC-AI-01) — у рядки форми; нічого не подаємо: подає людина («Submit»).
+  const applyLine = (suggested: PurchaseLine) => {
+    edited();
+    setLines((ls) => withMarkedSuggestion(ls, suggested));
+  };
+
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        // Відділ не обрано заздалегідь, коли їх кілька, — не надсилаємо форму без нього. Без `required` у Select:
-        // його приховане поле браузер не може показати, і вбудована перевірка мовчки блокувала б подання.
-        if (!departmentId) {
-          e.preventDefault();
-          setDepartmentMissing(true);
-        }
-      }}
-      className="flex max-w-2xl flex-col gap-6"
-    >
-      {showMessage ? (
-        <Alert variant={forbidden ? "default" : "destructive"} data-testid="purchase-message">
-          {state.message}
-        </Alert>
-      ) : null}
-
-      <Card>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="purchase-department">Department</Label>
-            <Select
-              name="departmentId"
-              disabled={locked}
-              items={departments}
-              value={departmentId || null}
-              onValueChange={(v) => {
-                edited();
-                setDepartmentId(String(v ?? ""));
-                setDepartmentMissing(false);
-              }}
-            >
-              <SelectTrigger
-                id="purchase-department"
-                className="w-full"
-                data-testid="purchase-department"
-                aria-invalid={departmentMissing || undefined}
-                aria-describedby={departmentMissing ? "purchase-department-error" : undefined}
-              >
-                <SelectValue placeholder="Choose a department" />
-              </SelectTrigger>
-              <SelectContent>
-                {departments.map((d) => (
-                  <SelectItem key={d.value} value={d.value}>
-                    {d.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {departmentMissing ? (
-              <p id="purchase-department-error" className="text-sm text-destructive">
-                Choose a department
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="purchase-type">Purchase type</Label>
-            <Select
-              name="purchaseType"
-              disabled={locked}
-              items={types}
-              value={purchaseType}
-              onValueChange={(v) => {
-                edited();
-                setPurchaseType(String(v ?? ""));
-              }}
-              required
-            >
-              <SelectTrigger id="purchase-type" className="w-full" data-testid="purchase-type">
-                <SelectValue placeholder="Choose a type" />
-              </SelectTrigger>
-              <SelectContent>
-                {types.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <section aria-labelledby="lines-title" className="flex flex-col gap-3">
-        <h2 id="lines-title" className="text-lg font-medium">
-          Lines
-        </h2>
-        {lines.map((line, index) => {
-          const wrong = new Set([
-            ...(markEmpty ? emptyLineFields(line) : []),
-            ...(markEmpty ? invalidNumberFields(line) : []),
-          ]);
-          const field = (name: LineField, label: string, extra: React.ComponentProps<typeof Input> = {}) => (
-            <div className={name === "name" || name === "purpose" ? "flex flex-col gap-2 sm:col-span-2" : "flex flex-col gap-2"}>
-              <Label htmlFor={`${name}-${line.key}`}>{label}</Label>
-              <Input
-                id={`${name}-${line.key}`}
-                name={`${name}.${line.key}`}
-                value={line[name]}
-                onChange={(e) => updateLine(line.key, name, e.target.value)}
-                aria-invalid={wrong.has(name) || undefined}
-                {...extra}
-              />
-            </div>
-          );
-          return (
-            <Card key={line.key}>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                {field("name", "Item", { maxLength: LINE_TEXT_LIMIT })}
-                {field("purpose", "Purpose", { maxLength: LINE_TEXT_LIMIT })}
-                {field("quantity", "Quantity", { ...numberField, step: "any", inputMode: "numeric" })}
-                {field("price", "Price", { ...numberField, step: "0.01" })}
-                {lines.length > 1 ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="justify-self-start text-muted-foreground"
-                    onClick={() => {
-                      edited();
-                      setLines((ls) => ls.filter((l) => l.key !== line.key));
-                    }}
-                  >
-                    <Trash2 aria-hidden="true" />
-                    Remove line {index + 1}
-                  </Button>
-                ) : null}
-              </CardContent>
-            </Card>
-          );
-        })}
-        <Button
-          type="button"
-          variant="outline"
-          className="self-start"
-          onClick={() => {
-            edited();
-            setLines((ls) => [...ls, blankLine(Math.max(0, ...ls.map((l) => l.key)) + 1)]);
-          }}
-        >
-          <Plus aria-hidden="true" />
-          Add line
-        </Button>
-      </section>
-
-      {/* «Submit» праворуч, як інші дії; row-reverse — щоб Tab ішов спершу на кнопку, а підказка стояла ліворуч від неї. */}
-      <div className="flex flex-col gap-2 sm:flex-row-reverse sm:items-center sm:gap-3">
-        <Button
-          type="submit"
-          disabled={pending || blocked}
-          aria-describedby={blocked ? "purchase-blocked-hint" : undefined}
-          className="w-full sm:w-auto"
-        >
-          {pending ? "Submitting…" : "Submit"}
-        </Button>
-        {blocked ? (
-          <p id="purchase-blocked-hint" className="text-sm text-muted-foreground">
-            Choose another department or type
-          </p>
+    <div className="flex flex-col gap-6">
+      {assistant ? <LineAssistant onLine={applyLine} /> : null}
+      <form
+        action={formAction}
+        onSubmit={(e) => {
+          // Відділ не обрано заздалегідь, коли їх кілька, — не надсилаємо форму без нього. Без `required` у Select:
+          // його приховане поле браузер не може показати, і вбудована перевірка мовчки блокувала б подання.
+          if (!departmentId) {
+            e.preventDefault();
+            setDepartmentMissing(true);
+          }
+        }}
+        className="flex max-w-2xl flex-col gap-6"
+      >
+        {showMessage ? (
+          <Alert variant={forbidden ? "default" : "destructive"} data-testid="purchase-message">
+            {state.message}
+          </Alert>
         ) : null}
-      </div>
-    </form>
+
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="purchase-department">Department</Label>
+              <Select
+                name="departmentId"
+                disabled={locked}
+                items={departments}
+                value={departmentId || null}
+                onValueChange={(v) => {
+                  edited();
+                  setDepartmentId(String(v ?? ""));
+                  setDepartmentMissing(false);
+                }}
+              >
+                <SelectTrigger
+                  id="purchase-department"
+                  className="w-full"
+                  data-testid="purchase-department"
+                  aria-invalid={departmentMissing || undefined}
+                  aria-describedby={departmentMissing ? "purchase-department-error" : undefined}
+                >
+                  <SelectValue placeholder="Choose a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {departmentMissing ? (
+                <p id="purchase-department-error" className="text-sm text-destructive">
+                  Choose a department
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="purchase-type">Purchase type</Label>
+              <Select
+                name="purchaseType"
+                disabled={locked}
+                items={types}
+                value={purchaseType}
+                onValueChange={(v) => {
+                  edited();
+                  setPurchaseType(String(v ?? ""));
+                }}
+                required
+              >
+                <SelectTrigger id="purchase-type" className="w-full" data-testid="purchase-type">
+                  <SelectValue placeholder="Choose a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {types.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <section aria-labelledby="lines-title" className="flex flex-col gap-3">
+          <h2 id="lines-title" className="text-lg font-medium">
+            Lines
+          </h2>
+          {lines.map((line, index) => {
+            const wrong = new Set(markedLineFields(line, markEmpty));
+            const hint = needsSuggestedHint(line);
+            const hintId = `suggested-hint-${line.key}`;
+            const field = (name: LineField, label: string, extra: React.ComponentProps<typeof Input> = {}) => (
+              <div className={name === "name" || name === "purpose" ? "flex flex-col gap-2 sm:col-span-2" : "flex flex-col gap-2"}>
+                <Label htmlFor={`${name}-${line.key}`}>{label}</Label>
+                <Input
+                  id={`${name}-${line.key}`}
+                  name={`${name}.${line.key}`}
+                  value={line[name]}
+                  onChange={(e) => updateLine(line.key, name, e.target.value)}
+                  aria-invalid={wrong.has(name) || undefined}
+                  aria-describedby={wrong.has(name) && hint ? hintId : undefined}
+                  {...extra}
+                />
+              </div>
+            );
+            return (
+              <Card key={line.key}>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  {field("name", "Item", { maxLength: LINE_TEXT_LIMIT })}
+                  {field("purpose", "Purpose", { maxLength: LINE_TEXT_LIMIT })}
+                  {field("quantity", "Quantity", { ...numberField, step: "any", inputMode: "numeric" })}
+                  {field("price", "Price", { ...numberField, step: "0.01" })}
+                  {hint ? (
+                    <p id={hintId} className="text-sm text-muted-foreground sm:col-span-2">
+                      {SUGGESTED_MISSING_HINT}
+                    </p>
+                  ) : null}
+                  {lines.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="justify-self-start text-muted-foreground"
+                      onClick={() => {
+                        edited();
+                        setLines((ls) => ls.filter((l) => l.key !== line.key));
+                      }}
+                    >
+                      <Trash2 aria-hidden="true" />
+                      Remove line {index + 1}
+                    </Button>
+                  ) : null}
+                </CardContent>
+              </Card>
+            );
+          })}
+          <Button
+            type="button"
+            variant="outline"
+            className="self-start"
+            onClick={() => {
+              edited();
+              setLines((ls) => [...ls, blankLine(Math.max(0, ...ls.map((l) => l.key)) + 1)]);
+            }}
+          >
+            <Plus aria-hidden="true" />
+            Add line
+          </Button>
+        </section>
+
+        {/* «Submit» праворуч, як інші дії; row-reverse — щоб Tab ішов спершу на кнопку, а підказка стояла ліворуч від неї. */}
+        <div className="flex flex-col gap-2 sm:flex-row-reverse sm:items-center sm:gap-3">
+          <Button
+            type="submit"
+            disabled={pending || blocked}
+            aria-describedby={blocked ? "purchase-blocked-hint" : undefined}
+            className="w-full sm:w-auto"
+          >
+            {pending ? "Submitting…" : "Submit"}
+          </Button>
+          {blocked ? (
+            <p id="purchase-blocked-hint" className="text-sm text-muted-foreground">
+              Choose another department or type
+            </p>
+          ) : null}
+        </div>
+      </form>
+    </div>
   );
 }

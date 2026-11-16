@@ -128,3 +128,45 @@ export function invalidNumberFields(line: PurchaseLine): LineField[] {
 export function isBlockedNumberKey(key: string): boolean {
   return key === "-" || key === "+" || key === "e" || key === "E";
 }
+
+// Пропозиція помічника AI у рядки форми (зріз 4, AC-AI-01; відповідь PM на ValiaBihun/2026-quitcode-dream-team#82):
+// заповнює перший порожній рядок форми, якщо він є, інакше додається новим рядком у кінці — введене не губиться.
+export function withSuggestedLine<T extends PurchaseLine & { key: number }>(lines: readonly T[], suggested: PurchaseLine): (PurchaseLine & { key: number })[] {
+  const key = suggestedLineKey(lines);
+  if (lines.some((l) => l.key === key)) return lines.map((l) => (l.key === key ? { ...suggested, key } : l));
+  return [...lines, { ...suggested, key }];
+}
+
+// Які поля рядка позначити (aria-invalid): після помилки «Submit» — порожні й неможливі; у рядку, який заповнив
+// помічник AI (suggested), — порожні (відповідь PM на #79). Позначка зникає, щойно людина заповнила поле.
+export function markedLineFields(line: PurchaseLine & { suggested?: boolean }, afterError: boolean): LineField[] {
+  const empty = afterError || line.suggested ? emptyLineFields(line) : [];
+  return afterError ? [...empty, ...invalidNumberFields(line)] : empty;
+}
+
+// Підказка під рядком пропозиції з порожніми полями (відповідь PM на #79): червона рамка без пояснення нічого не каже
+// читачу екрана (DESIGN.md §7 — помилка поля пов'язана з полем через aria-describedby). Власний текст у тоні PM: у
+// таблиці #49 його немає (незалежне рев'ю PR 76).
+export const SUGGESTED_MISSING_HINT = "The description did not include these values. Fill them in before submitting.";
+
+// Чи показувати підказку під рядком: рядок від помічника, і в ньому ще є порожні поля.
+export const needsSuggestedHint = (line: PurchaseLine & { suggested?: boolean }) =>
+  Boolean(line.suggested) && emptyLineFields(line).length > 0;
+
+// Пропозиція помічника в рядки форми з позначкою suggested на рядку, куди вона лягла. Ключ і рядки — з того самого
+// актуального стану (функціональне оновлення), тож позначка не губиться, якщо людина змінила форму під час очікування
+// чи попросила ще одну пропозицію.
+export function withMarkedSuggestion<T extends PurchaseLine & { key: number; suggested?: boolean }>(
+  lines: readonly T[],
+  suggested: PurchaseLine,
+): (PurchaseLine & { key: number; suggested?: boolean })[] {
+  const key = suggestedLineKey(lines);
+  return withSuggestedLine(lines, suggested).map((l) => (l.key === key ? { ...l, suggested: true } : l));
+}
+
+// Куди ляже пропозиція: ключ першого порожнього рядка, інакше — новий ключ (max + 1). Форма позначає в цьому рядку поля,
+// яких в описі не було (відповідь PM на ValiaBihun/2026-quitcode-dream-team#79: «порожнє поле позначено»).
+export function suggestedLineKey(lines: readonly (PurchaseLine & { key: number })[]): number {
+  const blank = lines.find((l) => !l.name && !l.purpose && !l.quantity && !l.price);
+  return blank ? blank.key : Math.max(0, ...lines.map((l) => l.key)) + 1;
+}

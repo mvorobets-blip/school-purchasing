@@ -38,7 +38,8 @@ export default async function NewPurchasePage() {
       {departments.length === 0 ? (
         <Alert data-testid="no-departments">{messageFor("NO_DEPARTMENTS")}</Alert>
       ) : (
-        <PurchaseForm departments={departments} types={types} />
+        // Помічник AI — лише для автора з роллю requester чи approver (#71, «Користувачі й ролі»); admin — без нього.
+        <PurchaseForm departments={departments} types={types} assistant={user.role !== "admin"} />
       )}
     </>
   );
