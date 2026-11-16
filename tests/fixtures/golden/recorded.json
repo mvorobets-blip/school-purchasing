@@ -12,39 +12,39 @@
     "text": "{\"status\":\"ok\",\"name\":\"Степлерні скоби\",\"purpose\":null,\"quantity\":2.5,\"price\":4}"
   },
   "GC-06": {
-    "modelId": "placeholder (hand-written, not a model answer)",
-    "recordedAt": "2026-11-15",
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-16T10:21:17.031Z",
     "promptVersion": "line-v1",
-    "text": "{\"status\":\"ok\",\"name\":\"Папір\",\"purpose\":null,\"quantity\":0,\"price\":20}"
+    "text": "{\"status\": \"ok\", \"name\": \"Папір\", \"purpose\": null, \"quantity\": 0, \"price\": 20}"
   },
   "GC-07": {
-    "modelId": "placeholder (hand-written, not a model answer)",
-    "recordedAt": "2026-11-15",
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-16T10:21:23.191Z",
     "promptVersion": "line-v1",
-    "text": "{\"status\":\"ok\",\"name\":\"Папка\",\"purpose\":null,\"quantity\":4,\"price\":-5}"
+    "text": "{\"status\": \"ok\", \"name\": \"Папка\", \"purpose\": null, \"quantity\": 4, \"price\": -5}"
   },
   "GC-08": {
-    "modelId": "placeholder (hand-written, not a model answer)",
-    "recordedAt": "2026-11-15",
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-16T10:21:27.713Z",
     "promptVersion": "line-v1",
-    "text": "{\"status\":\"off_topic\",\"name\":null,\"purpose\":null,\"quantity\":null,\"price\":null}"
+    "text": "{\"status\": \"off_topic\", \"name\": null, \"purpose\": null, \"quantity\": null, \"price\": null}"
   },
   "GC-09": {
-    "modelId": "placeholder (hand-written, not a model answer)",
-    "recordedAt": "2026-11-15",
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-16T10:21:35.982Z",
     "promptVersion": "line-v1",
-    "text": "{\"status\":\"off_topic\",\"name\":null,\"purpose\":null,\"quantity\":null,\"price\":null}"
+    "text": "{\"status\": \"off_topic\", \"name\": null, \"purpose\": null, \"quantity\": null, \"price\": null}"
   },
   "GC-13": {
-    "modelId": "placeholder (hand-written, not a model answer)",
-    "recordedAt": "2026-11-15",
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-16T10:21:43.916Z",
     "promptVersion": "line-v1",
-    "text": "{\"status\":\"ok\",\"name\":\"Крейда\",\"purpose\":\"Для уроків\",\"quantity\":2,\"price\":5}"
+    "text": "{\"status\": \"ok\", \"name\": \"Крейда\", \"purpose\": \"Для уроків\", \"quantity\": 2, \"price\": 5}"
   },
   "GC-14": {
-    "modelId": "placeholder (hand-written, not a model answer)",
-    "recordedAt": "2026-11-15",
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-16T10:21:50.878Z",
     "promptVersion": "line-v1",
-    "text": "{\"status\":\"ok\",\"name\":\"Маркер для дошки\",\"purpose\":\"Для дошки\",\"quantity\":4,\"price\":1.5}"
+    "text": "{\"status\": \"ok\", \"name\": \"Маркер\", \"purpose\": \"Для дошки\", \"quantity\": 4, \"price\": 1.5}"
   }
 }
