@@ -1,0 +1,137 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-16T14:28:21.966Z",
+  "baseURL": "https://therapy-scheduling-ten.vercel.app",
+  "deployedSha": "b8dfdde272ff01ac99f6fcb343ef61329c752420",
+  "testsCommit": "b8dfdde272ff01ac99f6fcb343ef61329c752420",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-AI-01",
+      "proof": "AC-AI-01",
+      "title": "AC-AI-01: опис «Need 3 packs of A4 paper for printing, 20 dollars each» — один рядок у формі (A4 paper, For printing, 3, 20.00), закупівлю ще не подано",
+      "screenshot": "docs/qa/uat/2026-11-16/frames/AC-AI-01-then-1.png",
+      "video": "test-results/artifacts/purchase-assistant-AC-AI-0-f5a2b-0-00-закупівлю-ще-не-подано-chromium/video-2.webm",
+      "trace": "test-results/artifacts/purchase-assistant-AC-AI-0-f5a2b-0-00-закупівлю-ще-не-подано-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі форма «New purchase» з одним рядком у «Lines»: Item «A4 paper», Purpose «For printing», Quantity 3, Price «20,00» (допустима локаль). Поле опису містить вихідний текст, форма ще не подана (видно кнопку Submit)."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "New purchase",
+          "onPage": true
+        },
+        {
+          "quote": "Lines",
+          "onPage": true
+        },
+        {
+          "quote": "A4 paper",
+          "onPage": true
+        },
+        {
+          "quote": "For printing",
+          "onPage": true
+        },
+        {
+          "quote": "3",
+          "onPage": true
+        },
+        {
+          "quote": "20,00",
+          "onPage": false
+        },
+        {
+          "quote": "Need 3 packs of A4 paper for printing, 20 dollars each",
+          "onPage": true
+        }
+      ],
+      "verdict": "NEEDS-HUMAN",
+      "factoryGate": "NOT-EARNED",
+      "rule": "R4: цитати агента немає на сторінці (aria) — не підтверджено",
+      "playwrightMs": 10411,
+      "reviewCostUsd": 0.03736,
+      "reviewWallMs": 18975
+    },
+    {
+      "id": "AC-AI-02",
+      "proof": "AC-AI-02",
+      "title": "AC-AI-02: опис «Book me a doctor's appointment for Friday» — «I can only help with purchases», рядків у формі не додано",
+      "screenshot": "docs/qa/uat/2026-11-16/frames/AC-AI-02-then-1.png",
+      "video": "test-results/artifacts/purchase-assistant-AC-AI-0-47cb5-s»-рядків-у-формі-не-додано-chromium/video.webm",
+      "trace": "test-results/artifacts/purchase-assistant-AC-AI-0-47cb5-s»-рядків-у-формі-не-додано-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі в полі опису введено «Book me a doctor's appointment for Friday», і під кнопкою «Suggest lines» з'явилося повідомлення «I can only help with purchases». У розділі «Lines» видно один рядок із порожніми полями Item, Purpose, Quantity і Price, нижче розташовані лише «Add line» і «Submit»."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "I can only help with purchases",
+          "onPage": true
+        },
+        {
+          "quote": "Lines",
+          "onPage": true
+        },
+        {
+          "quote": "Item",
+          "onPage": true
+        },
+        {
+          "quote": "Purpose",
+          "onPage": true
+        },
+        {
+          "quote": "Quantity",
+          "onPage": true
+        },
+        {
+          "quote": "Price",
+          "onPage": true
+        },
+        {
+          "quote": "Add line",
+          "onPage": true
+        },
+        {
+          "quote": "Submit",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 5436,
+      "reviewCostUsd": 0.00217,
+      "reviewWallMs": 7331
+    }
+  ],
+  "negativeControls": [],
+  "cleanup": {
+    "at": "2026-11-16T14:28:01.956Z",
+    "deleted": [],
+    "remaining": [],
+    "leftoverRequests": 0
+  }
+}
