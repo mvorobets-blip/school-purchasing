@@ -47,7 +47,12 @@
       "scripts/uat/**",
       "scripts/zip-accounts.mjs",
       "scripts/mutation-check.mjs",
-      "scripts/coverage-summary.mjs"
+      "scripts/coverage-summary.mjs",
+      // Набір AI-функції курсу (WS10, materials/ai-feature): скрипти й живий eval перевірено на демо; eval адаптовано лише
+      // під наш домен (golden cases PM, без судді) — запускає людина вручну, у CI його немає.
+      "scripts/free-models.mjs",
+      "scripts/quota.mjs",
+      "evals/**"
     ],
     "thresholdOverrides": [
       { "files": ["tests/**"], "maxUnitSize": 500, "reason": "describe()-блоки довгі за задумом" }

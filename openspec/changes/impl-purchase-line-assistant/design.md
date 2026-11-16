@@ -19,7 +19,7 @@
 
 ## UI і компоненти
 
-- Над рядками форми — блок помічника (AC-AI-01…06): поле «Purchase description» (`Textarea`, `maxLength` 1000), кнопка
+- Над формою нової закупівлі — блок помічника (AC-AI-01…06; окрема форма, бо HTML-форми не вкладаються): поле «Purchase description» (`Textarea`, `maxLength` 1000), кнопка
   `outline` «Suggest lines» (основна дія сторінки лишається «Submit»), під ними — повідомлення стану. Тексти — до
   відповіді PM на ValiaBihun/2026-quitcode-dream-team#77 англійські з `proposal.md` зміни `add-purchase-line-assistant`;
   усі в одному модулі `src/lib/ai/messages.ts`, тож зміна тексту — один рядок.
@@ -60,8 +60,9 @@
   лише назва. Перевірка — `tests/ai-key.test.ts` з набору (ADR `docs/decisions/0004-ai-feature-openrouter.md`).
 - **Моделі:** лише `:free` OpenRouter, ланцюжок з набору (`src/lib/ai/models.ts`) — перед роботою `npm run ai:models`;
   `maxRetries: 0`; без повтору в циклі. Ліміт — 50 запитів на добу на акаунт, спільний з прийманням PM.
-- **Схема (zod, `src/lib/ai/schema.ts`):** `status: ok | off_topic | injection | invalid` + `line { name, purpose,
-  quantity, price }`, невідоме — `null`, + `issue: quantity | price | null`. Відповідь не за схемою — збій (як AC-AI-04),
+- **Схема (zod, `src/lib/ai/schema.ts`):** відповідь моделі — `status: ok | off_topic | injection` + `name, purpose,
+  quantity, price` (невідоме — `null`, числа як у описі); стан `invalid` з `issue: quantity | price` ставить код
+  (`src/lib/ai/rules.ts`), а не модель. Відповідь не за схемою — збій (як AC-AI-04),
   а не «майже рядок».
 - **Правила кодом (після відповіді моделі, на сервері):** кількість — ціле від 1, ціна — від 0 (кейси № 5–7 → тексти
   форми «Quantity: a whole number from 1» / «Price: a number from 0» до відповіді PM на #78); `ok` без жодного поля →

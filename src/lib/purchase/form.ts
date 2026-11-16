@@ -128,3 +128,11 @@ export function invalidNumberFields(line: PurchaseLine): LineField[] {
 export function isBlockedNumberKey(key: string): boolean {
   return key === "-" || key === "+" || key === "e" || key === "E";
 }
+
+// Пропозиція помічника AI у рядки форми (зріз 4, AC-AI-01; відповідь PM на ValiaBihun/2026-quitcode-dream-team#82):
+// заповнює перший порожній рядок форми, якщо він є, інакше додається новим рядком у кінці — введене не губиться.
+export function withSuggestedLine<T extends PurchaseLine & { key: number }>(lines: readonly T[], suggested: PurchaseLine): (PurchaseLine & { key: number })[] {
+  const blank = lines.find((l) => !l.name && !l.purpose && !l.quantity && !l.price);
+  if (blank) return lines.map((l) => (l === blank ? { ...suggested, key: l.key } : l));
+  return [...lines, { ...suggested, key: Math.max(0, ...lines.map((l) => l.key)) + 1 }];
+}

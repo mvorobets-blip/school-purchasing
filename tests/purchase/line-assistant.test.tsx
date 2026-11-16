@@ -6,7 +6,9 @@ import { AI_TEXT } from "@/lib/ai/messages";
 import type { SuggestResult } from "@/lib/ai/suggest";
 import { MESSAGES } from "@/lib/org/messages";
 
-const text = (html: string) => html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+// Текст без тегів; сутності HTML, які ставить React (апостроф у «don't» — &#x27;), розкодовано.
+const text = (html: string) =>
+  html.replace(/<[^>]+>/g, "").replace(/&#x27;/g, "'").replace(/&quot;/g, "\"").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 // Вміст елемента з role="status" (без вкладених тегів).
 const statusText = (html: string) => {
   const m = html.match(/<(\w+)[^>]*role="status"[^>]*>([\s\S]*?)<\/\1>/);

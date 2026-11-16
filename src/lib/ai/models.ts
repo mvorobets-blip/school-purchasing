@@ -12,9 +12,7 @@ export const PRODUCT_MODELS = [
   "nvidia/nemotron-3.5-super-vl:free",
 ] as const;
 
-// Суддя для живого eval — інша родина, ніж основна модель продукту (не оцінює відповіді своєї родини).
-// Якщо відповідь дала резервна super-vl, суддя тієї ж родини: колонка modelId у звіті це показує.
-export const JUDGE_MODEL = "nvidia/nemotron-3.5-super-vl:free";
+// Судді-моделі немає: назву й мету golden cases PM перевіряє код правилом «містить» (src/lib/ai/scorer.ts, ADR 0004).
 
 // Фабрики приймають ключ параметром і НЕ читають process.env: так їх можна імпортувати в eval-скрипті.
 // У коді застосунку модель бере лише src/lib/ai/openrouter.ts (server-only).
@@ -32,7 +30,3 @@ export function makeProductModel(apiKey: string | undefined) {
   });
 }
 
-export function makeJudgeModel(apiKey: string | undefined) {
-  const openrouter = createOpenRouter({ apiKey, appName: "School purchasing — line assistant eval" });
-  return openrouter.chat(JUDGE_MODEL);
-}
