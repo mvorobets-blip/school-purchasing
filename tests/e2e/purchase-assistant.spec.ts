@@ -17,7 +17,9 @@ test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
 // Вище за типові 800 px: кадр «Тоді» (знімок вікна, не всієї сторінки) має вмістити розділ «Lines» повністю —
 // інакше агент-рецензент не може підтвердити «рядків не додано» (прогін UAT 16.11 15:47, NEEDS-HUMAN).
-test.use({ storageState: REQUESTER, viewport: { width: 1280, height: 1400 } });
+// locale en-US: поле ціни type="number" показує десятковий роздільник локалі; з uk-UA кадр показував «20,00», і агент
+// цитував значення, якого немає в дереві доступності («20.00») — NEEDS-HUMAN за R4 (UAT 16.11, зауваження PM).
+test.use({ storageState: REQUESTER, viewport: { width: 1280, height: 1400 }, locale: "en-US" });
 
 // «My requests» рахуємо в ОКРЕМІЙ вкладці того ж входу: основна сторінка лишається на формі, тож кадр «Тоді» показує
 // запропонований рядок, а не список заявок (прогін UAT 16.11 15:47: кадр знято після переходу на /requests).
@@ -103,8 +105,11 @@ test(
       async () => {
         await expect(page.getByTestId("assistant-message")).toHaveText(OFF_TOPIC, { timeout: MODEL_WAIT });
         await expect(page.getByLabel("Item")).toHaveCount(1);
+        // Усі чотири поля єдиного рядка порожні — «рядків у формі не додано» (зауваження PM: Purpose і Price теж).
         await expect(page.getByLabel("Item")).toHaveValue("");
+        await expect(page.getByLabel("Purpose", { exact: true })).toHaveValue("");
         await expect(page.getByLabel("Quantity")).toHaveValue("");
+        await expect(page.getByLabel("Price")).toHaveValue("");
       },
     );
   },

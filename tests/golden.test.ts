@@ -11,7 +11,7 @@ import recordedJson from "./fixtures/golden/recorded.json";
 // без мережі й без ключа, тож працює в CI. Перевіряє КОД навколо моделі (правила ін'єкції, межа <document>, схема,
 // межі кількості й ціни, тексти, оцінювач), а НЕ якість моделі — її міряє живий прогін `npm run eval`.
 // expected у cases.json — лише з колонки PM «Очікуваний результат». recorded.json — справжні відповіді моделі з живого
-// прогону `RECORD=1 npm run eval` (2026-11-16, промпт line-v2); для GC-11, 12 записів немає — ін'єкцію ловить код.
+// прогону `RECORD=1 npm run eval` (2026-11-16, промпт — LINE_PROMPT_VERSION, зараз line-v4; тест нижче не дає лишити записи іншої версії); для GC-11, 12 записів немає — ін'єкцію ловить код.
 
 type Recording = { modelId: string; recordedAt: string; promptVersion?: string; text: string };
 const cases = casesJson as (GoldenCase & { note?: string })[];

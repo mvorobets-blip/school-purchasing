@@ -17,6 +17,9 @@ export const PRODUCT_MODELS = [
 
 // Фабрики приймають ключ параметром і НЕ читають process.env: так їх можна імпортувати в eval-скрипті.
 // У коді застосунку модель бере лише src/lib/ai/openrouter.ts (server-only).
+// Режим роздумів моделі — окремою константою, щоб живий eval писав його у звіт (зауваження PM 16.11).
+export const PRODUCT_REASONING = { effort: "none", exclude: true } as const;
+
 export function makeProductModel(apiKey: string | undefined) {
   const openrouter = createOpenRouter({ apiKey, appName: "School purchasing - line assistant" });
   return openrouter.chat(PRODUCT_MODELS[0], {
@@ -29,7 +32,7 @@ export function makeProductModel(apiKey: string | undefined) {
     // Портативний параметр `reasoning` з AI SDK 7 цей провайдер не передає — лише його власний.
     // effort "none" (16.11): з "low" Nemotron двічі не встигала за 15 с на GC-01 (AC-AI-04 обриває запит) —
     // evals/reports/2026-11-16T13-10-32-724Z.md, 2026-11-16T13-16-15-326Z.md. Одна пропозиція рядка роздумів не потребує.
-    reasoning: { effort: "none", exclude: true },
+    reasoning: { ...PRODUCT_REASONING },
   });
 }
 
