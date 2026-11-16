@@ -8,8 +8,7 @@ import { formatRequestNumber } from "@/lib/purchase/number";
 import { loadRequestView } from "@/lib/purchase/request-view";
 import { createClient } from "@/lib/supabase/server";
 import { LineDecision } from "./line-decision";
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from "@/lib/uuid";
 
 // Звідки прийшли: зі списку «Awaiting decision» (?from=approvals) — туди й «← Назад», інакше — «My requests».
 const BACK = {
@@ -33,7 +32,7 @@ export default async function RequestPage({ params, searchParams }: PageProps<"/
       backLabel={`Back to ${back.label.toLowerCase()}`}
     />
   );
-  if (!UUID.test(id)) return forbidden;
+  if (!isUuid(id)) return forbidden;
 
   const view = await loadRequestView(await createClient(), id);
   if (view.status === "forbidden") return forbidden;

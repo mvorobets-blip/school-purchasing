@@ -16,8 +16,7 @@ import { ROLE_LABEL, type Role } from "@/lib/org/roles";
 import { createClient } from "@/lib/supabase/server";
 import { addRequester, removeRequester, setApprover, setAutoApprove } from "./actions";
 import { DepartmentActions, MemberMenu, MemberSwitch, type Person } from "./member-controls";
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { isUuid } from "@/lib/uuid";
 
 const OK_TEXT: Record<string, string> = {
   REQUESTER_ADDED: "The employee was added to the department as a requester.",
@@ -44,7 +43,7 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
 
   const { id } = await params;
   // id — uuid: інакше запит до бази впаде, і сторінка показала б помилку завантаження замість 404.
-  if (!UUID.test(id)) notFound();
+  if (!isUuid(id)) notFound();
   const { ok, error } = await searchParams;
   const supabase = await createClient();
 

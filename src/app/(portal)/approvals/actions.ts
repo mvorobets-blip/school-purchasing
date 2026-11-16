@@ -6,10 +6,9 @@ import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
 import { isTextLengthError, REASON_LIMIT, REASON_TOO_LONG, textLength } from "@/lib/purchase/form";
 import { createClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/uuid";
 
 export type DecisionState = { status: "idle" | "error"; message: string };
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type RpcError = { code?: string; message?: string } | null;
 
@@ -42,7 +41,7 @@ function errorMessage(error: RpcError): string {
 
 // Перевірки, які дія робить сама, — до будь-якого rpc (AGENTS.md); null — можна йти далі.
 function entryRefusal(user: Awaited<ReturnType<typeof getCurrentUser>>, requestId: string, decision: string): string | null {
-  if (!user || !UUID.test(requestId)) return messageFor("FORBIDDEN");
+  if (!user || !isUuid(requestId)) return messageFor("FORBIDDEN");
   // Заявник не вирішує жодної заявки (AC-APR-04). approver і admin (адміністратор теж буває схвалювачем) — до бази:
   // відділ саме цієї заявки, авторство й статус перевіряє private.decide_purchase.
   if (user.role !== "approver" && user.role !== "admin") return messageFor("FORBIDDEN");
