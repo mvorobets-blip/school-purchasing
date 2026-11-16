@@ -30,8 +30,8 @@
 
 ## 3. Живий eval і записи — `task/ai-eval`
 
-- [ ] 3.1 Людина: `npm run ai:quota`, потім `RECORD=1 npm run eval` (не в добу приймання PM).
-- [ ] 3.2 Звіт `evals/reports/<дата й час>.md` і `recorded.json` без заглушок; кожен FAIL — рядок пояснення.
+- [x] 3.1 Людина: `npm run ai:quota`, потім `RECORD=1 npm run eval` (не в добу приймання PM).
+- [x] 3.2 Звіт `evals/reports/<дата й час>.md` і `recorded.json` без заглушок; кожен FAIL — рядок пояснення.
   Done when: AC-AI-01, AC-AI-02, AC-AI-06 — golden cases реплеять справжні записи `RECORD=1` (заглушок немає); звіт на SHA.
 
 ## 4. Прод і UAT — `task/ai-uat`
