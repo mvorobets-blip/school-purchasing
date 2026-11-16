@@ -30,7 +30,7 @@ describe("AssistantStatus і SuggestButton", () => {
   });
 
   it("AC-AI-03: поки відповіді немає — введений опис лишається в полі «Purchase description», поле не вимкнене", () => {
-    const description = "Треба 3 пачки паперу А4 для друку, по 20 доларів";
+    const description = "Need 3 packs of A4 paper for printing, 20 dollars each";
     const html = renderToStaticMarkup(
       <>
         <DescriptionField value={description} onChange={() => {}} />
