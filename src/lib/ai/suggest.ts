@@ -27,14 +27,26 @@ const failed = (): SuggestResult => ({ state: "failed", message: AI_TEXT.failed 
 const unavailable = (): SuggestResult => ({ state: "unavailable", message: AI_TEXT.unavailable });
 
 export async function proposeLine(text: string, model: LanguageModel | null, opts: SuggestOptions = {}): Promise<SuggestResult> {
-  // Помічник не налаштований (немає ключа) — те саме, що «недоступний сьогодні» (технічний запасний шлях, не AC).
-  if (!model) return unavailable();
-  // Вказівки в описі — до виклику моделі (AC-AI-06): так «ігноруй інструкції» не дає рядка з жодною моделлю.
-  if (looksLikeInjection(text)) return { state: "injection", message: AI_TEXT.injection };
-  if (!text.trim()) return failed();
+  const early = precheck(text, model);
+  if (early || !model) return early ?? unavailable();
+  const answer = await askModel(text, model, opts);
+  return "state" in answer ? answer : interpret(answer.suggestion, answer.modelId);
+}
 
-  let suggestion: LineSuggestion;
-  let modelId: string;
+// Перевірки до виклику моделі: немає ключа — «недоступний сьогодні» (технічний запасний шлях, не AC); вказівки в описі —
+// одразу відмова (AC-AI-06), тож «ігноруй інструкції» не дає рядка з жодною моделлю; порожній опис — збій без виклику.
+function precheck(text: string, model: LanguageModel | null): SuggestResult | null {
+  if (!model) return unavailable();
+  if (looksLikeInjection(text)) return { state: "injection", message: AI_TEXT.injection };
+  return text.trim() ? null : failed();
+}
+
+// Один виклик моделі: схема zod, без повторів (безкоштовний ліміт, AC-AI-05), таймаут 15 с (AC-AI-04).
+async function askModel(
+  text: string,
+  model: LanguageModel,
+  opts: SuggestOptions,
+): Promise<{ suggestion: LineSuggestion; modelId: string } | SuggestResult> {
   try {
     const result = await generateText({
       model,
@@ -42,33 +54,29 @@ export async function proposeLine(text: string, model: LanguageModel | null, opt
       messages: [{ role: "user", content: [{ type: "text", text: wrapDocument(text) }] }],
       output: Output.object({ name: "line", schema: LineSuggestionSchema }),
       temperature: 0,
-      // Безкоштовний тариф: повтор витрачає той самий денний ліміт — без повторів (AC-AI-05).
       maxRetries: opts.maxRetries ?? 0,
       timeout: opts.timeoutMs ?? SUGGEST_TIMEOUT_MS,
     });
-    suggestion = result.output;
-    modelId = result.response.modelId;
+    return { suggestion: result.output, modelId: result.response.modelId };
   } catch (error) {
     // Модель відповіла JSON у Markdown-огорожі (```json … ```) — розбираємо сам JSON і перевіряємо тією самою схемою;
     // відповідь не за схемою лишається збоєм (AC-AI-04).
     const noObject = NoObjectGeneratedError.isInstance(error) ? error : null;
     const recovered = noObject ? parseFenced(noObject.text) : null;
-    if (!recovered) return classifyFailure(error);
-    suggestion = recovered;
-    modelId = noObject?.response?.modelId ?? "unknown";
+    return recovered ? { suggestion: recovered, modelId: noObject?.response?.modelId ?? "unknown" } : classifyFailure(error);
   }
+}
 
+// Відповідь моделі → стан для людини; межі кількості й ціни перевіряє код (checkLine).
+function interpret(suggestion: LineSuggestion, modelId: string): SuggestResult {
   if (suggestion.status === "off_topic") return { state: "off_topic", message: AI_TEXT.offTopic, modelId };
   if (suggestion.status === "injection") return { state: "injection", message: AI_TEXT.injection, modelId };
   const { name, purpose, quantity, price } = suggestion;
   if (name === null && purpose === null && quantity === null && price === null) return failed();
-
   const checked = checkLine(suggestion);
-  if (checked.kind === "invalid") {
-    const message = checked.issue === "quantity" ? MESSAGES.INVALID_QUANTITY : MESSAGES.INVALID_PRICE;
-    return { state: "invalid", issue: checked.issue, message, modelId };
-  }
-  return { state: "line", line: checked.line, modelId };
+  if (checked.kind === "line") return { state: "line", line: checked.line, modelId };
+  const message = checked.issue === "quantity" ? MESSAGES.INVALID_QUANTITY : MESSAGES.INVALID_PRICE;
+  return { state: "invalid", issue: checked.issue, message, modelId };
 }
 
 function parseFenced(text: string | undefined): LineSuggestion | null {
