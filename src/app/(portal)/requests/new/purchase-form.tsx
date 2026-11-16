@@ -10,16 +10,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { messageFor } from "@/lib/org/messages";
 import {
-  emptyLineFields,
   initialDepartment,
-  invalidNumberFields,
   isBlockedNumberKey,
   isLineError,
   LINE_TEXT_LIMIT,
+  markedLineFields,
   submitBlocked,
   type LineField,
   type Option,
   type PurchaseLine,
+  suggestedLineKey,
   withSuggestedLine,
 } from "@/lib/purchase/form";
 import { resubmitPurchase, submitPurchase, type SubmitPurchaseState } from "../actions";
@@ -27,6 +27,25 @@ import { LineAssistant } from "./line-assistant";
 
 type Line = PurchaseLine & { key: number };
 const blankLine = (key: number): Line => ({ key, name: "", purpose: "", quantity: "", price: "" });
+
+const initialState = (departments: Option[], types: Option[]): SubmitPurchaseState => ({
+  status: "idle",
+  message: "",
+  departmentId: initialDepartment(departments),
+  purchaseType: types[0]?.value ?? "",
+});
+
+// Пропозиція помічника AI (AC-AI-01) — у рядки форми; нічого не подаємо: подає людина («Submit»). Рядок, який заповнив
+// помічник, запам'ятовуємо: його порожні поля позначено одразу, а не лише після «Submit» (відповідь PM на #79).
+function useSuggestedLine(lines: readonly Line[], setLines: (update: (ls: Line[]) => Line[]) => void, onEdit: () => void) {
+  const [suggestedKey, setSuggestedKey] = useState<number | null>(null);
+  const applyLine = (suggested: PurchaseLine) => {
+    onEdit();
+    setSuggestedKey(suggestedLineKey(lines));
+    setLines((ls) => withSuggestedLine(ls, suggested));
+  };
+  return { suggestedKey, applyLine };
+}
 
 // Форма закупівлі: відділи й типи — лише за правами (AC-FRM-01, AC-FRM-03); одне поле на рядок, великі зони натискання
 // (PM «Вигляд і тон»). Усі поля керовані: React після кожного подання скидає некеровані поля форми, а введене має
@@ -45,12 +64,7 @@ export function PurchaseForm({
   resubmit?: { requestId: string; lines: readonly PurchaseLine[] };
   assistant?: boolean;
 }) {
-  const initial: SubmitPurchaseState = {
-    status: "idle",
-    message: "",
-    departmentId: initialDepartment(departments),
-    purchaseType: types[0]?.value ?? "",
-  };
+  const initial = initialState(departments, types);
   const action = resubmit ? resubmitPurchase.bind(null, resubmit.requestId) : submitPurchase;
   const locked = Boolean(resubmit);
   const [state, formAction, pending] = useActionState(action, initial);
@@ -87,15 +101,11 @@ export function PurchaseForm({
     },
   } as const;
 
-  // Пропозиція помічника (AC-AI-01) — у рядки форми; нічого не подаємо: подає людина («Submit»).
-  const applyLine = (suggested: PurchaseLine) => {
-    edited();
-    setLines((ls) => withSuggestedLine(ls, suggested));
-  };
+  const suggestion = useSuggestedLine(lines, setLines, edited);
 
   return (
     <div className="flex flex-col gap-6">
-      {assistant ? <LineAssistant onLine={applyLine} /> : null}
+      {assistant ? <LineAssistant onLine={suggestion.applyLine} /> : null}
       <form
         action={formAction}
         onSubmit={(e) => {
@@ -185,10 +195,7 @@ export function PurchaseForm({
             Lines
           </h2>
           {lines.map((line, index) => {
-            const wrong = new Set([
-              ...(markEmpty ? emptyLineFields(line) : []),
-              ...(markEmpty ? invalidNumberFields(line) : []),
-            ]);
+            const wrong = new Set(markedLineFields(line, { afterError: markEmpty, suggestedKey: suggestion.suggestedKey }));
             const field = (name: LineField, label: string, extra: React.ComponentProps<typeof Input> = {}) => (
               <div className={name === "name" || name === "purpose" ? "flex flex-col gap-2 sm:col-span-2" : "flex flex-col gap-2"}>
                 <Label htmlFor={`${name}-${line.key}`}>{label}</Label>

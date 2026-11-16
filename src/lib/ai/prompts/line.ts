@@ -46,8 +46,15 @@ Examples (they are not the employee's text):
 ${EXAMPLES}`;
 
 // Недовірений текст — між межами; теги-межі з самого тексту вирізаємо (інакше текст міг би «закрити» межу даних
-// зсередини), довжину обмежуємо.
+// зсередини), довжину обмежуємо. Вирізаємо повторно, доки тегів не лишиться: після одного проходу `<docu<document>ment>`
+// склеївся б у `<document>`. Спершу обрізаємо — цикл іде по тексту не довшому за MAX_INPUT.
+const BOUNDARY_TAG = /<\/?\s*document\s*>/gi;
+
 export function wrapDocument(text: string): string {
-  const clean = text.replace(/<\/?\s*document\s*>/gi, "").slice(0, MAX_INPUT);
+  let clean = text.slice(0, MAX_INPUT);
+  for (let prev = ""; prev !== clean; ) {
+    prev = clean;
+    clean = clean.replace(BOUNDARY_TAG, "");
+  }
   return `<document>\n${clean}\n</document>`;
 }

@@ -1,7 +1,7 @@
 // Помічник рядків у формі нової закупівлі: стан очікування, кнопка й повідомлення. Лише розмітка: дію не викликаємо.
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AssistantStatus, SuggestButton } from "@/app/(portal)/requests/new/line-assistant";
+import { AssistantStatus, DescriptionField, SuggestButton } from "@/app/(portal)/requests/new/line-assistant";
 import { AI_TEXT } from "@/lib/ai/messages";
 import type { SuggestResult } from "@/lib/ai/suggest";
 import { MESSAGES } from "@/lib/org/messages";
@@ -27,6 +27,21 @@ describe("AssistantStatus і SuggestButton", () => {
     const html = renderToStaticMarkup(<SuggestButton pending />);
     expect(text(button(html))).toContain(AI_TEXT.button);
     expect(isDisabled(html)).toBe(true);
+  });
+
+  it("AC-AI-03: поки відповіді немає — введений опис лишається в полі «Purchase description», поле не вимкнене", () => {
+    const description = "Треба 3 пачки паперу А4 для друку, по 20 доларів";
+    const html = renderToStaticMarkup(
+      <>
+        <DescriptionField value={description} onChange={() => {}} />
+        <SuggestButton pending />
+        <AssistantStatus pending result={null} />
+      </>,
+    );
+    const textarea = html.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/);
+    expect(text(textarea?.[1] ?? "")).toBe(description);
+    expect(textarea?.[0]).not.toMatch(/\sdisabled(=""|\s|>)/);
+    expect(statusText(html)).toBe(AI_TEXT.pending);
   });
 
   it("без очікування — кнопка «Suggest lines» активна, напису «Looking for lines…» немає", () => {

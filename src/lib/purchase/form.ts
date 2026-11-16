@@ -132,7 +132,24 @@ export function isBlockedNumberKey(key: string): boolean {
 // Пропозиція помічника AI у рядки форми (зріз 4, AC-AI-01; відповідь PM на ValiaBihun/2026-quitcode-dream-team#82):
 // заповнює перший порожній рядок форми, якщо він є, інакше додається новим рядком у кінці — введене не губиться.
 export function withSuggestedLine<T extends PurchaseLine & { key: number }>(lines: readonly T[], suggested: PurchaseLine): (PurchaseLine & { key: number })[] {
+  const key = suggestedLineKey(lines);
+  if (lines.some((l) => l.key === key)) return lines.map((l) => (l.key === key ? { ...suggested, key } : l));
+  return [...lines, { ...suggested, key }];
+}
+
+// Які поля рядка позначити (aria-invalid): після помилки «Submit» — порожні й неможливі; у рядку, який щойно заповнив
+// помічник AI, — порожні (відповідь PM на #79). Позначка зникає, щойно людина заповнила поле.
+export function markedLineFields(
+  line: PurchaseLine & { key: number },
+  mark: { afterError: boolean; suggestedKey: number | null },
+): LineField[] {
+  const empty = mark.afterError || line.key === mark.suggestedKey ? emptyLineFields(line) : [];
+  return mark.afterError ? [...empty, ...invalidNumberFields(line)] : empty;
+}
+
+// Куди ляже пропозиція: ключ першого порожнього рядка, інакше — новий ключ (max + 1). Форма позначає в цьому рядку поля,
+// яких в описі не було (відповідь PM на ValiaBihun/2026-quitcode-dream-team#79: «порожнє поле позначено»).
+export function suggestedLineKey(lines: readonly (PurchaseLine & { key: number })[]): number {
   const blank = lines.find((l) => !l.name && !l.purpose && !l.quantity && !l.price);
-  if (blank) return lines.map((l) => (l === blank ? { ...suggested, key: l.key } : l));
-  return [...lines, { ...suggested, key: Math.max(0, ...lines.map((l) => l.key)) + 1 }];
+  return blank ? blank.key : Math.max(0, ...lines.map((l) => l.key)) + 1;
 }

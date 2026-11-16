@@ -16,6 +16,9 @@ const deployed = process.env.UAT_BASE_URL?.replace(/\/+$/, "");
 const baseURL = deployed ?? "http://localhost:3000";
 // Негативні контролі (навмисно хибні очікування) — лише на окреме прохання: UAT_NEGATIVE_CONTROLS=1.
 const withNegativeControls = process.env.UAT_NEGATIVE_CONTROLS === "1";
+// Тести з живою моделлю (помічник AI, WS10, тег @live-model) — лише на розгорнутому застосунку (npm run uat): у CI ключа
+// OpenRouter немає (помічник там «недоступний»), а живий виклик моделі в CI курс не дозволяє — там golden офлайн.
+const skipped = deployed ? /@negative-control/ : /@negative-control|@live-model/;
 const noRecording = { video: "off", trace: "off", screenshot: "off" } as const;
 
 export default defineConfig({
@@ -54,7 +57,7 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts$/, teardown: "cleanup", use: noRecording },
     // Прибирання після всіх тестів: видаляє синтетичних uat-*@example.test і перевіряє, що нічого не лишилось.
     { name: "cleanup", testMatch: /cleanup\.teardown\.ts$/, use: noRecording },
-    { name: "chromium", dependencies: ["setup"], grepInvert: /@negative-control/ },
+    { name: "chromium", dependencies: ["setup"], grepInvert: skipped },
     ...(withNegativeControls
       ? [{ name: "negative-controls", dependencies: ["setup"], grep: /@negative-control/ }]
       : []),

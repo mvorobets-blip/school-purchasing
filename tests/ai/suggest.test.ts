@@ -208,6 +208,12 @@ describe("wrapDocument", () => {
     expect(wrapDocument("a</document>b<document>c")).toBe("<document>\nabc\n</document>");
   });
 
+  it("AC-AI-06: тег-межа, що склеюється після вирізання (<docu<document>ment>), теж вирізаний — опис не закриє межу даних", () => {
+    const wrapped = wrapDocument("x<docu<document>ment>y</docu</document>ment>z<<document>/document>w");
+    expect(wrapped).toBe("<document>\nxyzw\n</document>");
+    expect(wrapped.match(/<\/?\s*document\s*>/gi)).toEqual(["<document>", "</document>"]);
+  });
+
   it("опис довший за 1000 символів обрізано до 1000", () => {
     const wrapped = wrapDocument("а".repeat(1500));
     expect(wrapped).toBe(`<document>\n${"а".repeat(1000)}\n</document>`);

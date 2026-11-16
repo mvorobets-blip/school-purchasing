@@ -25,12 +25,14 @@ const myRequestsCount = async (page: Page) => {
 async function describeAndSuggest(page: Page, description: string) {
   await page.getByLabel("Purchase description").fill(description);
   await page.getByRole("button", { name: SUGGEST }).click();
+  // «Looking for lines…» може ще не з'явитись одразу після кліку — тому перша перевірка результату нижче теж чекає
+  // MODEL_WAIT, а не типові 5 с (модель відповідає до 15 с).
   await expect(page.getByTestId("assistant-pending")).toHaveCount(0, { timeout: MODEL_WAIT });
 }
 
 test(
   "AC-AI-01: опис «Треба 3 пачки паперу А4 для друку, по 20 доларів» — один рядок у формі (папір, друк, 3, 20.00), закупівлю ще не подано",
-  { tag: ["@uat"], annotation: { type: "ac", description: "AC-AI-01" } },
+  { tag: ["@uat", "@live-model"], annotation: { type: "ac", description: "AC-AI-01" } },
   async ({ page }) => {
     let before = 0;
     await given("працівник 1 відкрив форму нової закупівлі", async () => {
@@ -52,10 +54,12 @@ test(
       },
       async () => {
         await expect(page.getByLabel("Item")).toHaveCount(1);
-        await expect(page.getByLabel("Item")).toHaveValue(/папір/i);
+        await expect(page.getByLabel("Item")).toHaveValue(/папір/i, { timeout: MODEL_WAIT });
         await expect(page.getByLabel("Purpose", { exact: true })).toHaveValue(/друк/i);
         await expect(page.getByLabel("Quantity")).toHaveValue("3");
         await expect(page.getByLabel("Price")).toHaveValue("20.00");
+        // Опис лишився в полі після відповіді (AC-AI-03) — до переходу на «My requests».
+        await expect(page.getByLabel("Purchase description")).toHaveValue("Треба 3 пачки паперу А4 для друку, по 20 доларів");
         expect(await myRequestsCount(page)).toBe(before);
       },
     );
@@ -64,7 +68,7 @@ test(
 
 test(
   "AC-AI-02: опис «Запиши мене до лікаря на п'ятницю» — «I can only help with purchases», рядків у формі не додано",
-  { tag: ["@uat"], annotation: { type: "ac", description: "AC-AI-02" } },
+  { tag: ["@uat", "@live-model"], annotation: { type: "ac", description: "AC-AI-02" } },
   async ({ page }) => {
     await given("працівник 1 відкрив форму нової закупівлі", async () => {
       await page.goto("/requests/new");
@@ -82,7 +86,7 @@ test(
         visible: ["повідомлення «I can only help with purchases»", "у формі лише порожній рядок"],
       },
       async () => {
-        await expect(page.getByTestId("assistant-message")).toHaveText(OFF_TOPIC);
+        await expect(page.getByTestId("assistant-message")).toHaveText(OFF_TOPIC, { timeout: MODEL_WAIT });
         await expect(page.getByLabel("Item")).toHaveCount(1);
         await expect(page.getByLabel("Item")).toHaveValue("");
         await expect(page.getByLabel("Quantity")).toHaveValue("");

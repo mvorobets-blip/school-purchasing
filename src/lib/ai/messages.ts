@@ -1,5 +1,5 @@
 // Тексти помічника рядків закупівлі (зріз 4, AC-AI-01…06). Інтерфейс англійською (вимога PM #49); англійські тексти —
-// припущення розробника до відповіді PM на ValiaBihun/2026-quitcode-dream-team#77. Зміна тексту — лише тут.
+// з таблиці #49 (PM доповнила її 2026-11-16, відповідь на ValiaBihun/2026-quitcode-dream-team#77). Зміна тексту — лише тут.
 // Межі кількості й ціни — ті самі тексти, що у формі (MESSAGES.INVALID_QUANTITY / INVALID_PRICE; питання PM #78).
 export const AI_TEXT = {
   label: "Purchase description",

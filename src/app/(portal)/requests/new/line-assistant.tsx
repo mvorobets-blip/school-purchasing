@@ -48,6 +48,24 @@ export function SuggestButton({ pending, disabled = false }: { pending: boolean;
   );
 }
 
+// Поле опису: керований стан, не вимикається під час очікування — введений опис лишається в полі (AC-AI-03), зокрема
+// після відповіді (React скидає лише некеровані поля форми з action).
+export function DescriptionField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor="purchase-description">{AI_TEXT.label}</Label>
+      <Textarea
+        id="purchase-description"
+        name="description"
+        rows={2}
+        maxLength={DESCRIPTION_LIMIT}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
 // Помічник над рядками форми нової закупівлі (зріз 4). Окрема форма: опис іде лише в дію пропозиції, яка нічого не
 // пише; запропонований рядок форма закупівлі отримує через onLine, а подає людина кнопкою «Submit» (AC-AI-01).
 // Опис — керований стан, тож він лишається в полі під час і після відповіді (AC-AI-03).
@@ -63,17 +81,7 @@ export function LineAssistant({ onLine }: { onLine: (line: FormLine) => void }) 
     <form action={action} className="max-w-2xl" data-testid="line-assistant">
       <Card>
         <CardContent className="flex flex-col gap-3">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="purchase-description">{AI_TEXT.label}</Label>
-            <Textarea
-              id="purchase-description"
-              name="description"
-              rows={2}
-              maxLength={DESCRIPTION_LIMIT}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+          <DescriptionField value={description} onChange={setDescription} />
           <div>
             <SuggestButton pending={pending} disabled={!description.trim()} />
           </div>

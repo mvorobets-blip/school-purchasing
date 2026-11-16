@@ -10,8 +10,8 @@ import recordedJson from "./fixtures/golden/recorded.json";
 // Офлайн-реплей golden cases PM (issue ValiaBihun/2026-quitcode-dream-team#70, набір WS10: № 1, 5, 6, 7, 8, 9, 11–14):
 // без мережі й без ключа, тож працює в CI. Перевіряє КОД навколо моделі (правила ін'єкції, межа <document>, схема,
 // межі кількості й ціни, тексти, оцінювач), а НЕ якість моделі — її міряє живий прогін `npm run eval`.
-// expected у cases.json — лише з колонки PM «Очікуваний результат». recorded.json поки містить написані вручну
-// заглушки («placeholder»), які замінить справжній запис `RECORD=1`.
+// expected у cases.json — лише з колонки PM «Очікуваний результат». recorded.json — справжні відповіді моделі з живого
+// прогону `RECORD=1 npm run eval` (2026-11-16, промпт line-v2); для GC-11, 12 записів немає — ін'єкцію ловить код.
 
 type Recording = { modelId: string; recordedAt: string; promptVersion?: string; text: string };
 const cases = casesJson as (GoldenCase & { note?: string })[];
@@ -74,7 +74,8 @@ describe("golden cases, офлайн-реплей", () => {
     expect(model.doGenerateCalls).toHaveLength(0);
   });
 
-  it.each(byIds("GC-05", "GC-06", "GC-07"))("межі кількості й ціни: golden $id", async (c) => {
+  // Кейси № 5–7 PM привʼязала до AC-AI-01 (відповідь на ValiaBihun/2026-quitcode-dream-team#78).
+  it.each(byIds("GC-05", "GC-06", "GC-07"))("AC-AI-01: golden $id (межі кількості й ціни)", async (c) => {
     const result = await proposeLine(c.input, replay(c.id));
     expect(result).toMatchObject({ state: "invalid", issue: c.expected.issue });
     expect(result).not.toHaveProperty("line");
