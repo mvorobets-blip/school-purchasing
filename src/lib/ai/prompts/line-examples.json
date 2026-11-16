@@ -1,48 +1,38 @@
 {
-  "_про_файл": "Приклади для промпту помічника рядків (src/lib/ai/prompts/line.ts). Дані українською — окремим JSON, бо в .ts кирилиця поза коментарями заборонена (AC-LANG-01). Навмисно НЕ golden cases PM (ValiaBihun/2026-quitcode-dream-team#70): інші предмети й формулювання, щоб не підганяти відповідь під кейси. Після зміни — LINE_PROMPT_VERSION + 1. line-v3: приклад «дроту → Дріт» — чергування голосного в корені (і ↔ о), як «паперу → папір».",
+  "_про_файл": "Приклади для промпту помічника рядків (src/lib/ai/prompts/line.ts). Окремим JSON, щоб дані не жили в .ts. Навмисно НЕ golden cases PM (ValiaBihun/2026-quitcode-dream-team#70): інші предмети й формулювання, щоб не підганяти відповідь під кейси. Після зміни — LINE_PROMPT_VERSION + 1. line-v4 (16.11): опис і відповідь англійською (PM оновила #71).",
   "examples": [
     {
-      "text": "Потрібно 5 зошитів для контрольних робіт, по 2 долари",
+      "text": "We need 5 notebooks for the tests, 2 dollars each",
       "answer": {
         "status": "ok",
-        "name": "Зошит",
-        "purpose": "Для контрольних робіт",
+        "name": "Notebook",
+        "purpose": "For the tests",
         "quantity": 5,
         "price": 2
       }
     },
     {
-      "text": "Треба 2 мотки дроту для гірлянди в актовій залі, по 3 долари",
+      "text": "Please buy 12 pens for the pupils, 1.20 dollars per pen",
       "answer": {
         "status": "ok",
-        "name": "Дріт",
-        "purpose": "Для гірлянди в актовій залі",
-        "quantity": 2,
-        "price": 3
-      }
-    },
-    {
-      "text": "Купіть 12 ручок учням, кожна по 1,20 долара",
-      "answer": {
-        "status": "ok",
-        "name": "Ручка",
-        "purpose": "Для учнів",
+        "name": "Pen",
+        "purpose": "For the pupils",
         "quantity": 12,
         "price": 1.2
       }
     },
     {
-      "text": "Потрібні 1,5 рулони скотчу по 3 долари",
+      "text": "Need 1.5 rolls of tape at 3 dollars",
       "answer": {
         "status": "ok",
-        "name": "Скотч",
+        "name": "Tape",
         "purpose": null,
         "quantity": 1.5,
         "price": 3
       }
     },
     {
-      "text": "Нагадай мені про нараду в понеділок",
+      "text": "Remind me about the meeting on Monday",
       "answer": {
         "status": "off_topic",
         "name": null,
