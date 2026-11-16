@@ -17,7 +17,9 @@ import casesJson from "../tests/fixtures/golden/cases.json";
 //   RUNS=2    — кілька прогонів поспіль (до 10 запитів кожен; денний ліміт — 50, спільний із прийманням PM).
 //   RECORD=1  — успішні відповіді моделі дописати в tests/fixtures/golden/recorded.json (офлайн-реплей у CI).
 
-const cases = casesJson as GoldenCase[];
+//   ONLY=GC-01 — лише вибрані кейси (через кому), напр. для діагностики збою за 1 запит.
+const ONLY = process.env.ONLY?.split(",").map((id) => id.trim());
+const cases = (casesJson as GoldenCase[]).filter((c) => !ONLY || ONLY.includes(c.id));
 const key = process.env.OPENROUTER_API_KEY?.trim();
 const RECORD = process.env.RECORD === "1";
 const RUNS = Math.max(1, Number(process.env.RUNS ?? 1) || 1);
@@ -52,12 +54,20 @@ describe.skipIf(!key)("golden cases, живий прогін (безкоштов
         }
         // Модель-обгортка, що запам'ятовує сирий JSON відповіді — для запису RECORD=1 (офлайн-реплей того самого тексту).
         let rawText: string | undefined;
+        let providerError: string | undefined; // справжня причина збою — у звіт (продукт показує людині лише стан)
         const base = makeProductModel(key);
         const model = new Proxy(base, {
           get(target, prop, receiver) {
             if (prop !== "doGenerate") return Reflect.get(target, prop, receiver);
             return async (options: Parameters<typeof base.doGenerate>[0]) => {
-              const out = await target.doGenerate(options);
+              let out: Awaited<ReturnType<typeof base.doGenerate>>;
+              try {
+                out = await target.doGenerate(options);
+              } catch (error) {
+                const e = error as { statusCode?: number; message?: string; responseBody?: string };
+                providerError = [e.statusCode, e.message, e.responseBody?.slice(0, 300)].filter(Boolean).join(" — ");
+                throw error;
+              }
               rawText = out.content.map((p) => (p.type === "text" ? p.text : "")).join("");
               return out;
             };
@@ -73,7 +83,10 @@ describe.skipIf(!key)("golden cases, живий прогін (безкоштов
         }
         const score = scoreCase(c.expected, result);
         const modelId = result.modelId ?? (calls ? "—" : "код (без моделі)");
-        rows.push({ run, id: c.id, modelId, state: result.state, pass: score.pass, why: score.mismatches.join("; ") || undefined });
+        const why = [score.mismatches.join("; "), providerError && `помилка постачальника: ${providerError}`, result.state === "failed" && !providerError && rawText ? `відповідь: ${rawText.slice(0, 200)}` : ""]
+          .filter(Boolean)
+          .join(" · ");
+        rows.push({ run, id: c.id, modelId, state: result.state, pass: score.pass, why: why || undefined });
         // Записуємо лише успішні відповіді моделі: офлайн-реплей у CI має лишатися зеленим.
         if (RECORD && score.pass && rawText && result.modelId) {
           fresh[c.id] = { modelId: result.modelId, recordedAt: new Date().toISOString(), promptVersion: LINE_PROMPT_VERSION, text: rawText };

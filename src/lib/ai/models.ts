@@ -17,7 +17,7 @@ export const PRODUCT_MODELS = [
 // Фабрики приймають ключ параметром і НЕ читають process.env: так їх можна імпортувати в eval-скрипті.
 // У коді застосунку модель бере лише src/lib/ai/openrouter.ts (server-only).
 export function makeProductModel(apiKey: string | undefined) {
-  const openrouter = createOpenRouter({ apiKey, appName: "School purchasing — line assistant" });
+  const openrouter = createOpenRouter({ apiKey, appName: "School purchasing - line assistant" });
   return openrouter.chat(PRODUCT_MODELS[0], {
     // OpenRouter пробує наступну модель при помилці, ліміті постачальника або простої.
     // Платформний ліміт безкоштовних моделей (20/хв, 50/день на акаунт) ланцюжок НЕ обходить.

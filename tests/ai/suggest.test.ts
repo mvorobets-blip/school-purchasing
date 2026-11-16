@@ -213,3 +213,12 @@ describe("wrapDocument", () => {
     expect(wrapped).toBe(`<document>\n${"а".repeat(1000)}\n</document>`);
   });
 });
+
+describe("заголовки запиту до OpenRouter", () => {
+  it("appName (іде в HTTP-заголовок) — лише ASCII: інакше fetch падає «Cannot convert argument to a ByteString» до запиту", async () => {
+    const { readFileSync } = await import("node:fs");
+    const names = [...readFileSync("src/lib/ai/models.ts", "utf8").matchAll(/appName:\s*"([^"]*)"/g)].map((m) => m[1]);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(name).toMatch(/^[\x20-\x7e]+$/);
+  });
+});
