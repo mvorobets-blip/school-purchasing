@@ -149,3 +149,13 @@ describe("дія requestLineSuggestion", () => {
     expect(model.doGenerateCalls).toHaveLength(0);
   });
 });
+
+describe("canUseAssistant — перелік дозволених ролей (зауваження PM 16.11)", () => {
+  it("requester і approver — так; admin і невідома роль — ні (нова роль не отримає помічника мовчки)", async () => {
+    const { canUseAssistant } = await import("@/lib/ai/access");
+    expect(canUseAssistant("requester")).toBe(true);
+    expect(canUseAssistant("approver")).toBe(true);
+    expect(canUseAssistant("admin")).toBe(false);
+    expect(canUseAssistant("auditor" as never)).toBe(false);
+  });
+});

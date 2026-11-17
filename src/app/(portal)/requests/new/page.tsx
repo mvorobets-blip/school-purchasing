@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
+import { canUseAssistant } from "@/lib/ai/access";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
 import { departmentOptions, purchaseTypeOptions } from "@/lib/purchase/form";
@@ -39,7 +40,7 @@ export default async function NewPurchasePage() {
         <Alert data-testid="no-departments">{messageFor("NO_DEPARTMENTS")}</Alert>
       ) : (
         // Помічник AI — лише для автора з роллю requester чи approver (#71, «Користувачі й ролі»); admin — без нього.
-        <PurchaseForm departments={departments} types={types} assistant={user.role !== "admin"} />
+        <PurchaseForm departments={departments} types={types} assistant={canUseAssistant(user.role)} />
       )}
     </>
   );

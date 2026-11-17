@@ -1,11 +1,23 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { PRODUCT_MODELS, makeProductModel } from "@/lib/ai/models";
+import { PRODUCT_MODELS, PRODUCT_REASONING, makeProductModel } from "@/lib/ai/models";
 import { LINE_PROMPT_VERSION } from "@/lib/ai/prompts/line";
 import { passRate, scoreCase, type GoldenCase } from "@/lib/ai/scorer";
 import { proposeLine, type SuggestResult } from "@/lib/ai/suggest";
 import casesJson from "../tests/fixtures/golden/cases.json";
+
+// Коміт коду, на якому зроблено прогін (і чи були незакомічені зміни), — у шапку звіту (зауваження PM 16.11).
+function codeVersion(): string {
+  try {
+    const sha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+    const dirty = execFileSync("git", ["status", "--porcelain", "--", "src", "evals", "tests/fixtures/golden"], { encoding: "utf8" }).trim();
+    return dirty ? `${sha} + незакомічені зміни` : sha;
+  } catch {
+    return "невідомо (немає git)";
+  }
+}
 
 // `npm run eval` — ЖИВИЙ прогін golden cases PM (ValiaBihun/2026-quitcode-dream-team#70) на безкоштовних моделях
 // OpenRouter. Ніколи не в `npm test` і не в CI. Потрібен ключ у .env.local (OPENROUTER_API_KEY); без ключа кейси
@@ -123,6 +135,7 @@ function writeReport() {
     `# Живий прогін golden cases — ${new Date().toISOString()}`,
     "",
     `- Промпт: \`${LINE_PROMPT_VERSION}\`; ланцюжок моделей: ${PRODUCT_MODELS.map((m) => `\`${m}\``).join(" → ")}; суддя: немає (назву й мету перевіряє код правилом PM «містить»)`,
+    `- Код: \`${codeVersion()}\`; режим роздумів моделі: \`reasoning.effort: "${PRODUCT_REASONING.effort}"\``,
     `- Прогонів: ${RUNS}; кейсів у прогоні: ${cases.length}; таймаут: ${LIVE_TIMEOUT_MS / 1000} с`,
     `- **Частка успіху: ${total.passed}/${total.total} (${Math.round(total.rate * 100)}%)** — з кейсів, що отримали відповідь`,
     `- Поріг приймання PM (≥ 8 з 10, обов'язково № 1, 8, 11) в останньому прогоні: ${threshold ? "виконано" : "не виконано"}`,

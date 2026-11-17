@@ -180,7 +180,7 @@ ValiaBihun/2026-quitcode-dream-team#73–75); скорочення зрізу д
 
 # Зріз 4 (WS10) — помічник AI пропонує рядок закупівлі
 
-Вимоги: ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-13 (вимога ValiaBihun/2026-quitcode-dream-team#71
+Вимоги: ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-13, далі 2026-11-16 (ранок — відповіді на питання; вдень — описи англійською, див. кінець розділу) (вимога ValiaBihun/2026-quitcode-dream-team#71
 оновлена PM 2026-11-13: додано AC-AI-05, AC-AI-06 і поріг приймання).
 
 Вимога зрізу: ValiaBihun/2026-quitcode-dream-team#71 (AC-AI-01…06); golden cases — ValiaBihun/2026-quitcode-dream-team#70

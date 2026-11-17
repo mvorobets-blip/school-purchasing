@@ -1,5 +1,6 @@
 "use server";
 
+import { canUseAssistant } from "@/lib/ai/access";
 import { proposeLine, SUGGEST_TIMEOUT_MS, type SuggestResult } from "@/lib/ai/suggest";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
@@ -12,7 +13,7 @@ export type SuggestActionState = { status: "idle" } | { status: "done"; result: 
 // а подає закупівлю людина наявною дією submitPurchase (AC-AI-01 «закупівлю ще не подано», AC-AI-06 «нової заявки немає»).
 export async function requestLineSuggestion(_prev: SuggestActionState, formData: FormData): Promise<SuggestActionState> {
   const user = await getCurrentUser();
-  if (!user || user.role === "admin") return { status: "forbidden", message: messageFor("FORBIDDEN") };
+  if (!user || !canUseAssistant(user.role)) return { status: "forbidden", message: messageFor("FORBIDDEN") };
 
   const description = String(formData.get("description") ?? "");
   // Обгортку з ключем (server-only) вантажимо лише тут, на сервері: клієнтська форма імпортує цю дію як посилання.
