@@ -103,6 +103,14 @@ describe("дія requestLineSuggestion", () => {
     expect(model.doGenerateCalls).toHaveLength(0);
   });
 
+  it("опис, що після NFKC довший за 1000 (400 × «ﬃ» → 1200 літер), — «Could not get a suggestion…», модель не викликано", async () => {
+    expect(await requestLineSuggestion(idle, form("\uFB03".repeat(400)))).toEqual({
+      status: "done",
+      result: { state: "failed", message: AI_TEXT.failed },
+    });
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
+
   it("опис рівно 1000 символів — до моделі доходить", async () => {
     await requestLineSuggestion(idle, form(`${PAPER} ${"x".repeat(1000 - PAPER.length - 1)}`));
     expect(model.doGenerateCalls).toHaveLength(1);
