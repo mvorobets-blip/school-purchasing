@@ -29,3 +29,23 @@ export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   // 0 — мережа (Supabase недоступний або хибний URL), 5xx, PGRST000–003.
   return { db: "down", reason: `status-${status}${code ? `-${code}` : ""}` };
 }
+
+// WS11: у якому середовищі й з якою базою працює деплой — без секретів. appEnv — лише значення змінної APP_ENV (на гілці
+// staging у Vercel = "staging"; на staging VERCEL_ENV теж "preview", тож лише APP_ENV їх розрізняє), без неї — null
+// (R03 курсу: так з /api/health видно, де APP_ENV справді задано; VERCEL_ENV і так є в полі env).
+// supabaseRef — ref проєкту Supabase з адреси NEXT_PUBLIC_SUPABASE_URL (https://<ref>.supabase.co): не секрет, він і так
+// є в публічній адресі; за ним smoke і перевірка курсу бачать, що staging і preview ходять не в прод-базу.
+const SUPABASE_HOST = /^([a-z0-9]{20})\.supabase\.co$/;
+
+export function supabaseRefFrom(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    return SUPABASE_HOST.exec(new URL(url).hostname)?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function appEnvFrom(appEnv: string | undefined): string | null {
+  return appEnv?.trim() || null;
+}

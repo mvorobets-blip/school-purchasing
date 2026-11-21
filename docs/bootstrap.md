@@ -52,6 +52,10 @@ Docker не потрібен: локально — лише npm run dev прот
       літер і цифр, кодування не потрібне
 - [x] Запасний шлях (лише якщо `--db-url` не працює): секрети environment `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
       `SUPABASE_PROJECT_ID` (README, «Міграції в прод: запасний шлях») — не потрібно: `db-deploy` працює через `SUPABASE_DB_URL`
+- [x] WS11: Settings → Environments → `staging`, **Deployment branches** = Selected branches → `main`; секрет environment
+      `SUPABASE_DB_URL` = рядок Session pooler проєкту staging (`school-purchasing-staging`) — job `db-deploy-staging`
+- [x] WS11: змінні репо (Variables, не секрети) `SUPABASE_STAGING_REF` і `SUPABASE_PROD_REF` — ref двох різних проєктів;
+      без них запобіжники `db-deploy-staging` і `db-deploy` зупиняють міграції (README, «Міграції в прод»)
 - [ ] (Необов'язково) секрет репо `SPEC_DENYLIST` — ті самі справжні назви через кому, для CI
 
 ## 4. Vercel
