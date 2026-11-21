@@ -1,5 +1,6 @@
 // Промпт помічника рядків закупівлі (зріз 4). Після КОЖНОЇ зміни інструкцій чи схеми — LINE_PROMPT_VERSION + 1:
 // записи tests/fixtures/golden/recorded.json з іншою версією тест вважає застарілими (RECORD=1 npm run eval).
+import { MAX_DESCRIPTION, normalizeText } from "../text";
 import lineExamples from "./line-examples.json";
 
 // Інструкції — англійською (як увесь код інтерфейсу, AC-LANG-01); опис і відповідь — англійською (#71 від 16.11).
@@ -10,7 +11,6 @@ import lineExamples from "./line-examples.json";
 // українського правопису прибрано, приклади англійські (не golden cases).
 export const LINE_PROMPT_VERSION = "line-v4";
 
-const MAX_INPUT = 1000;
 
 const EXAMPLES = lineExamples.examples
   .map((e) => `Text: ${e.text}\nAnswer: ${JSON.stringify(e.answer)}`)
@@ -50,11 +50,12 @@ ${EXAMPLES}`;
 
 // Недовірений текст — між межами; теги-межі з самого тексту вирізаємо (інакше текст міг би «закрити» межу даних
 // зсередини), довжину обмежуємо. Вирізаємо повторно, доки тегів не лишиться: після одного проходу `<docu<document>ment>`
-// склеївся б у `<document>`. Спершу обрізаємо — цикл іде по тексту не довшому за MAX_INPUT.
+// склеївся б у `<document>`. Спершу нормалізуємо (як детектор вказівок: «＜/document＞» → «</document>», невидимі
+// символи геть), потім обрізаємо — цикл іде по тексту не довшому за MAX_DESCRIPTION.
 const BOUNDARY_TAG = /<\/?\s*document\s*>/gi;
 
 export function wrapDocument(text: string): string {
-  let clean = text.slice(0, MAX_INPUT);
+  let clean = normalizeText(text).slice(0, MAX_DESCRIPTION);
   for (let prev = ""; prev !== clean; ) {
     prev = clean;
     clean = clean.replace(BOUNDARY_TAG, "");
