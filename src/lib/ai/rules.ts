@@ -1,4 +1,5 @@
 import injectionPatterns from "./injection-patterns.json";
+import { normalizeText } from "./text";
 import { invalidNumberFields } from "@/lib/purchase/form";
 import type { LineSuggestion } from "./schema";
 
@@ -18,7 +19,7 @@ const TO_CYRILLIC = new Map([...TO_LATIN].map(([cyr, lat]) => [lat, cyr]));
 const fold = (text: string, map: ReadonlyMap<string, string>) => [...text].map((ch) => map.get(ch) ?? ch).join("");
 
 function variants(text: string): string[] {
-  const clean = text.normalize("NFKC").replace(/\p{Cf}/gu, "");
+  const clean = normalizeText(text);
   return [clean, fold(clean, TO_LATIN), fold(clean, TO_CYRILLIC)];
 }
 

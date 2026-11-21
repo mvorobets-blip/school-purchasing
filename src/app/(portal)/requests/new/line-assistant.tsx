@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { AI_TEXT } from "@/lib/ai/messages";
 import type { FormLine } from "@/lib/ai/rules";
 import type { SuggestResult } from "@/lib/ai/suggest";
+import { MAX_DESCRIPTION } from "@/lib/ai/text";
 import { requestLineSuggestion, type SuggestActionState } from "./suggest-action";
 
-const DESCRIPTION_LIMIT = 1000;
 const idle: SuggestActionState = { status: "idle" };
 const callFailed: SuggestActionState = { status: "done", result: { state: "failed", message: AI_TEXT.failed } };
 
@@ -78,7 +78,7 @@ export function DescriptionField({ value, onChange }: { value: string; onChange:
         id="purchase-description"
         name="description"
         rows={2}
-        maxLength={DESCRIPTION_LIMIT}
+        maxLength={MAX_DESCRIPTION}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

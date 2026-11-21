@@ -95,6 +95,19 @@ describe("дія requestLineSuggestion", () => {
     expect(model.doGenerateCalls).toHaveLength(0);
   });
 
+  it("опис довший за 1000 символів (прямий виклик дії, оминаючи форму) — «Could not get a suggestion…», модель не викликано", async () => {
+    expect(await requestLineSuggestion(idle, form("a".repeat(1001)))).toEqual({
+      status: "done",
+      result: { state: "failed", message: AI_TEXT.failed },
+    });
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
+
+  it("опис рівно 1000 символів — до моделі доходить", async () => {
+    await requestLineSuggestion(idle, form(`${PAPER} ${"x".repeat(1000 - PAPER.length - 1)}`));
+    expect(model.doGenerateCalls).toHaveLength(1);
+  });
+
   it("відділ закупівель (role admin) — «Not enough permissions»: вимога стосується лише автора заявки", async () => {
     state.user = { id: "a1", role: "admin", isActive: true };
     expect(await requestLineSuggestion(idle, form(PAPER))).toEqual(forbidden);
