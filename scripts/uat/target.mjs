@@ -2,7 +2,8 @@
 // заявки). Перед першим записом звіряємо ref проєкту Supabase з /api/health цільової адреси з ref з
 // NEXT_PUBLIC_SUPABASE_URL у .env.local — інакше UAT на staging з прод-ключами в .env.local писав би в прод (і навпаки).
 // Захищена Vercel адреса (preview, staging) — заголовок x-vercel-protection-bypass зі змінної
-// VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише на *.vercel.app (секрет не віддаємо чужому хосту).
+// VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — *.vercel.app (запит /api/health іде лише на
+// ціль; у браузері Playwright extraHTTPHeaders — до всіх запитів, див. playwright.config.ts).
 // Значення секрету й ключів не друкуємо ніде: у повідомленнях — лише ref (він і так у публічній адресі бази).
 // Джерело: R03 курсу WS11 і документація Vercel «Protection Bypass for Automation» (приклад Playwright), 17.11.2026.
 

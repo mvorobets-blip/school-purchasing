@@ -21,8 +21,11 @@ const withNegativeControls = process.env.UAT_NEGATIVE_CONTROLS === "1";
 // OpenRouter немає (помічник там «недоступний»), а живий виклик моделі в CI курс не дозволяє — там golden офлайн.
 const skipped = deployed ? /@negative-control/ : /@negative-control|@live-model/;
 const noRecording = { video: "off", trace: "off", screenshot: "off" } as const;
-// WS11 (R03): preview і staging за захистом Vercel — заголовок обходу лише з VERCEL_AUTOMATION_BYPASS_SECRET і лише для
-// *.vercel.app (scripts/uat/target.mjs). Локальна збірка й CI — без заголовків.
+// WS11 (R03): preview і staging за захистом Vercel — заголовок обходу лише з VERCEL_AUTOMATION_BYPASS_SECRET і лише коли
+// ЦІЛЬ UAT — *.vercel.app (scripts/uat/target.mjs). Увага: extraHTTPHeaders Playwright додає до ВСІХ запитів браузера,
+// зокрема до інших хостів, — так само в прикладі Playwright у документації Vercel. Зараз це безпечно: застосунок не робить
+// запитів з браузера на чужі хости (шрифти — next/font локально, клієнта Supabase в браузері немає). З'явиться такий
+// запит — обмежити заголовок маршрутом (page.route на хост цілі). Локальна збірка й CI — без заголовків.
 const extraHTTPHeaders = deployed ? bypassHeaders(deployed, process.env.VERCEL_AUTOMATION_BYPASS_SECRET) : {};
 
 export default defineConfig({
