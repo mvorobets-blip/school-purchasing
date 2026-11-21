@@ -126,7 +126,8 @@ jobs:
 
   # WS11: спершу база staging (окремий проєкт Supabase), і лише якщо там зелено — прод (db-deploy чекає на цей job).
   # Взято з https://github.com/koldovsky/2026-quitcode-11-devops-operations-hw/blob/main/materials/ops-kit/ci-examples/db-deploy-staging.yml
-  # з однією зміною: запобіжник розпізнає і рядок Session pooler, і пряме підключення (db.<ref>.supabase.co).
+  # зі зміною: запобіжник (scripts/db-url-ref.sh) розпізнає і Session pooler (лише хост *.pooler.supabase.com), і пряме
+  # підключення (db.<ref>.supabase.co).
   db-deploy-staging:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [spec, app, conformance, db-check]
@@ -143,6 +144,8 @@ jobs:
       PROD_REF: ${{ vars.SUPABASE_PROD_REF }}
       SEED_FLAG: ${{ github.event_name == 'workflow_dispatch' && inputs.include_seed_staging && '--include-seed' || '' }}
     steps:
+      # Checkout — до запобіжника: він читає scripts/db-url-ref.sh. Секрету checkout не бачить.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Без запасного шляху й без пропуску: немає секрету чи він веде не туди — job червоний, і прод не мігрує.
       # Ref не секрет (він і так у NEXT_PUBLIC_SUPABASE_URL), тож журнал друкує лише його.
       - name: Guard - staging database ref
@@ -153,7 +156,7 @@ jobs:
             echo "::error title=db-deploy-staging::Секрет SUPABASE_DB_URL в environment staging не задано."
             exit 1
           fi
-          ref=$(printf '%s' "$SUPABASE_DB_URL" | sed -n -E -e 's#^postgres(ql)?://postgres\.([a-z0-9]{20}):.*$#\2#p' -e 's#^postgres(ql)?://[^@]*@db\.([a-z0-9]{20})\.supabase\.co[:/].*$#\2#p' | head -n 1)
+          ref=$(sh scripts/db-url-ref.sh) # pooler — лише з хостом *.pooler.supabase.com; пряме — db.<ref>.supabase.co
           if [ -z "$ref" ]; then
             echo "::error title=db-deploy-staging::SUPABASE_DB_URL не схожий на рядок підключення Supabase (Session pooler чи пряме). Скопіюйте його з Connect у проєкті staging."
             exit 1
@@ -167,7 +170,6 @@ jobs:
             exit 1
           fi
           echo "Ціль міграцій: проєкт $ref (staging)"
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
       - name: Dry run (list of migrations to apply)
         env:
@@ -211,6 +213,9 @@ jobs:
             echo "mode=skip" >> "$GITHUB_OUTPUT"
             echo "::notice title=db-deploy::Секрет SUPABASE_DB_URL в environment production не задано — міграції не застосовано (db push пропущено)."
           fi
+      # Checkout — до запобіжника: він читає scripts/db-url-ref.sh.
+      - if: steps.mode.outputs.mode != 'skip'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # WS11: запобіжник — рядок production веде саме в прод-проєкт, а не в staging. У режимі link ref береться із
       # секрету SUPABASE_PROJECT_ID, GitHub маскує його в журналі, тож там пишемо лише «збігається».
       - name: Guard - production database ref
@@ -230,7 +235,7 @@ jobs:
             fi
             echo "Ціль міграцій: ref збігається з SUPABASE_PROD_REF (production; значення секрету в журналі замасковане)"
           else
-            ref=$(printf '%s' "$SUPABASE_DB_URL" | sed -n -E -e 's#^postgres(ql)?://postgres\.([a-z0-9]{20}):.*$#\2#p' -e 's#^postgres(ql)?://[^@]*@db\.([a-z0-9]{20})\.supabase\.co[:/].*$#\2#p' | head -n 1)
+            ref=$(sh scripts/db-url-ref.sh) # pooler — лише з хостом *.pooler.supabase.com; пряме — db.<ref>.supabase.co
             if [ -z "$ref" ]; then
               echo "::error title=db-deploy::SUPABASE_DB_URL в environment production не схожий на рядок підключення Supabase. Скопіюйте його з Connect у прод-проєкті."
               exit 1
@@ -241,8 +246,6 @@ jobs:
             fi
             echo "Ціль міграцій: проєкт $ref (production)"
           fi
-      - if: steps.mode.outputs.mode != 'skip'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.mode.outputs.mode != 'skip'
         uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
       - name: Link project (fallback path)

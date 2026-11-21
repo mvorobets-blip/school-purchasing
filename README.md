@@ -183,6 +183,19 @@ push, fetch, `git log` і `scripts/check-migration-order.mjs` працюють �
 вручну: **Actions → CI → Run workflow** на `main` з `include_seed` (`--include-seed`). Без секрету job пропускає
 крок з повідомленням. Перевіряємо прогоном у день 0.
 
+**Спершу staging (WS11).** Перед `db-deploy` той самий push у `main` запускає job `db-deploy-staging`: міграції в окремий
+проєкт Supabase staging, і лише якщо там зелено — у прод (`db-deploy` має `needs: db-deploy-staging`). Налаштування:
+
+- Settings → Environments → `staging`, **Deployment branches** = Selected branches → `main`; секрет environment
+  `SUPABASE_DB_URL` = рядок **Session pooler** проєкту staging (порт 5432) або пряме підключення `db.<ref>.supabase.co`;
+- Settings → Secrets and variables → Actions → **Variables**: `SUPABASE_STAGING_REF` і `SUPABASE_PROD_REF` — ref двох
+  **різних** проєктів (не секрети: вони є в `NEXT_PUBLIC_SUPABASE_URL`).
+
+Обидва jobs мають запобіжник (`scripts/db-url-ref.sh`): ref із рядка підключення (pooler — лише з хостом
+`*.pooler.supabase.com`) має збігатися з `SUPABASE_STAGING_REF` / `SUPABASE_PROD_REF`, інакше job червоний до `db push`.
+Без цього налаштування `db-deploy-staging` червоний, і прод не мігрує — так задумано. Сид staging — **Actions → CI → Run
+workflow** на `main` з `include_seed_staging`.
+
 **Запасний шлях** (якщо `--db-url` не працює): офіційний `supabase link` + `supabase db push`. Створіть scoped token
 (Supabase → Account → Access Tokens; доступ лише до вашого проєкту, дозвіл **Project Settings → API Keys → API Key
 Secrets: Read**; точні назви перевірте в інтерфейсі) і задайте в environment `production` секрети `SUPABASE_ACCESS_TOKEN`,
