@@ -6,9 +6,31 @@
 //   3) "/api/health" → 200 {db:"ok"}; з expected-sha — sha збігається (до 6 спроб × 20 с: прод-домен перемикається
 //                      на новий деплой не миттєво).
 // Код виходу: 0 — усе гаразд, 1 — є збій (рядки ::error:: видно в GitHub Actions), 2 — не вказано адресу.
+// WS11 (smoke v2, взято з koldovsky/2026-quitcode-11-devops-operations-hw materials/ops-kit/scripts/smoke.mjs):
+//   - VERCEL_AUTOMATION_BYPASS_SECRET задано → кожен запит несе заголовок x-vercel-protection-bypass (preview і staging
+//     за Vercel Authentication). Значення не друкуємо: у журналі лише bypass=true/false.
+//   - x-vercel-set-bypass-cookie НЕ надсилаємо: відповідь — редирект із Set-Cookie, а redirect:"manual" побачив би 3xx.
+//   - Секрет іде лише на *.vercel.app (і localhost для тестів): на чужу адресу з ручного запуску — без заголовка.
+//   - SMOKE_TARGET=deploy (preview і staging у smoke.yml) змінює лише підказки й підсумковий рядок.
 const [rawBase = process.env.PROD_URL ?? "", expectSha = ""] = process.argv.slice(2);
 // client_payload.url від Vercel може прийти хостом без схеми — додаємо https://.
 const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : "").replace(/\/+$/, "");
+
+const bypass = (process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
+const target = process.env.SMOKE_TARGET === "deploy" ? "deploy" : "prod";
+// Секрет обходу — лише деплоям Vercel (і локальним тестам): ручний запуск приймає будь-яку адресу, чужому хосту
+// секрет не віддаємо.
+const bypassHost = (() => {
+  try {
+    const { hostname } = new URL(base);
+    return hostname.endsWith(".vercel.app") || hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+})();
+const headers = { "user-agent": "smoke/2.0 (WS11)" };
+const sendBypass = Boolean(bypass) && bypassHost;
+if (sendBypass) headers["x-vercel-protection-bypass"] = bypass;
 
 const TIMEOUT_MS = 20_000;
 
@@ -18,7 +40,7 @@ const get = async (path) => {
     const r = await fetch(base + path, {
       redirect: "manual",
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: { "user-agent": "smoke/1.0 (D0)" },
+      headers,
     });
     return {
       status: r.status,
@@ -44,9 +66,23 @@ const isSameSiteLogin = (location) => {
 const vercelWall = (r) =>
   /vercel\.com\/(sso|login)|_vercel_sso/.test(r.location) || ((r.status === 401 || r.status === 403) && /vercel/i.test(r.text));
 
+// Підказка про стіну входу Vercel залежить від цілі й від того, чи є секрет обходу.
+function wallHint() {
+  if (bypass && !bypassHost) {
+    return `адреса не на *.vercel.app — секрет обходу на неї не надсилаємо; перевірте адресу деплою`;
+  }
+  if (sendBypass) {
+    return "Vercel не прийняв секрет обходу — його перегенерували чи видалили? Скопіюйте актуальний з Vercel (Settings → Deployment Protection → Protection Bypass for Automation) у GitHub Secrets VERCEL_AUTOMATION_BYPASS_SECRET і зробіть Redeploy";
+  }
+  if (target === "deploy") {
+    return "деплой за захистом Vercel, а секрету обходу немає — увімкніть Protection Bypass for Automation (Vercel → Settings → Deployment Protection) і додайте значення в GitHub Secrets як VERCEL_AUTOMATION_BYPASS_SECRET";
+  }
+  return "прод за стіною входу Vercel — Settings → Deployment Protection: Standard Protection (захищає preview і staging, прод відкритий), не All Deployments";
+}
+
 // Кожна перевірка повертає текст збою або null.
 function rootProblem(root) {
-  if (vercelWall(root)) return `"/": стіна входу Vercel — Settings → Deployment Protection → вимкніть Vercel Authentication`;
+  if (vercelWall(root)) return `"/": ${wallHint()}`;
   if (root.status === 0) return `"/": недоступний (${root.text})`;
   if (root.status >= 400) {
     const hint = root.vercelError === "MIDDLEWARE_INVOCATION_FAILED" ? " — у Vercel бракує NEXT_PUBLIC_SUPABASE_*?" : "";
@@ -97,7 +133,7 @@ function healthProblem(health) {
     return `"/api/health": Supabase призупинено — Dashboard → Resume project (безкоштовний проєкт засинає після тижня без активності)`;
   }
   if (health.reason === "invalid-api-key") {
-    return `"/api/health": ключ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY у Vercel не приймається — звірте змінні Production і зробіть Redeploy`;
+    return `"/api/health": ключ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY у Vercel не приймається — звірте змінні цього середовища (Production чи Preview) і зробіть Redeploy`;
   }
   if (health.status === 200 && health.db === "ok") return null;
   const reason = health.reason ? ` (${health.reason})` : "";
@@ -110,7 +146,9 @@ function shaProblem(health) {
     return `"/api/health": sha=local — у Vercel увімкніть Settings → Environment Variables → «Automatically expose System Environment Variables» і зробіть Redeploy`;
   }
   if (health.sha === expectSha) return null;
-  return `прод показує ${String(health.sha).slice(0, 7)}, а очікувався ${expectSha.slice(0, 7)} — деплой main не пройшов чи зроблено Instant Rollback?`;
+  const why = target === "deploy" ? "адреса деплою показує інший коміт — чи та адреса в client_payload.url?" : "деплой main не пройшов чи зроблено Instant Rollback?";
+  const who = target === "deploy" ? base : "прод";
+  return `${who} показує ${String(health.sha).slice(0, 7)}, а очікувався ${expectSha.slice(0, 7)} — ${why}`;
 }
 
 async function main() {
@@ -119,9 +157,10 @@ async function main() {
   const health = await fetchHealth(login.status === 200);
   const fail = [rootProblem(root), loginProblem(login), healthProblem(health), shaProblem(health)].filter(Boolean);
 
-  console.log(JSON.stringify({ base, root: root.status, login: login.status, health }));
+  // Лише статуси й публічна відповідь /api/health. Секрет обходу — тільки як true/false.
+  console.log(JSON.stringify({ base, target, bypass: sendBypass, root: root.status, login: login.status, health }));
   for (const f of fail) console.log(`::error title=smoke ${base}::${f}`);
-  if (!fail.length) console.log("OK — прод живий, сторінка входу відкривається, база відповідає.");
+  if (!fail.length) console.log(`OK — ${target === "deploy" ? "деплой" : "прод"} живий, сторінка входу відкривається, база відповідає.`);
   return fail.length ? 1 : 0;
 }
 
