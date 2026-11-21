@@ -15,8 +15,13 @@ const HEALTHY: Reply = { status: 200, body: JSON.stringify({ ok: true, sha: "abc
 let close: (() => void) | undefined;
 afterEach(() => close?.());
 
+// Заголовки, які бачив сервер, — щоб перевірити заголовок обходу Vercel.
+let seen: IncomingMessage["headers"][] = [];
+
 async function serve(routes: Routes) {
+  seen = [];
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+    seen.push(req.headers);
     const reply = routes[req.url ?? ""] ?? { status: 404 };
     res.writeHead(reply.status, reply.headers);
     res.end(reply.body ?? "");
@@ -28,9 +33,13 @@ async function serve(routes: Routes) {
 
 // Асинхронний запуск: spawnSync заблокував би сервер у цьому ж процесі.
 function smoke(...args: string[]) {
+  return smokeWith({}, ...args);
+}
+
+function smokeWith(extraEnv: Record<string, string>, ...args: string[]) {
   return new Promise<{ code: number | null; out: string }>((resolve) => {
     const child = spawn(process.execPath, [path.join(repoRoot, "scripts", "smoke.mjs"), ...args], {
-      env: { ...process.env, PROD_URL: "" },
+      env: { ...process.env, PROD_URL: "", VERCEL_AUTOMATION_BYPASS_SECRET: "", SMOKE_TARGET: "", ...extraEnv },
     });
     let out = "";
     child.stdout.on("data", (d) => (out += d));
@@ -126,5 +135,52 @@ describe("smoke.mjs", () => {
     expect(out).toContain('"/login": HTTP 500');
     expect(out).toContain('"/api/health": Supabase призупинено');
     expect(code).toBe(1);
+  });
+
+  const SECRET = "bypass-test-value-not-real-0123456789";
+  const OK_ROUTES: Routes = { "/": { status: 307, headers: { location: "/login" } }, "/login": LOGIN, "/api/health": HEALTHY };
+
+  it("із секретом обходу надсилає x-vercel-protection-bypass у кожному запиті й не друкує значення", async () => {
+    const base = await serve(OK_ROUTES);
+    const { code, out } = await smokeWith({ VERCEL_AUTOMATION_BYPASS_SECRET: SECRET, SMOKE_TARGET: "deploy" }, base, "abc1234");
+    expect(seen.length).toBeGreaterThanOrEqual(3);
+    expect(seen.every((h) => h["x-vercel-protection-bypass"] === SECRET)).toBe(true);
+    expect(seen.some((h) => "x-vercel-set-bypass-cookie" in h)).toBe(false);
+    expect(out).not.toContain(SECRET);
+    expect(out).toContain('"bypass":true');
+    expect(out).toContain("OK — деплой живий");
+    expect(code).toBe(0);
+  });
+
+  it("без секрету заголовка обходу немає", async () => {
+    const base = await serve(OK_ROUTES);
+    const { code, out } = await smoke(base);
+    expect(seen.some((h) => "x-vercel-protection-bypass" in h)).toBe(false);
+    expect(out).toContain('"bypass":false');
+    expect(code).toBe(0);
+  });
+
+  it("деплой за стіною Vercel без секрету — підказка увімкнути Protection Bypass for Automation", async () => {
+    const base = await serve({ "/": { status: 401, body: "Vercel Authentication" }, "/login": { status: 401 }, "/api/health": { status: 401 } });
+    const { code, out } = await smokeWith({ SMOKE_TARGET: "deploy" }, base);
+    expect(out).toContain("Protection Bypass for Automation");
+    expect(code).toBe(1);
+  });
+
+  it("Vercel не прийняв секрет — підказка оновити секрет, значення не друкується", async () => {
+    const base = await serve({ "/": { status: 401, body: "Vercel Authentication" }, "/login": { status: 401 }, "/api/health": { status: 401 } });
+    const { code, out } = await smokeWith({ VERCEL_AUTOMATION_BYPASS_SECRET: SECRET, SMOKE_TARGET: "deploy" }, base);
+    expect(out).toContain("Vercel не прийняв секрет обходу");
+    expect(out).not.toContain(SECRET);
+    expect(code).toBe(1);
+  });
+
+  it("на адресу не з *.vercel.app секрет обходу не надсилає", async () => {
+    const base = (await serve(OK_ROUTES)).replace("127.0.0.1", "localhost.");
+    const { out } = await smokeWith({ VERCEL_AUTOMATION_BYPASS_SECRET: SECRET, SMOKE_TARGET: "deploy" }, base);
+    expect(seen.length).toBeGreaterThanOrEqual(3);
+    expect(seen.some((h) => "x-vercel-protection-bypass" in h)).toBe(false);
+    expect(out).toContain('"bypass":false');
+    expect(out).not.toContain(SECRET);
   });
 });
