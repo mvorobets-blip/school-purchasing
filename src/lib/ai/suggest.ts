@@ -20,6 +20,15 @@ export type SuggestResult =
 
 export type SuggestOptions = { timeoutMs?: number; maxRetries?: number };
 
+// Що сталося з викликом (WS11, журнал llm.call і таблиця ai_calls): лише факти без тексту — чи викликали модель, токени
+// й КОД причини збою (не текст повідомлення: у ньому може бути текст користувача чи відповідь постачальника).
+export type SuggestTrace = {
+  modelCalled: boolean;
+  inputTokens?: number;
+  outputTokens?: number;
+  errorKind?: "no_key" | "empty_input" | "too_long" | "rate_limited" | "timeout" | "invalid_output" | "empty_output" | "provider_error";
+};
+
 // 15 секунд чекання відповіді до повідомлення (AC-AI-04, припущення PM у #71).
 export const SUGGEST_TIMEOUT_MS = 15_000;
 
@@ -27,10 +36,31 @@ const failed = (): SuggestResult => ({ state: "failed", message: AI_TEXT.failed 
 const unavailable = (): SuggestResult => ({ state: "unavailable", message: AI_TEXT.unavailable });
 
 export async function proposeLine(text: string, model: LanguageModel | null, opts: SuggestOptions = {}): Promise<SuggestResult> {
+  return (await proposeLineTraced(text, model, opts)).result;
+}
+
+/** proposeLine + факти виклику для журналу (WS11). Поведінка для людини та сама: result — той самий SuggestResult. */
+export async function proposeLineTraced(
+  text: string,
+  model: LanguageModel | null,
+  opts: SuggestOptions = {},
+): Promise<{ result: SuggestResult; trace: SuggestTrace }> {
   const early = precheck(text, model);
-  if (early || !model) return early ?? unavailable();
+  if (early || !model) {
+    const result = early ?? unavailable();
+    return { result, trace: { modelCalled: false, errorKind: earlyErrorKind(result, model) } };
+  }
   const answer = await askModel(text, model, opts);
-  return "state" in answer ? answer : interpret(answer.suggestion, answer.modelId);
+  if ("state" in answer) return { result: answer, trace: { modelCalled: true, errorKind: answer.errorKind } };
+  const result = interpret(answer.suggestion, answer.modelId);
+  const trace: SuggestTrace = { modelCalled: true, inputTokens: answer.inputTokens, outputTokens: answer.outputTokens };
+  if (result.state === "failed") trace.errorKind = "empty_output";
+  return { result, trace };
+}
+
+function earlyErrorKind(result: SuggestResult, model: LanguageModel | null): SuggestTrace["errorKind"] {
+  if (result.state === "injection") return undefined; // відмова, не збій
+  return model ? "empty_input" : "no_key";
 }
 
 // Перевірки до виклику моделі: вказівки в описі — одразу відмова (AC-AI-06) за будь-якого стану, зокрема без ключа, тож
@@ -47,7 +77,10 @@ async function askModel(
   text: string,
   model: LanguageModel,
   opts: SuggestOptions,
-): Promise<{ suggestion: LineSuggestion; modelId: string } | SuggestResult> {
+): Promise<
+  | { suggestion: LineSuggestion; modelId: string; inputTokens?: number; outputTokens?: number }
+  | (SuggestResult & { errorKind: SuggestTrace["errorKind"] })
+> {
   try {
     const result = await generateText({
       model,
@@ -58,13 +91,26 @@ async function askModel(
       maxRetries: opts.maxRetries ?? 0,
       timeout: opts.timeoutMs ?? SUGGEST_TIMEOUT_MS,
     });
-    return { suggestion: result.output, modelId: result.response.modelId };
+    return {
+      suggestion: result.output,
+      modelId: result.response.modelId,
+      inputTokens: result.usage?.inputTokens,
+      outputTokens: result.usage?.outputTokens,
+    };
   } catch (error) {
     // Модель відповіла JSON у Markdown-огорожі (```json … ```) — розбираємо сам JSON і перевіряємо тією самою схемою;
     // відповідь не за схемою лишається збоєм (AC-AI-04).
     const noObject = NoObjectGeneratedError.isInstance(error) ? error : null;
     const recovered = noObject ? parseFenced(noObject.text) : null;
-    return recovered ? { suggestion: recovered, modelId: noObject?.response?.modelId ?? "unknown" } : classifyFailure(error);
+    if (recovered) {
+      return {
+        suggestion: recovered,
+        modelId: noObject?.response?.modelId ?? "unknown",
+        inputTokens: noObject?.usage?.inputTokens,
+        outputTokens: noObject?.usage?.outputTokens,
+      };
+    }
+    return { ...classifyFailure(error), errorKind: failureKind(error) };
   }
 }
 
@@ -93,6 +139,18 @@ function parseFenced(text: string | undefined): LineSuggestion | null {
 
 // Збій моделі → стан для людини: ліміт (429, зокрема 429 у тілі відповіді HTTP 200) — AC-AI-05; таймаут, відповідь не за
 // схемою чи інша помилка постачальника — AC-AI-04 («не вдалося отримати пропозицію»).
+// Код причини збою для журналу (не текст помилки). Та сама логіка, що в classifyFailure, плюс таймаут окремо.
+export function failureKind(error: unknown): SuggestTrace["errorKind"] {
+  const cause = RetryError.isInstance(error) ? error.lastError : error;
+  if (NoObjectGeneratedError.isInstance(cause)) return "invalid_output";
+  if (APICallError.isInstance(cause)) {
+    const code = cause.statusCode === 200 ? (cause.data as { code?: unknown } | undefined)?.code : cause.statusCode;
+    if (code === 429 || code === "429") return "rate_limited";
+  }
+  if (cause instanceof Error && (cause.name === "TimeoutError" || cause.name === "AbortError")) return "timeout";
+  return "provider_error";
+}
+
 export function classifyFailure(error: unknown): SuggestResult {
   const cause = RetryError.isInstance(error) ? error.lastError : error;
   if (NoObjectGeneratedError.isInstance(cause)) return failed();
