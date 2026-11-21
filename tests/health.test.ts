@@ -1,6 +1,6 @@
 // D0: /api/health відрізняє «база відповіла» від «база недоступна, призупинена чи ключ хибний».
 import { describe, expect, it } from "vitest";
-import { classifyDbProbe } from "@/lib/health";
+import { appEnvFrom, classifyDbProbe, supabaseRefFrom } from "@/lib/health";
 
 describe("classifyDbProbe (/api/health)", () => {
   it("рахує базу живою, коли запит пройшов або Postgres відмовив у правах (42501)", () => {
@@ -54,5 +54,23 @@ describe("classifyDbProbe (/api/health)", () => {
     });
     // PGRST121 (не розібрано JSON у RAISE) — база відповіла.
     expect(classifyDbProbe({ status: 500, error: { code: "PGRST121", message: "could not parse RAISE" } }).db).toBe("ok");
+  });
+});
+
+describe("appEnv і supabaseRef (/api/health, WS11)", () => {
+  it("ref проєкту береться з адреси Supabase; хибна чи порожня адреса — null, без винятку", () => {
+    expect(supabaseRefFrom("https://rnawhejsgqhgbtjajjmb.supabase.co")).toBe("rnawhejsgqhgbtjajjmb");
+    expect(supabaseRefFrom("https://tqbvafkcniaspvluverp.supabase.co/")).toBe("tqbvafkcniaspvluverp");
+    expect(supabaseRefFrom(undefined)).toBeNull();
+    expect(supabaseRefFrom("not a url")).toBeNull();
+    expect(supabaseRefFrom("https://evil.example.test")).toBeNull();
+    expect(supabaseRefFrom("https://abc.supabase.co.evil.example.test")).toBeNull();
+  });
+
+  it("appEnv: APP_ENV для гілки staging, інакше VERCEL_ENV, локально — local", () => {
+    expect(appEnvFrom({ APP_ENV: "staging", VERCEL_ENV: "preview" })).toBe("staging");
+    expect(appEnvFrom({ VERCEL_ENV: "production" })).toBe("production");
+    expect(appEnvFrom({ APP_ENV: "  ", VERCEL_ENV: "preview" })).toBe("preview");
+    expect(appEnvFrom({})).toBe("local");
   });
 });
