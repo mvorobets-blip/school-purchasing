@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { canUseAssistant } from "@/lib/ai/access";
 import { recordSuggestCall } from "@/lib/ai/ai-call";
 import { AI_TEXT } from "@/lib/ai/messages";
@@ -13,8 +14,9 @@ export type SuggestActionState = { status: "idle" } | { status: "done"; result: 
 
 // Пропозиція рядка за вільним описом (зріз 4, AC-AI-01…06). Хто питає — до виклику моделі (AGENTS.md): гість чи
 // деактивований — відмова без виклику; `admin` — теж відмова: вимога PM стосується лише автора заявки з ролями
-// `requester` і `approver` (#71, «Користувачі й ролі»). Дія НІЧОГО не пише в базу: лише повертає пропозицію у форму,
-// а подає закупівлю людина наявною дією submitPurchase (AC-AI-01 «закупівлю ще не подано», AC-AI-06 «нової заявки немає»).
+// `requester` і `approver` (#71, «Користувачі й ролі»). Заявок дія не пише: лише повертає пропозицію у форму, а подає
+// закупівлю людина наявною дією submitPurchase (AC-AI-01 «закупівлю ще не подано», AC-AI-06 «нової заявки немає»).
+// Єдиний запис — рядок журналу ai_calls без тексту опису, ПІСЛЯ відповіді (after): ADR 0006, SLO-2 PM #83.
 export async function requestLineSuggestion(_prev: SuggestActionState, formData: FormData): Promise<SuggestActionState> {
   const user = await getCurrentUser();
   if (!user || !canUseAssistant(user.role)) return { status: "forbidden", message: messageFor("FORBIDDEN") };
@@ -35,6 +37,10 @@ export async function requestLineSuggestion(_prev: SuggestActionState, formData:
     const { productModel } = await import("@/lib/ai/openrouter");
     outcome = await proposeLineTraced(description, productModel(), { timeoutMs: SUGGEST_TIMEOUT_MS, maxRetries: 0 });
   }
-  await recordSuggestCall({ requestId, latencyMs: performance.now() - started, ...outcome }, await createClient());
+  // Журнал — після відповіді людині (ADR 0006): вставка й прибирання старих рядків не додають затримки до 15 с AC-AI-04.
+  // Клієнт Supabase (cookie сесії) створюємо ще в межах запиту.
+  const call = { requestId, latencyMs: performance.now() - started, ...outcome };
+  const supabase = await createClient();
+  after(() => recordSuggestCall(call, supabase));
   return { status: "done", result: outcome.result };
 }

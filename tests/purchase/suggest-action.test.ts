@@ -13,6 +13,17 @@ const dbCalls: string[] = [];
 // Що дія вставила (WS11: єдиний дозволений запис — рядок журналу ai_calls без тексту опису).
 const inserted: { table: string; row: Record<string, unknown> }[] = [];
 const db = vi.hoisted(() => ({ insertError: null as null | { code: string; message: string } }));
+// after() з next/server: черга, як у Next.js — колбек іде ПІСЛЯ відповіді дії; тест сам «відпускає» його (ADR 0006).
+const afterQueue = vi.hoisted(() => [] as (() => unknown)[]);
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (task: () => unknown) => {
+    afterQueue.push(task);
+  },
+}));
+const flushAfter = async () => {
+  while (afterQueue.length) await afterQueue.shift()?.();
+};
 const provider = vi.hoisted(() => ({ model: null as unknown }));
 
 vi.mock("server-only", () => ({}));
@@ -69,7 +80,8 @@ const form = (description: string) => {
 };
 const forbidden = { status: "forbidden", message: MESSAGES.FORBIDDEN };
 // Жодного запису заявки: у базу йде лише один рядок ai_calls (WS11, SLO-2), і в ньому немає тексту опису.
-const expectOnlyLogRow = (description: string, appState: string) => {
+const expectOnlyLogRow = async (description: string, appState: string) => {
+  await flushAfter();
   expect(dbCalls).toEqual(["from ai_calls", "insert ai_calls"]);
   expect(inserted).toHaveLength(1);
   expect(inserted[0].row).toMatchObject({ app_state: appState, prompt_version: "line-v4" });
@@ -86,6 +98,7 @@ describe("дія requestLineSuggestion", () => {
     dbCalls.length = 0;
     inserted.length = 0;
     db.insertError = null;
+    afterQueue.length = 0;
     model = replay(PAPER_LINE);
     provider.model = model;
     process.env.OPENROUTER_API_KEY = "test-key-not-real";
@@ -143,7 +156,7 @@ describe("дія requestLineSuggestion", () => {
       result: { state: "line", modelId: "test-model", line: { name: "A4 paper", purpose: "For printing", quantity: "3", price: "20.00" } },
     });
     expect(model.doGenerateCalls).toHaveLength(1);
-    expectOnlyLogRow(PAPER, "line");
+    await expectOnlyLogRow(PAPER, "line");
   });
 
   it("AC-AI-01: автор-схвалювач (role approver) теж отримує пропозицію для власної форми", async () => {
@@ -157,7 +170,7 @@ describe("дія requestLineSuggestion", () => {
       result: { state: "injection", message: AI_TEXT.injection },
     });
     expect(model.doGenerateCalls).toHaveLength(0);
-    expectOnlyLogRow(INJECTION, "injection");
+    await expectOnlyLogRow(INJECTION, "injection");
   });
 
   it("AC-AI-05: денний ліміт вичерпано (429) — «The assistant is unavailable today…», один виклик без повтору, лише рядок журналу", async () => {
@@ -172,7 +185,7 @@ describe("дія requestLineSuggestion", () => {
       result: { state: "unavailable", message: AI_TEXT.unavailable },
     });
     expect(model.doGenerateCalls).toHaveLength(1);
-    expectOnlyLogRow(PAPER, "unavailable");
+    await expectOnlyLogRow(PAPER, "unavailable");
   });
 
   it("ключа OPENROUTER_API_KEY немає (порожній) — «The assistant is unavailable today…», без мережі", async () => {
@@ -209,6 +222,7 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
     dbCalls.length = 0;
     inserted.length = 0;
     db.insertError = null;
+    afterQueue.length = 0;
     provider.model = replay(PAPER_LINE);
     process.env.OPENROUTER_API_KEY = "sk-or-test-not-real";
     info = vi.spyOn(console, "info").mockImplementation(() => {});
@@ -223,6 +237,7 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
 
   it("один запит — рівно один рядок llm.call і один рядок ai_calls; маркера з опису немає ні там, ні там", async () => {
     await requestLineSuggestion(idle, form(`${PAPER}. ${MARKER}`));
+    await flushAfter();
     const lines = llmLines();
     expect(lines).toHaveLength(1);
     const parsed = JSON.parse(lines[0]);
@@ -241,6 +256,7 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
 
   it("пропозиція (модель викликано): state ok, модель що відповіла, токени з usage; маркера з опису немає", async () => {
     await requestLineSuggestion(idle, form(`${PAPER} MARKER-7f3a`));
+    await flushAfter();
     expect(llmLines()).toHaveLength(1);
     expect(llmLines()[0]).not.toContain("MARKER-7f3a");
     expect(JSON.stringify(inserted[0].row)).not.toContain("MARKER-7f3a");
@@ -263,6 +279,7 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
       },
     });
     await requestLineSuggestion(idle, form(PAPER));
+    await flushAfter();
     expect(error).toHaveBeenCalledTimes(1);
     const parsed = JSON.parse(String(error.mock.calls[0][0]));
     expect(parsed).toMatchObject({ state: "unavailable", appState: "unavailable", errorKind: "rate_limited", modelCalled: true });
@@ -273,11 +290,13 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
   it("без ключа: модель не викликано, код no_key", async () => {
     process.env.OPENROUTER_API_KEY = " ";
     await requestLineSuggestion(idle, form(PAPER));
+    await flushAfter();
     expect(inserted[0].row).toMatchObject({ app_state: "unavailable", model_called: false, error_kind: "no_key", fallback_used: false });
   });
 
   it("задовгий опис (прямий виклик дії): failed без виклику моделі, код too_long", async () => {
     await requestLineSuggestion(idle, form("a".repeat(1001)));
+    await flushAfter();
     expect(inserted[0].row).toMatchObject({ state: "unavailable", app_state: "failed", model_called: false, error_kind: "too_long" });
   });
 
@@ -285,6 +304,7 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
     for (const user of [null, { id: "a1", role: "admin", isActive: true }]) {
       state.user = user;
       await requestLineSuggestion(idle, form(PAPER));
+      await flushAfter();
     }
     expect(llmLines()).toEqual([]);
     expect(inserted).toEqual([]);
@@ -293,9 +313,19 @@ describe("llm.call і ai_calls у дії requestLineSuggestion", () => {
   it("збій вставки ai_calls не ламає відповідь людині: подія ai_calls.insert_failed лише з кодом, без тексту помилки", async () => {
     db.insertError = { code: "42501", message: `new row violates policy: ${MARKER}` };
     expect(await requestLineSuggestion(idle, form(PAPER))).toMatchObject({ status: "done", result: { state: "line" } });
+    await flushAfter();
     expect(warn).toHaveBeenCalledTimes(1);
     const line = String(warn.mock.calls[0][0]);
     expect(JSON.parse(line)).toMatchObject({ event: "ai_calls.insert_failed", code: "42501" });
     expect(line).not.toContain("MARKER-7f3a");
+  });
+
+  it("відповідь людині — до запису журналу: рядок ai_calls і llm.call з'являються лише після after() (ADR 0006)", async () => {
+    expect(await requestLineSuggestion(idle, form(PAPER))).toMatchObject({ status: "done", result: { state: "line" } });
+    expect(inserted).toEqual([]);
+    expect(llmLines()).toEqual([]);
+    await flushAfter();
+    expect(inserted).toHaveLength(1);
+    expect(llmLines()).toHaveLength(1);
   });
 });
