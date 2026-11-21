@@ -136,8 +136,9 @@ jobs:
     concurrency:
       group: supabase-staging
       cancel-in-progress: false
+    # Рядок підключення (секрет) — лише в env кроків, яким він потрібен, а не всього job: сторонні дії
+    # (checkout, setup-cli) його не бачать.
     env:
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }} # рядок підключення проєкту staging
       STAGING_REF: ${{ vars.SUPABASE_STAGING_REF }}
       PROD_REF: ${{ vars.SUPABASE_PROD_REF }}
       SEED_FLAG: ${{ github.event_name == 'workflow_dispatch' && inputs.include_seed_staging && '--include-seed' || '' }}
@@ -145,6 +146,8 @@ jobs:
       # Без запасного шляху й без пропуску: немає секрету чи він веде не туди — job червоний, і прод не мігрує.
       # Ref не секрет (він і так у NEXT_PUBLIC_SUPABASE_URL), тож журнал друкує лише його.
       - name: Guard - staging database ref
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }} # рядок підключення проєкту staging
         run: |
           if [ -z "$SUPABASE_DB_URL" ]; then
             echo "::error title=db-deploy-staging::Секрет SUPABASE_DB_URL в environment staging не задано."
@@ -167,8 +170,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
       - name: Dry run (list of migrations to apply)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: supabase db push --yes --dry-run --db-url "$SUPABASE_DB_URL" $SEED_FLAG
       - name: Apply migrations
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: supabase db push --yes --db-url "$SUPABASE_DB_URL" $SEED_FLAG
 
   db-deploy:
@@ -208,12 +215,15 @@ jobs:
       # секрету SUPABASE_PROJECT_ID, GitHub маскує його в журналі, тож там пишемо лише «збігається».
       - name: Guard - production database ref
         if: steps.mode.outputs.mode != 'skip'
+        # Вихід кроку — через env, а не підстановкою ${{ }} у текст скрипту (звичка проти ін'єкцій у shell).
+        env:
+          MODE: ${{ steps.mode.outputs.mode }}
         run: |
           if [ -z "$PROD_REF" ] || [ -z "$STAGING_REF" ] || [ "$PROD_REF" = "$STAGING_REF" ]; then
             echo "::error title=db-deploy::Задайте змінні репо SUPABASE_PROD_REF і SUPABASE_STAGING_REF (різні)."
             exit 1
           fi
-          if [ "${{ steps.mode.outputs.mode }}" = "link" ]; then
+          if [ "$MODE" = "link" ]; then
             if [ "$SUPABASE_PROJECT_ID" != "$PROD_REF" ]; then
               echo "::error title=db-deploy::Секрет SUPABASE_PROJECT_ID в environment production не збігається з SUPABASE_PROD_REF. Міграцію зупинено."
               exit 1
