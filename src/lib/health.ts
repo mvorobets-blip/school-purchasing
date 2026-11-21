@@ -30,8 +30,9 @@ export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   return { db: "down", reason: `status-${status}${code ? `-${code}` : ""}` };
 }
 
-// WS11: у якому середовищі й з якою базою працює деплой — без секретів. appEnv — змінна APP_ENV (на гілці staging у
-// Vercel = "staging"; на staging VERCEL_ENV теж "preview", тож лише APP_ENV їх розрізняє), без неї — VERCEL_ENV.
+// WS11: у якому середовищі й з якою базою працює деплой — без секретів. appEnv — лише значення змінної APP_ENV (на гілці
+// staging у Vercel = "staging"; на staging VERCEL_ENV теж "preview", тож лише APP_ENV їх розрізняє), без неї — null
+// (R03 курсу: так з /api/health видно, де APP_ENV справді задано; VERCEL_ENV і так є в полі env).
 // supabaseRef — ref проєкту Supabase з адреси NEXT_PUBLIC_SUPABASE_URL (https://<ref>.supabase.co): не секрет, він і так
 // є в публічній адресі; за ним smoke і перевірка курсу бачать, що staging і preview ходять не в прод-базу.
 const SUPABASE_HOST = /^([a-z0-9]{20})\.supabase\.co$/;
@@ -45,6 +46,6 @@ export function supabaseRefFrom(url: string | undefined): string | null {
   }
 }
 
-export function appEnvFrom(env: { APP_ENV?: string; VERCEL_ENV?: string }): string {
-  return env.APP_ENV?.trim() || env.VERCEL_ENV || "local";
+export function appEnvFrom(appEnv: string | undefined): string | null {
+  return appEnv?.trim() || null;
 }

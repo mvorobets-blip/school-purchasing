@@ -67,10 +67,10 @@ describe("appEnv і supabaseRef (/api/health, WS11)", () => {
     expect(supabaseRefFrom("https://abc.supabase.co.evil.example.test")).toBeNull();
   });
 
-  it("appEnv: APP_ENV для гілки staging, інакше VERCEL_ENV, локально — local", () => {
-    expect(appEnvFrom({ APP_ENV: "staging", VERCEL_ENV: "preview" })).toBe("staging");
-    expect(appEnvFrom({ VERCEL_ENV: "production" })).toBe("production");
-    expect(appEnvFrom({ APP_ENV: "  ", VERCEL_ENV: "preview" })).toBe("preview");
-    expect(appEnvFrom({})).toBe("local");
+  it("appEnv: лише значення APP_ENV (staging); без змінної чи з порожньою — null, а не VERCEL_ENV", () => {
+    expect(appEnvFrom("staging")).toBe("staging");
+    expect(appEnvFrom(" staging ")).toBe("staging");
+    expect(appEnvFrom("  ")).toBeNull();
+    expect(appEnvFrom(undefined)).toBeNull();
   });
 });
