@@ -58,6 +58,27 @@ describe("stackFrames", () => {
     expect(frames.join("\n")).not.toMatch(/someone|marker-7f3a|not a frame/);
   });
 
+  it("абсолютний шлях поза .next/src/node_modules і шлях з пробілами — лише назва файла з рядком (CodeRabbit, PR 97)", () => {
+    const e = new Error("x");
+    e.stack = [
+      "Error: x",
+      "    at run (/Users/synthetic-user/project/dist/handler.js:10:5)",
+      "    at /home/someone/my app/build/chunk 1.js:3:7",
+      "    at boot (C:\\Users\\someone\\proj\\out\\main.js:1:2)",
+      "    at page (/Users/synthetic-user/My Projects/app/.next/server/page.js:4:4)",
+      "    at node:internal/process/task_queues:95:5",
+    ].join("\n");
+    const frames = stackFrames(e);
+    expect(frames).toEqual([
+      "at run (handler.js:10:5)",
+      "at chunk 1.js:3:7",
+      "at boot (main.js:1:2)",
+      "at page (.next/server/page.js:4:4)",
+      "at node:internal/process/task_queues:95:5",
+    ]);
+    expect(frames.join("\n")).not.toMatch(/synthetic-user|someone|Users|home/);
+  });
+
   it("не Error чи без стеку — порожньо", () => {
     expect(stackFrames("boom")).toEqual([]);
     const e = new Error("x");

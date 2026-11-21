@@ -32,6 +32,17 @@ export type AlertEnv = {
  * містити дані користувача), беремо лише рядки виду «at … файл:рядок:колонка», а абсолютний шлях скорочуємо до
  * .next/…, src/… чи node_modules/… — щоб у чат не потрапило ім'я користувача ОС з локального шляху.
  */
+// Абсолютний шлях у кадрі: до .next/, src/ чи node_modules/ — відносний (як раніше); будь-який інший абсолютний шлях
+// (зокрема з пробілами) — лише назва файла з рядком і колонкою: ім'я користувача ОС у чат не йде (CodeRabbit, PR 97).
+const KNOWN_ROOT = /(?:[A-Za-z]:)?[\\/][^()]*?[\\/](\.next|src|node_modules)[\\/]/g;
+// Абсолютний шлях у кадрі починається одразу після «(» чи пробілу після «at»: так не чіпаємо відносні .next/… і node:internal/….
+const OTHER_ABSOLUTE = /(?<=[(\s])(?:[A-Za-z]:)?[\\/][^()]*[\\/]([^\\/()]+:\d+:\d+)/g;
+
+function shortenPath(line: string): string {
+  const known = line.replace(KNOWN_ROOT, "$1/");
+  return known.replace(OTHER_ABSOLUTE, "$1");
+}
+
 export function stackFrames(error: unknown): string[] {
   if (!(error instanceof Error) || typeof error.stack !== "string") return [];
   const header = error.message ? `${error.name}: ${error.message}` : error.name;
@@ -42,7 +53,7 @@ export function stackFrames(error: unknown): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.startsWith("at ") && /:\d+:\d+\)?$/.test(line))
-    .map((line) => line.replace(/(?:[A-Za-z]:)?[\\/][^\s()]*?[\\/](\.next|src|node_modules)[\\/]/g, "$1/"))
+    .map(shortenPath)
     .slice(0, STACK_FRAMES)
     .map((line) => line.slice(0, FRAME_MAX));
 }
