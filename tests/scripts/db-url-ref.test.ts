@@ -7,7 +7,7 @@ import { repoRoot } from "./run-script";
 // Технічні тести — без AC ID. Рядки вигадані, паролі не справжні.
 const REF = "rnawhejsgqhgbtjajjmb";
 const ref = (url: string) =>
-  spawnSync("sh", [path.join(repoRoot, "scripts", "db-url-ref.sh")], { env: { PATH: process.env.PATH, SUPABASE_DB_URL: url }, encoding: "utf8" })
+  spawnSync("sh", [path.join(repoRoot, "scripts", "db-url-ref.sh")], { env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", SUPABASE_DB_URL: url }, encoding: "utf8" })
     .stdout.trim();
 
 describe("db-url-ref.sh", () => {
