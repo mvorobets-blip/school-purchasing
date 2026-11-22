@@ -5,13 +5,15 @@
 // Кроки: playwright test → pack.mjs → review.mjs (claude -p) → combine.mjs → report.mjs.
 // Звіт пишеться завжди, навіть якщо тести червоні: FAIL — теж результат для PM. Код виходу 1, якщо є FAIL.
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { parseEnv } from "node:util";
 import { pack } from "./pack.mjs";
 import { review } from "./review.mjs";
 import { combine } from "./combine.mjs";
 import { report } from "./report.mjs";
 import { RESULTS, ROOT, WORK, rel } from "./lib.mjs";
+import { fetchTargetHealth } from "./target.mjs";
 
 const argv = process.argv.slice(2);
 const take = (name) => {
@@ -37,15 +39,17 @@ const git = (...a) => {
   }
 };
 
+// З заголовком обходу Vercel (WS11): інакше preview і staging віддали б стіну входу замість sha. З .env.local беремо
+// ЛИШЕ цю змінну (parseEnv), а не весь файл: env цього процесу йде й у рецензента (claude -p) — ключам там не місце.
+function bypassSecret() {
+  if (process.env.VERCEL_AUTOMATION_BYPASS_SECRET) return process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const file = path.join(ROOT, ".env.local");
+  return existsSync(file) ? parseEnv(readFileSync(file, "utf8")).VERCEL_AUTOMATION_BYPASS_SECRET : undefined;
+}
+
 async function deployedSha(base) {
   if (!base) return null;
-  try {
-    const res = await fetch(`${base}/api/health`, { redirect: "manual" });
-    if (!res.headers.get("content-type")?.includes("json")) return null;
-    return (await res.json()).sha ?? null;
-  } catch {
-    return null;
-  }
+  return (await fetchTargetHealth(base, bypassSecret())).sha;
 }
 
 const startedAt = new Date().toISOString();

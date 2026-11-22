@@ -4,6 +4,7 @@
 // Запис увімкнено для КОЖНОГО тесту, не лише для впалих: для PM зелений прогін — такий самий доказ, як червоний.
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+import { bypassHeaders } from "./scripts/uat/target.mjs";
 
 // Локально — значення з .env.local (DEMO_USER_PASSWORD, ключі Supabase). Файл не друкуємо й не комітимо.
 // У CI .env.local немає: змінні дає workflow.
@@ -20,12 +21,20 @@ const withNegativeControls = process.env.UAT_NEGATIVE_CONTROLS === "1";
 // OpenRouter немає (помічник там «недоступний»), а живий виклик моделі в CI курс не дозволяє — там golden офлайн.
 const skipped = deployed ? /@negative-control/ : /@negative-control|@live-model/;
 const noRecording = { video: "off", trace: "off", screenshot: "off" } as const;
+// WS11 (R03): preview і staging за захистом Vercel — заголовок обходу лише з VERCEL_AUTOMATION_BYPASS_SECRET і лише коли
+// ЦІЛЬ UAT — *.vercel.app (scripts/uat/target.mjs). Увага: extraHTTPHeaders Playwright додає до ВСІХ запитів браузера,
+// зокрема до інших хостів, — так само в прикладі Playwright у документації Vercel. Зараз це безпечно: застосунок не робить
+// запитів з браузера на чужі хости (шрифти — next/font локально, клієнта Supabase в браузері немає). З'явиться такий
+// запит — обмежити заголовок маршрутом (page.route на хост цілі). Локальна збірка й CI — без заголовків.
+const extraHTTPHeaders = deployed ? bypassHeaders(deployed, process.env.VERCEL_AUTOMATION_BYPASS_SECRET) : {};
 
 export default defineConfig({
   testDir: "tests/e2e",
   testMatch: "**/*.spec.ts",
   outputDir: "test-results/artifacts",
   forbidOnly: !!process.env.CI,
+  // WS11 (R03): на розгорнутій адресі до першого запису звіряємо ref Supabase цілі (/api/health) з .env.local.
+  globalSetup: deployed ? "./tests/e2e/support/target-guard.ts" : undefined,
   // Повтор на розгорнутому застосунку може вдруге створити дані, а доказом має бути перша спроба.
   retries: 0,
   // По одному сценарію: читабельні відео, без гонок за спільні акаунти.
@@ -39,6 +48,7 @@ export default defineConfig({
   use: {
     ...devices["Desktop Chrome"],
     baseURL,
+    extraHTTPHeaders,
     locale: "uk-UA",
     timezoneId: "Europe/Kyiv",
     viewport: { width: 1280, height: 800 },
