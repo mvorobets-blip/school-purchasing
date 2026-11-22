@@ -49,6 +49,13 @@ describe("профіль «лише пропонує» (R08)", () => {
       expect(perms.allow ?? []).not.toContain("mcp__vercel__filter_project_envs");
     });
 
+    // `vercel` без підкоманди = `vercel deploy` (`vercel --yes` розгортає), тож `*vercel deploy*` його не ловить (CodeRabbit PR 101).
+    it(`${name}: виклик vercel без підкоманди (vercel, vercel --yes) — у deny для обох оболонок`, () => {
+      expect(perms.deny).toEqual(
+        expect.arrayContaining(["Bash(*vercel)", "Bash(*vercel -*)", "PowerShell(*vercel)", "PowerShell(*vercel -*)"]),
+      );
+    });
+
     it(`${name}: жоден інструмент не і в allow, і в deny`, () => {
       const deny = new Set(perms.deny);
       expect((perms.allow ?? []).filter((a) => deny.has(a))).toEqual([]);
@@ -59,6 +66,8 @@ describe("профіль «лише пропонує» (R08)", () => {
     expect(incident.defaultMode).toBe("plan");
     expect(incident.disableBypassPermissionsMode).toBe("disable");
     expect(incident.deny).toEqual(expect.arrayContaining(["Edit", "Write", "Bash(git push*)", "Read(.env*)"]));
+    // `git diff --output=<файл>` пише файл попри deny на Edit/Write (CodeRabbit PR 101).
+    expect(incident.deny).toEqual(expect.arrayContaining(["Bash(git diff *--output*)", "PowerShell(git diff *--output*)"]));
   });
 
   it(".mcp.incident.json: Supabase лише на читання й лише проєкт staging; Vercel через OAuth; токенів у файлі немає", () => {
