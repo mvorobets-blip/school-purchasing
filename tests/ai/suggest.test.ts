@@ -288,7 +288,7 @@ describe("proposeLineTraced: код причини для журналу", () =>
 
   it("відповідь не за схемою — invalid_output", async () => {
     const { trace } = await proposeLineTraced(PAPER, replay("Ось ваш рядок: папір"), { maxRetries: 0 });
-    expect(trace).toMatchObject({ modelCalled: true, errorKind: "invalid_output" });
+    expect(trace).toMatchObject({ modelCalled: true, errorKind: "invalid_output", inputTokens: 10, outputTokens: 20 });
   });
 
   it("модель відповіла, але всі поля порожні — empty_output", async () => {

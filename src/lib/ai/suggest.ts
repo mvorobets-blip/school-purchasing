@@ -51,7 +51,14 @@ export async function proposeLineTraced(
     return { result, trace: { modelCalled: false, errorKind: earlyErrorKind(result, model) } };
   }
   const answer = await askModel(text, model, opts);
-  if ("state" in answer) return { result: answer, trace: { modelCalled: true, errorKind: answer.errorKind } };
+  if ("state" in answer) {
+    const { errorKind, inputTokens, outputTokens, ...result } = answer;
+    const trace: SuggestTrace = { modelCalled: true, errorKind };
+    // Відповідь не за схемою теж витратила токени ліміту — пишемо їх, якщо SDK їх дав (CodeRabbit PR 100).
+    if (inputTokens !== undefined) trace.inputTokens = inputTokens;
+    if (outputTokens !== undefined) trace.outputTokens = outputTokens;
+    return { result: result as SuggestResult, trace };
+  }
   const result = interpret(answer.suggestion, answer.modelId);
   const trace: SuggestTrace = { modelCalled: true, inputTokens: answer.inputTokens, outputTokens: answer.outputTokens };
   if (result.state === "failed") trace.errorKind = "empty_output";
@@ -79,7 +86,7 @@ async function askModel(
   opts: SuggestOptions,
 ): Promise<
   | { suggestion: LineSuggestion; modelId: string; inputTokens?: number; outputTokens?: number }
-  | (SuggestResult & { errorKind: SuggestTrace["errorKind"] })
+  | (SuggestResult & { errorKind: SuggestTrace["errorKind"]; inputTokens?: number; outputTokens?: number })
 > {
   try {
     const result = await generateText({
@@ -110,7 +117,12 @@ async function askModel(
         outputTokens: noObject?.usage?.outputTokens,
       };
     }
-    return { ...classifyFailure(error), errorKind: failureKind(error) };
+    return {
+      ...classifyFailure(error),
+      errorKind: failureKind(error),
+      inputTokens: noObject?.usage?.inputTokens,
+      outputTokens: noObject?.usage?.outputTokens,
+    };
   }
 }
 

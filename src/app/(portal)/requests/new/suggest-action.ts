@@ -19,7 +19,8 @@ export type SuggestActionState = { status: "idle" } | { status: "done"; result: 
 // Єдиний запис — рядок журналу ai_calls без тексту опису, ПІСЛЯ відповіді (after): ADR 0006, SLO-2 PM #83.
 export async function requestLineSuggestion(_prev: SuggestActionState, formData: FormData): Promise<SuggestActionState> {
   const user = await getCurrentUser();
-  if (!user || !canUseAssistant(user.role)) return { status: "forbidden", message: messageFor("FORBIDDEN") };
+  // isActive — явно, не лише через RLS (RLS віддає профіль тільки активному): другий рубіж не замінює перший (CodeRabbit PR 100).
+  if (!user || !user.isActive || !canUseAssistant(user.role)) return { status: "forbidden", message: messageFor("FORBIDDEN") };
 
   // WS11 (SLO-2, PM #83): кожен запит після перевірки прав — рядок llm.call і рядок ai_calls (без тексту опису).
   const requestId = crypto.randomUUID();
