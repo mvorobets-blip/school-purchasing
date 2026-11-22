@@ -15,10 +15,14 @@ import base from "./vitest.config.mjs";
 // (гілки 73 %) — додати, коли тести його піднімуть; utils (лише реекспорт cn для shadcn/ui, 0 рядків для покриття).
 // 12.11.2026 додано файли зрізу 3 purchase/money, number, request-view — 100 % (зауваження PM 4, приймання 12.11).
 // 21.11.2026 додано error-alert (трекер помилок сервера, WS11) — 100 %.
+// 21.11.2026 додано ai/ai-call, ai/llm-log, log (журнал llm.call і ai_calls, WS11) — 100 / 100 / 96.7 % гілок.
 // 13.11.2026 прибрано org/roles і org/membership: це TS-модель правил ролей, застосунок її функцій не викликає (окрім ROLE_LABEL і типів); правила доводить база — tests/db/org-roles.test.ts і мутанти S35–S42 (відгук викладача на WS8, пункт 1).
 const FLOORED: string[] = [
+  "ai/ai-call",
+  "ai/llm-log",
   "error-alert",
   "health",
+  "log",
   "theme",
   "org/access",
   "org/current-user",

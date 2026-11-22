@@ -22,7 +22,27 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "department_members": {
+            "ai_calls": {
+                  Row: {
+                    "app_state": string,"created_at": string,"error_kind": string | null,"fallback_used": boolean,"id": number,"input_tokens": number | null,"latency_ms": number,"model": string | null,"model_called": boolean,"output_tokens": number | null,"prompt_version": string,"request_id": string,"state": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "app_state": string,"created_at"?: string,"error_kind"?: string | null,"fallback_used"?: boolean,"id"?: never,"input_tokens"?: number | null,"latency_ms": number,"model"?: string | null,"model_called": boolean,"output_tokens"?: number | null,"prompt_version": string,"request_id": string,"state": string,"user_id"?: string
+                  }
+                  Update: {
+                    "app_state"?: string,"created_at"?: string,"error_kind"?: string | null,"fallback_used"?: boolean,"id"?: never,"input_tokens"?: number | null,"latency_ms"?: number,"model"?: string | null,"model_called"?: boolean,"output_tokens"?: number | null,"prompt_version"?: string,"request_id"?: string,"state"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_calls_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"department_members": {
                   Row: {
                     "auto_approve": boolean,"created_at": string,"department_id": string,"is_approver": boolean,"profile_id": string
                   }
