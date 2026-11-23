@@ -175,6 +175,54 @@ describe("smoke.mjs", () => {
     expect(code).toBe(1);
   });
 
+  // Дія з postmortem docs/incidents/2026-11-23-staging-supabase-url.md: smoke знає, з якою базою має працювати
+  // середовище (змінна репо SUPABASE_STAGING_REF / SUPABASE_PROD_REF → SMOKE_EXPECT_SUPABASE_REF), і хибна адреса
+  // Supabase у Vercel дає рядок з назвою змінної, а не загальне «Supabase недоступний?». Refs — не секрети.
+  const STAGING = "rnawhejsgqhgbtjajjmb";
+  const health = (body: Record<string, unknown>, status = 200): Reply => ({
+    status,
+    body: JSON.stringify({ ok: status === 200, sha: "abc1234", env: "preview", appEnv: "staging", db: "ok", reason: "", ...body }),
+  });
+  const withHealth = (reply: Reply): Routes => ({ ...OK_ROUTES, "/api/health": reply });
+
+  it("стан дрілу 23.11: хибний ref у NEXT_PUBLIC_SUPABASE_URL — збій з назвою змінної й обома ref", async () => {
+    const base = await serve(withHealth(health({ supabaseRef: "rnawhejsgqhgbtjajjmc", db: "down", reason: "status-0" }, 503)));
+    const { code, out } = await smokeWith({ SMOKE_TARGET: "deploy", SMOKE_EXPECT_SUPABASE_REF: STAGING }, base);
+    expect(out).toContain('"/api/health": supabaseRef=rnawhejsgqhgbtjajjmc, а очікувався rnawhejsgqhgbtjajjmb');
+    expect(out).toContain("NEXT_PUBLIC_SUPABASE_URL у Vercel для цього середовища вказує не на той проєкт Supabase");
+    expect(code).toBe(1);
+  });
+
+  it("база відповідає, але це інша база (staging дивиться в прод) — теж збій, хоча db=ok", async () => {
+    const base = await serve(withHealth(health({ supabaseRef: "tqbvafkcniaspvluverp" })));
+    const { code, out } = await smokeWith({ SMOKE_TARGET: "deploy", SMOKE_EXPECT_SUPABASE_REF: STAGING }, base);
+    expect(out).toContain("supabaseRef=tqbvafkcniaspvluverp, а очікувався rnawhejsgqhgbtjajjmb");
+    expect(out).not.toContain("OK —");
+    expect(code).toBe(1);
+  });
+
+  it("supabaseRef null — NEXT_PUBLIC_SUPABASE_URL не має вигляду https://<ref>.supabase.co", async () => {
+    const base = await serve(withHealth(health({ supabaseRef: null })));
+    const { code, out } = await smokeWith({ SMOKE_TARGET: "deploy", SMOKE_EXPECT_SUPABASE_REF: STAGING }, base);
+    expect(out).toContain("NEXT_PUBLIC_SUPABASE_URL у Vercel не має вигляду https://<ref>.supabase.co");
+    expect(code).toBe(1);
+  });
+
+  it("ref збігається з очікуваним — зелений", async () => {
+    const base = await serve(withHealth(health({ supabaseRef: STAGING })));
+    const { code, out } = await smokeWith({ SMOKE_TARGET: "deploy", SMOKE_EXPECT_SUPABASE_REF: STAGING }, base);
+    expect(out).toContain("OK — деплой живий");
+    expect(code).toBe(0);
+  });
+
+  it("без SMOKE_EXPECT_SUPABASE_REF чи без поля supabaseRef у відповіді ref не порівнюємо", async () => {
+    const noExpect = await serve(withHealth(health({ supabaseRef: "rnawhejsgqhgbtjajjmc" })));
+    expect((await smoke(noExpect)).code).toBe(0);
+    close?.();
+    const noField = await serve(OK_ROUTES);
+    expect((await smokeWith({ SMOKE_EXPECT_SUPABASE_REF: STAGING }, noField)).code).toBe(0);
+  });
+
   it("на адресу не з *.vercel.app секрет обходу не надсилає", async () => {
     const base = (await serve(OK_ROUTES)).replace("127.0.0.1", "localhost.");
     const { out } = await smokeWith({ VERCEL_AUTOMATION_BYPASS_SECRET: SECRET, SMOKE_TARGET: "deploy" }, base);

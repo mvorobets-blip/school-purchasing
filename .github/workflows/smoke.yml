@@ -71,6 +71,8 @@ jobs:
       EXPECT_SHA: ${{ github.event.client_payload.git.sha || github.event.sha || github.sha }}
       # Прод не за захистом (Standard Protection), але заголовок не шкодить, якщо колись увімкнуть All Deployments.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      # Дія з postmortem 2026-11-23-staging-supabase-url: прод має дивитися лише в прод-базу (змінна репо, не секрет).
+      SMOKE_EXPECT_SUPABASE_REF: ${{ vars.SUPABASE_PROD_REF }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -137,6 +139,8 @@ jobs:
       DEPLOY_ENV: ${{ github.event.client_payload.environment || 'manual' }}
       DEPLOY_BRANCH: ${{ github.event.client_payload.git.ref || '' }}
       SMOKE_TARGET: deploy
+      # Дія з postmortem 2026-11-23-staging-supabase-url: staging і кожен preview — лише база staging (змінна репо).
+      SMOKE_EXPECT_SUPABASE_REF: ${{ vars.SUPABASE_STAGING_REF }}
       # Значення — лише з GitHub Secrets; скрипт додає заголовок x-vercel-protection-bypass і не друкує секрет.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
