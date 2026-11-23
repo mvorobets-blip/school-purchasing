@@ -39,7 +39,7 @@ function smoke(...args: string[]) {
 function smokeWith(extraEnv: Record<string, string>, ...args: string[]) {
   return new Promise<{ code: number | null; out: string }>((resolve) => {
     const child = spawn(process.execPath, [path.join(repoRoot, "scripts", "smoke.mjs"), ...args], {
-      env: { ...process.env, PROD_URL: "", VERCEL_AUTOMATION_BYPASS_SECRET: "", SMOKE_TARGET: "", ...extraEnv },
+      env: { ...process.env, PROD_URL: "", VERCEL_AUTOMATION_BYPASS_SECRET: "", SMOKE_TARGET: "", SMOKE_EXPECT_SUPABASE_REF: "", ...extraEnv },
     });
     let out = "";
     child.stdout.on("data", (d) => (out += d));

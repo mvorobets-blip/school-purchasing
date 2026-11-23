@@ -87,6 +87,13 @@ jobs:
             echo "::error title=smoke::Немає змінної репо PROD_URL — Settings → Secrets and variables → Actions → Variables → PROD_URL = https://<проєкт>.vercel.app"
             exit 1
           fi
+      - name: Очікуваний ref Supabase проду задано
+        # Без нього smoke не звіряв би базу проду (дія з postmortem 2026-11-23-staging-supabase-url; CodeRabbit PR 106).
+        run: |
+          if [ -z "$SMOKE_EXPECT_SUPABASE_REF" ]; then
+            echo "::error title=smoke::Немає змінної репо SUPABASE_PROD_REF — Settings → Secrets and variables → Actions → Variables (ref проєкту Supabase проду, не секрет)"
+            exit 1
+          fi
       - name: Ручний запуск — лише з main
         # EXPECT_SHA ручного запуску — github.sha гілки запуску; прод порівнюємо лише з main.
         if: github.event_name == 'workflow_dispatch' && github.ref_name != github.event.repository.default_branch
@@ -162,6 +169,13 @@ jobs:
             echo "::warning title=smoke::Немає секрету VERCEL_AUTOMATION_BYPASS_SECRET — захищений деплой відповість стіною входу Vercel."
           fi
           echo "Середовище: $DEPLOY_ENV; гілка: ${DEPLOY_BRANCH:-?}; коміт: ${EXPECT_SHA:0:7}"
+      - name: Очікуваний ref Supabase staging задано
+        # Staging і кожен preview ходять у базу staging; без ref smoke не звіряв би базу (CodeRabbit PR 106).
+        run: |
+          if [ -z "$SMOKE_EXPECT_SUPABASE_REF" ]; then
+            echo "::error title=smoke::Немає змінної репо SUPABASE_STAGING_REF — Settings → Secrets and variables → Actions → Variables (ref проєкту Supabase staging, не секрет)"
+            exit 1
+          fi
       - name: Деплой відкривається з обходом захисту, база відповідає, коміт той самий
         run: node scripts/smoke.mjs "$DEPLOY_URL" "$EXPECT_SHA"
       - name: Алерт людині в Telegram (лише якщо щось червоне)
