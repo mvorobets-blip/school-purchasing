@@ -8,7 +8,7 @@
 | Дата інциденту | 2026-11-23 |
 | Автори | черговий розробник; рецензія — PM |
 | Статус | розбір PM 23.11 ([коментар у #107](https://github.com/mvorobets-blip/school-purchasing/pull/107#issuecomment-7107635893)); зауваження виправлено 24.11, чекає підпису PM |
-| Серйозність | **SEV3** — тестова версія без користувачів (матриця PM: ValiaBihun/2026-quitcode-dream-team#83, розділ 2). Така сама поломка на проді — **SEV1**: без бази не працює вхід ні в кого |
+| Серйозність | **SEV3** — тестова версія без користувачів (тлумачення розробника за матрицею PM: ValiaBihun/2026-quitcode-dream-team#83, розділ 2). Така сама поломка на проді — **SEV1**: без бази не працює вхід ні в кого |
 | Середовище | `staging` (навчальний дріл, issue [#105](https://github.com/mvorobets-blip/school-purchasing/issues/105)); прод і база проду не постраждали |
 | Стенограма розбору агентом | [`docs/incidents/2026-11-23-staging-supabase-url-rca.md`](2026-11-23-staging-supabase-url-rca.md) |
 
@@ -103,7 +103,8 @@
   - алерт дійшов за ~17–20 с, з посиланням на прогін, середовищем і гілкою; передбачений сигнал збігся дослівно;
   - `supabaseRef` у `/api/health` (додано в WS11) одразу показав хибний ref — без доступу до змінних Vercel;
   - агент у профілі «лише пропонує» знайшов причину (аналіз ~1,5 хв, сесія ~5 хв) і запропонував виправлення; спроба Write заблокована
-    профілем (`No such tool available: Write`), значення ключа агент не показав.
+    (`No such tool available: Write`; діяли і профіль — `Write` у `deny`, — і режим `plan`; яка саме заборона
+    спрацювала, з одного тесту не видно), значення ключа агент не показав.
 - **Не спрацювало:**
   - рядок smoke не казав, *яка* база очікувалась — лише загальне «недоступний чи не той?»;
   - журнали Vercel цього деплою порожні: `/api/health` не пише в журнал причину `db: down` — розбір тримався лише на
@@ -122,7 +123,7 @@
 
 | Дія | Власник | Строк | Перевірка, якою вона стала | Посилання |
 |---|---|---|---|---|
-| 1. Smoke звіряє `supabaseRef` з очікуваним ref середовища (`SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF`) і називає змінну `NEXT_PUBLIC_SUPABASE_URL` | @mvorobets-blip (розробник) | 23.11.2026 | тест `tests/scripts/smoke.test.ts` «стан дрілу 23.11…» (червоний до зміни, зелений після) + `SMOKE_EXPECT_SUPABASE_REF` у `smoke.yml` | PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) (злито 24.11); прогони з `main`: червоний [45349576560](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349576560), зелений [45349590267](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349590267) |
+| 1. Smoke звіряє `supabaseRef` з очікуваним ref середовища (`SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF`) і називає змінну `NEXT_PUBLIC_SUPABASE_URL` | @mvorobets-blip (розробник) | 23.11.2026 (злито 24.11) | тест `tests/scripts/smoke.test.ts` «стан дрілу 23.11…» (червоний до зміни, зелений після) + `SMOKE_EXPECT_SUPABASE_REF` у `smoke.yml` | PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) (злито 24.11); прогони з `main`: червоний [45349576560](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349576560), зелений [45349590267](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349590267) |
 | 2. Runbook: «червоний smoke» з рядком про `supabaseRef`, база на паузі, ротація ключа, журнали, доступ PM до staging | @mvorobets-blip (розробник) | 23.11.2026 | ручний прогін розділу 1 з відтворенням дрілу: команди runbook на зламаному деплої дрілу (червоний з рядком таблиці) і на поточному staging (зелений) — [результат у #105](https://github.com/mvorobets-blip/school-purchasing/issues/105#issuecomment-7125089227) | `docs/runbook.md`, PR [#107](https://github.com/mvorobets-blip/school-purchasing/pull/107) |
 | 3. `APP_ENV` — лише для гілки `staging` | @mvorobets-blip (розробник) | 23.11.2026 (зроблено) | smoke preview з PR показує `"appEnv":null`, staging — `"staging"` | [#105](https://github.com/mvorobets-blip/school-purchasing/issues/105#issuecomment-7106114706), preview PR #107 — [45217536189](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45217536189) |
 | 4. `/api/health` пише в журнал один рядок `health.db_down` з `reason` і `supabaseRef` (без значень змінних), щоб журнали Vercel не були порожні | @mvorobets-blip (розробник) | 30.11.2026 | тест на рядок журналу | наступний PR після релізу |
@@ -142,7 +143,7 @@
 - Причина — помилка в одному символі адреси бази в налаштуванні лише тестової версії; налаштування повернуто, версія
   знову працює.
 - Перевірку доповнено: тепер вона порівнює адресу бази з очікуваною і називає налаштування з помилкою (перевірено
-  24.11 на копії зламаної тестової версії — перевірка червона й називає налаштування).
+  24.11 на тому самому зламаному деплої дрілу — перевірка червона й називає налаштування).
 - Така сама поломка на робочій версії — SEV1, PM повідомляє клієнта протягом 2 годин.
 
 ## Додатки

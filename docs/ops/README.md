@@ -10,8 +10,8 @@
 | Міграції застосовує CI, спершу staging, потім прод | прогін CI на `9bc4249`: [45140612003](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45140612003) — job `db-deploy-staging` друкує «Ціль міграцій: проєкт rnawhejsgqhgbtjajjmb (staging)», далі `db-deploy` — «…tqbvafkcniaspvluverp (production)», обидва `success`; міграцію `ai_calls` застосував прогін [44996946853](https://github.com/mvorobets-blip/school-purchasing/actions/runs/44996946853) |
 | Запобіжник: ціль міграції звіряється зі змінними репо `SUPABASE_STAGING_REF` / `SUPABASE_PROD_REF` | `.github/workflows/ci.yml`, jobs `db-deploy-staging` і `db-deploy` |
 | Staging ходить у свою базу, прод — у свою | smoke staging [45209055366](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45209055366): `"appEnv":"staging"`, `"supabaseRef":"rnawhejsgqhgbtjajjmb"`; прод `/api/health`: `"appEnv":null`, `"supabaseRef":"tqbvafkcniaspvluverp"` |
-| Preview з PR теж ходить у базу staging, а `APP_ENV` — лише на гілці `staging` | smoke preview цього PR (посилання — в описі PR документації) |
-| Smoke сам звіряє ref середовища (дія з postmortem) | PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) |
+| Preview з PR теж ходить у базу staging, а `APP_ENV` — лише на гілці `staging` | smoke preview PR #107 — [45217536189](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45217536189): `"appEnv":null`, `"supabaseRef":"rnawhejsgqhgbtjajjmb"` |
+| Smoke сам звіряє ref середовища (дія з postmortem) | PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) (злито 24.11, `fcfa3f6`); червоний [45349576560](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349576560), зелений [45349590267](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349590267) |
 | Рядок журналу AI-помічника в базі staging і в базі проду | [`ws11-ai-calls-row.png`](ws11-ai-calls-row.png) (проєкт `school-purchasing-staging`), [`ws11-ai-calls-prod-row.png`](ws11-ai-calls-prod-row.png) (проєкт `school-purchasing`) |
 
 ## Сигнали
