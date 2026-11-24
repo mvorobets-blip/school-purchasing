@@ -90,7 +90,8 @@ jobs:
       - name: Очікуваний ref Supabase проду задано
         # Без нього smoke не звіряв би базу проду (дія з postmortem 2026-11-23-staging-supabase-url; CodeRabbit PR 106).
         run: |
-          if [ -z "$SMOKE_EXPECT_SUPABASE_REF" ]; then
+          # Порожньо чи лише пробіли — те саме, що в smoke.mjs (trim): порівняння не відбулося б (CodeRabbit PR 106).
+          if [ -z "$(printf '%s' "$SMOKE_EXPECT_SUPABASE_REF" | tr -d '[:space:]')" ]; then
             echo "::error title=smoke::Немає змінної репо SUPABASE_PROD_REF — Settings → Secrets and variables → Actions → Variables (ref проєкту Supabase проду, не секрет)"
             exit 1
           fi
@@ -172,7 +173,8 @@ jobs:
       - name: Очікуваний ref Supabase staging задано
         # Staging і кожен preview ходять у базу staging; без ref smoke не звіряв би базу (CodeRabbit PR 106).
         run: |
-          if [ -z "$SMOKE_EXPECT_SUPABASE_REF" ]; then
+          # Порожньо чи лише пробіли — те саме, що в smoke.mjs (trim): порівняння не відбулося б (CodeRabbit PR 106).
+          if [ -z "$(printf '%s' "$SMOKE_EXPECT_SUPABASE_REF" | tr -d '[:space:]')" ]; then
             echo "::error title=smoke::Немає змінної репо SUPABASE_STAGING_REF — Settings → Secrets and variables → Actions → Variables (ref проєкту Supabase staging, не секрет)"
             exit 1
           fi
