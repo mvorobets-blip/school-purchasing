@@ -7,7 +7,7 @@
 |---|---|
 | Дата інциденту | 2026-11-23 |
 | Автори | черговий розробник; рецензія — PM |
-| Статус | розбір PM 23.11 ([коментар у #107](https://github.com/mvorobets-blip/school-purchasing/pull/107#issuecomment-7107635893)); зауваження виправлено 24.11, чекає підпису PM |
+| Статус | розбір PM 23.11 ([коментар у #107](https://github.com/mvorobets-blip/school-purchasing/pull/107#issuecomment-7107635893)); зауваження виправлено 24.11; **прийнято PM, 24.11.2026** ([коментар у #107](https://github.com/mvorobets-blip/school-purchasing/pull/107#issuecomment-7128100726)) |
 | Серйозність | **SEV3** — тестова версія без користувачів (тлумачення розробника за матрицею PM: ValiaBihun/2026-quitcode-dream-team#83, розділ 2). Така сама поломка на проді — **SEV1**: без бази не працює вхід ні в кого |
 | Середовище | `staging` (навчальний дріл, issue [#105](https://github.com/mvorobets-blip/school-purchasing/issues/105)); прод і база проду не постраждали |
 | Стенограма розбору агентом | [`docs/incidents/2026-11-23-staging-supabase-url-rca.md`](2026-11-23-staging-supabase-url-rca.md) |
