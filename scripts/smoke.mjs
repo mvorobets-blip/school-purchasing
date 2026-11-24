@@ -12,6 +12,9 @@
 //   - x-vercel-set-bypass-cookie НЕ надсилаємо: відповідь — редирект із Set-Cookie, а redirect:"manual" побачив би 3xx.
 //   - Секрет іде лише на *.vercel.app (і localhost для тестів): на чужу адресу з ручного запуску — без заголовка.
 //   - SMOKE_TARGET=deploy (preview і staging у smoke.yml) змінює лише підказки й підсумковий рядок.
+//   - SMOKE_EXPECT_SUPABASE_REF задано → supabaseRef з /api/health має збігатися з ним (дія з postmortem
+//     docs/incidents/2026-11-23-staging-supabase-url.md): хибна адреса Supabase у Vercel дає рядок з назвою змінної,
+//     а staging, що дивиться в чужу базу, червоніє навіть з db=ok. Ref — не секрет (він у публічній адресі).
 const [rawBase = process.env.PROD_URL ?? "", expectSha = ""] = process.argv.slice(2);
 // client_payload.url від Vercel може прийти хостом без схеми — додаємо https://.
 const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : "").replace(/\/+$/, "");
@@ -31,6 +34,8 @@ const bypassHost = (() => {
 const headers = { "user-agent": "smoke/2.0 (WS11)" };
 const sendBypass = Boolean(bypass) && bypassHost;
 if (sendBypass) headers["x-vercel-protection-bypass"] = bypass;
+
+const expectRef = (process.env.SMOKE_EXPECT_SUPABASE_REF ?? "").trim();
 
 const TIMEOUT_MS = 20_000;
 
@@ -140,6 +145,16 @@ function healthProblem(health) {
   return `"/api/health": HTTP ${health.status}, db=${health.db ?? "?"}${reason} — Supabase недоступний чи NEXT_PUBLIC_SUPABASE_URL у Vercel не той?`;
 }
 
+// Лише коли відповідь має поле supabaseRef (старі деплої й чужі адреси його не мають — там порівнювати нічого).
+function refProblem(health) {
+  if (!expectRef || !health || !("supabaseRef" in health)) return null;
+  if (health.supabaseRef === expectRef) return null;
+  if (!health.supabaseRef) {
+    return `"/api/health": немає supabaseRef — NEXT_PUBLIC_SUPABASE_URL у Vercel не має вигляду https://<ref>.supabase.co (очікувався ref ${expectRef})`;
+  }
+  return `"/api/health": supabaseRef=${health.supabaseRef}, а очікувався ${expectRef} — NEXT_PUBLIC_SUPABASE_URL у Vercel для цього середовища вказує не на той проєкт Supabase: звірте змінну (Production чи Preview / гілка) і зробіть Redeploy`;
+}
+
 function shaProblem(health) {
   if (!expectSha || !health?.sha) return null;
   if (health.sha === "local") {
@@ -155,7 +170,7 @@ async function main() {
   const root = await get("/");
   const login = await get("/login");
   const health = await fetchHealth(login.status === 200);
-  const fail = [rootProblem(root), loginProblem(login), healthProblem(health), shaProblem(health)].filter(Boolean);
+  const fail = [rootProblem(root), loginProblem(login), refProblem(health), healthProblem(health), shaProblem(health)].filter(Boolean);
 
   // Лише статуси й публічна відповідь /api/health. Секрет обходу — тільки як true/false.
   console.log(JSON.stringify({ base, target, bypass: sendBypass, root: root.status, login: login.status, health }));
