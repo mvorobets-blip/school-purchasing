@@ -17,6 +17,16 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
 | PM (говорить із клієнтом) | @ValiaBihun | SEV1 — одразу (реакція протягом 2 годин у робочий час); SEV2 — того самого робочого дня; SEV3 — у плановій роботі |
 | Резерв | немає (один розробник) | — |
 
+**Вночі й у вихідні (зокрема SEV1 о 2-й ночі).** Чергування поза робочим часом немає — продукт навчальний, це
+записане рішення, а не прогалина. Робочий час — пн–пт 09:00–18:00 за Києвом (припущення розробника; #83 каже лише
+«у робочий час»).
+
+- Алерт лишається в групі Telegram; розробник починає з нього робочий день о 09:00 (розділ 1), PM бачить те саме.
+- SEV1 на проді: PM пише клієнту за шаблоном `docs/incident-message.md` протягом 2 годин робочого часу (до 11:00) і
+  **не чекає розробника** — якщо причини ще немає, пише «причина встановлюється, наступне оновлення — о …».
+- Розробник не відповів у групі за 2 години робочого часу — PM пише клієнту те саме й додає строк наступного
+  оновлення; розробник, коли з'явиться, — «беру, SEV1» і далі за розділом 1.
+
 - **Канал алерту:** група команди в Telegram (розробник і PM). Бот пише туди з `.github/workflows/smoke.yml` (секрети
   GitHub `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) і з `src/instrumentation.ts` (`onRequestError` → `src/lib/error-alert.ts`,
   ті самі назви — змінні Vercel). Помилки preview теж приходять у групу з позначкою середовища.
@@ -59,7 +69,7 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
    | `стіна входу Vercel` / `секрет обходу` | захист Vercel або секрет `VERCEL_AUTOMATION_BYPASS_SECRET` | розділ 4 (ротація) |
    | `Supabase призупинено` | база на паузі (`reason: paused`) | розділ 3 |
    | `ключ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY у Vercel не приймається` | хибний ключ у змінних Vercel цього середовища | розділ 4 |
-   | `supabaseRef=<ref>, а очікувався <ref>` / `NEXT_PUBLIC_SUPABASE_URL … вказує не на той проєкт Supabase` | хибна адреса Supabase у змінних Vercel цього середовища (smoke звіряє з `SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF`, PR #106) | Vercel → Environment Variables: знайдіть `NEXT_PUBLIC_SUPABASE_URL` для цього середовища (Production; Preview; Preview → гілка `staging`), поверніть правильний ref з «Де що» або видаліть хибне перевизначення гілки → Redeploy без кешу |
+   | `supabaseRef=<ref>, а очікувався <ref>` / `NEXT_PUBLIC_SUPABASE_URL … вказує не на той проєкт Supabase` | хибна адреса Supabase у змінних Vercel цього середовища (smoke звіряє з `SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF` — рядок з'являється **після злиття PR #106**; до того той самий збій видно лише як рядок `db=down (status-0 …)` нижче, а `supabaseRef` — у JSON health у журналі smoke) | Vercel → Environment Variables: знайдіть `NEXT_PUBLIC_SUPABASE_URL` для цього середовища (Production; Preview; Preview → гілка `staging`), поверніть правильний ref з «Де що» або видаліть хибне перевизначення гілки → Redeploy без кешу |
    | `немає supabaseRef — NEXT_PUBLIC_SUPABASE_URL … не має вигляду https://<ref>.supabase.co` | змінна порожня чи не адреса Supabase | те саме |
    | `db=down (status-0 …)` / `NEXT_PUBLIC_SUPABASE_URL у Vercel не той?` | Supabase недоступний або хибна адреса (якщо ref збігся — швидше провайдер чи мережа) | крок 2, далі змінні Vercel |
    | `показує <sha>, а очікувався <sha>` | деплой не пройшов або зроблено Instant Rollback | розділ 2 |
