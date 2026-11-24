@@ -93,8 +93,9 @@
 - **Зупинили шкоду:** видалили **лише** перевизначення `NEXT_PUBLIC_SUPABASE_URL` для Preview → `staging` (загальне
   значення Preview, `APP_ENV` і ключ не чіпали) → staging знову бере загальне значення Preview (база staging) →
   Redeploy без кешу. Instant Rollback для staging не працює (лише прод-деплої).
-- **Виправили причину (щоб наступного разу збій називав себе):** PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) —
-  smoke звіряє `supabaseRef` з очікуваним ref середовища.
+- **Виправили причину (щоб наступного разу збій називав себе):** PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106)
+  (злито 24.11, `fcfa3f6`) — smoke звіряє `supabaseRef` з очікуваним ref середовища; у CI: зламаний деплой дрілу —
+  червоний з назвою змінної ([45349576560](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349576560)), staging — зелений ([45349590267](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349590267)).
 
 ## Що спрацювало, що ні, де пощастило
 
@@ -121,7 +122,7 @@
 
 | Дія | Власник | Строк | Перевірка, якою вона стала | Посилання |
 |---|---|---|---|---|
-| 1. Smoke звіряє `supabaseRef` з очікуваним ref середовища (`SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF`) і називає змінну `NEXT_PUBLIC_SUPABASE_URL` | @mvorobets-blip (розробник) | 23.11.2026 | тест `tests/scripts/smoke.test.ts` «стан дрілу 23.11…» (червоний до зміни, зелений після) + `SMOKE_EXPECT_SUPABASE_REF` у `smoke.yml` | PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) |
+| 1. Smoke звіряє `supabaseRef` з очікуваним ref середовища (`SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF`) і називає змінну `NEXT_PUBLIC_SUPABASE_URL` | @mvorobets-blip (розробник) | 23.11.2026 | тест `tests/scripts/smoke.test.ts` «стан дрілу 23.11…» (червоний до зміни, зелений після) + `SMOKE_EXPECT_SUPABASE_REF` у `smoke.yml` | PR [#106](https://github.com/mvorobets-blip/school-purchasing/pull/106) (злито 24.11); прогони з `main`: червоний [45349576560](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349576560), зелений [45349590267](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349590267) |
 | 2. Runbook: «червоний smoke» з рядком про `supabaseRef`, база на паузі, ротація ключа, журнали, доступ PM до staging | @mvorobets-blip (розробник) | 23.11.2026 | ручний прогін розділу 1 з відтворенням дрілу: команди runbook на зламаному деплої дрілу (червоний з рядком таблиці) і на поточному staging (зелений) — [результат у #105](https://github.com/mvorobets-blip/school-purchasing/issues/105#issuecomment-7125089227) | `docs/runbook.md`, PR [#107](https://github.com/mvorobets-blip/school-purchasing/pull/107) |
 | 3. `APP_ENV` — лише для гілки `staging` | @mvorobets-blip (розробник) | 23.11.2026 (зроблено) | smoke preview з PR показує `"appEnv":null`, staging — `"staging"` | [#105](https://github.com/mvorobets-blip/school-purchasing/issues/105#issuecomment-7106114706), preview PR #107 — [45217536189](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45217536189) |
 | 4. `/api/health` пише в журнал один рядок `health.db_down` з `reason` і `supabaseRef` (без значень змінних), щоб журнали Vercel не були порожні | @mvorobets-blip (розробник) | 30.11.2026 | тест на рядок журналу | наступний PR після релізу |
@@ -131,7 +132,7 @@
 ## Факти для повідомлення клієнту (для PM)
 
 Для цього дрілу (SEV3, staging) клієнту не пишемо — #83, розділ 4. Якщо PM складає навчальне повідомлення за
-шаблоном `docs/incident-message.md`, факти такі:
+шаблоном PM [`docs/incident-message.md`](https://github.com/ValiaBihun/2026-quitcode-dream-team/blob/main/docs/incident-message.md), факти такі:
 
 - 23.11.2026, ~21 хвилину тестова версія порталу не могла дістатися до своєї бази: сторінка входу відкривалась, але
   вхід і робота із заявками не спрацювали б (висновок із відповіді системи; вхід не пробували).
@@ -140,8 +141,8 @@
 - Автоматична перевірка помітила збій приблизно за 20 секунд і повідомила команду в робочий чат.
 - Причина — помилка в одному символі адреси бази в налаштуванні лише тестової версії; налаштування повернуто, версія
   знову працює.
-- Перевірку доповнюємо: вона порівнюватиме адресу бази з очікуваною і називатиме налаштування з помилкою (PR #106;
-  «доповнено» можна писати лише після його злиття — посилання на прогін з новою перевіркою буде в рядку дії 1).
+- Перевірку доповнено: тепер вона порівнює адресу бази з очікуваною і називає налаштування з помилкою (перевірено
+  24.11 на копії зламаної тестової версії — перевірка червона й називає налаштування).
 - Така сама поломка на робочій версії — SEV1, PM повідомляє клієнта протягом 2 годин.
 
 ## Додатки

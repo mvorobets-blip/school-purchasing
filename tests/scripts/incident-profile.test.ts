@@ -27,6 +27,24 @@ const MUST_DENY = [
   "mcp__vercel__patch_url_protection_bypass",
   "mcp__supabase__apply_migration",
   "mcp__supabase__pause_project",
+  // Звірка зі списком /mcp перед дрілом 23.11 (275 інструментів): запис чи читання вмісту поза R08 (CodeRabbit PR 107).
+  "mcp__vercel__create_ai_gateway_api_key",
+  "mcp__vercel__create_ai_gateway_rule",
+  "mcp__vercel__update_ai_gateway_rule",
+  "mcp__vercel__create_ai_gateway_virtual_model",
+  "mcp__vercel__update_ai_gateway_virtual_model",
+  "mcp__vercel__upsert_ai_gateway_budget",
+  "mcp__vercel__upsert_ai_gateway_budget_default",
+  "mcp__vercel__fork_drive",
+  "mcp__vercel__create_trace_session",
+  "mcp__vercel__generate_route",
+  "mcp__vercel__get_named_sandbox",
+  "mcp__vercel__read_session_file",
+  "mcp__vercel__artifact_query",
+  "mcp__vercel__start_board_thread",
+  "mcp__vercel__reply_to_board_thread",
+  "mcp__vercel__react_to_board_message",
+  "mcp__vercel__label_board_message",
 ];
 
 describe("профіль «лише пропонує» (R08)", () => {

@@ -22,7 +22,7 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
 «у робочий час»).
 
 - Алерт лишається в групі Telegram; розробник починає з нього робочий день о 09:00 (розділ 1), PM бачить те саме.
-- SEV1 на проді: PM пише клієнту за шаблоном `docs/incident-message.md` протягом 2 годин робочого часу (до 11:00) і
+- SEV1 на проді: PM пише клієнту за [шаблоном PM `docs/incident-message.md`](https://github.com/ValiaBihun/2026-quitcode-dream-team/blob/main/docs/incident-message.md) протягом 2 годин робочого часу (до 11:00) і
   **не чекає розробника** — якщо причини ще немає, пише «причина встановлюється, наступне оновлення — о …».
 - Розробник не відповів у групі за 2 години робочого часу — PM пише клієнту те саме й додає строк наступного
   оновлення; розробник, коли з'явиться, — «беру, SEV1» і далі за розділом 1.
@@ -39,7 +39,7 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
   | SEV3 | незручно, робота не стоїть; будь-який збій лише staging чи preview | дріл 23.11 на staging | будь-хто з команди | у наступному релізі |
 
 - **Хто говорить з клієнтом** (#83, розділ 4): червоний smoke на проді SEV1–SEV2 — **PM** протягом 2 годин пише клієнту
-  за шаблоном PM `docs/incident-message.md` (що сталося, кого зачепило, що зроблено, що далі); база на паузі — PM пише
+  за [шаблоном PM `docs/incident-message.md`](https://github.com/ValiaBihun/2026-quitcode-dream-team/blob/main/docs/incident-message.md) (що сталося, кого зачепило, що зроблено, що далі); база на паузі — PM пише
   клієнту лише для SEV1. Розробник дає PM факти з postmortem: час, вплив мовою користувача, що виправлено. Розробник
   клієнту сам не пише. Збій лише на staging чи preview — клієнту не пишемо.
 
@@ -69,7 +69,7 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
    | `стіна входу Vercel` / `секрет обходу` | захист Vercel або секрет `VERCEL_AUTOMATION_BYPASS_SECRET` | розділ 4 (ротація) |
    | `Supabase призупинено` | база на паузі (`reason: paused`) | розділ 3 |
    | `ключ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY у Vercel не приймається` | хибний ключ у змінних Vercel цього середовища | розділ 4 |
-   | `supabaseRef=<ref>, а очікувався <ref>` / `NEXT_PUBLIC_SUPABASE_URL … вказує не на той проєкт Supabase` | хибна адреса Supabase у змінних Vercel цього середовища (smoke звіряє з `SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF` — рядок з'являється **після злиття PR #106**; до того той самий збій видно лише як рядок `db=down (status-0 …)` нижче, а `supabaseRef` — у JSON health у журналі smoke) | Vercel → Environment Variables: знайдіть `NEXT_PUBLIC_SUPABASE_URL` для цього середовища (Production; Preview; Preview → гілка `staging`), поверніть правильний ref з «Де що» або видаліть хибне перевизначення гілки → Redeploy без кешу |
+   | `supabaseRef=<ref>, а очікувався <ref>` / `NEXT_PUBLIC_SUPABASE_URL … вказує не на той проєкт Supabase` | хибна адреса Supabase у змінних Vercel цього середовища (smoke звіряє з `SUPABASE_PROD_REF` / `SUPABASE_STAGING_REF` — з PR #106, злито 24.11; у CI перевірено: червоний на зламаному деплої дрілу [45349576560](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349576560), зелений на staging [45349590267](https://github.com/mvorobets-blip/school-purchasing/actions/runs/45349590267)) | Vercel → Environment Variables: знайдіть `NEXT_PUBLIC_SUPABASE_URL` для цього середовища (Production; Preview; Preview → гілка `staging`), поверніть правильний ref з «Де що» або видаліть хибне перевизначення гілки → Redeploy без кешу |
    | `немає supabaseRef — NEXT_PUBLIC_SUPABASE_URL … не має вигляду https://<ref>.supabase.co` | змінна порожня чи не адреса Supabase | те саме |
    | `db=down (status-0 …)` / `NEXT_PUBLIC_SUPABASE_URL у Vercel не той?` | Supabase недоступний або хибна адреса (якщо ref збігся — швидше провайдер чи мережа) | крок 2, далі змінні Vercel |
    | `показує <sha>, а очікувався <sha>` | деплой не пройшов або зроблено Instant Rollback | розділ 2 |
@@ -104,7 +104,9 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
 4. **Спершу зупинити шкоду, потім шукати причину.** Прод зламав останній деплой — відкат (розділ 2), потім розбір.
    Журнали Vercel на Hobby живуть **1 годину**: потрібні рядки (без даних користувачів) — одразу в issue інциденту.
 5. **Розбір** — агентом у профілі «лише пропонує» (розділ 7) або вручну. Агент пропонує, виправляє людина.
-6. **Перевірка:** Actions → smoke → Re-run failed jobs — зелений; у групу: «SEV<N> закрито, причина: …».
+6. **Перевірка — на новому деплої:** дочекайтеся прогону smoke, який Vercel запускає для нового деплою, або Actions →
+   smoke → Run workflow з полем `url` = адреса нового деплою (для проду — без `url`) — зелений. «Re-run failed jobs» не
+   годиться: він повторює старий запуск зі старою адресою деплою, а там стара змінна. Далі у групу: у групу: «SEV<N> закрито, причина: …».
 7. Після SEV1–SEV2 і після дрілу — postmortem `docs/incidents/<YYYY-MM-DD>-<slug>.md` за шаблоном.
 
 Приклад (дріл 2026-11-23, SEV3): о 16:01:50 UTC smoke `deploy` на staging червоний — `/api/health` 503, `db: down`,
