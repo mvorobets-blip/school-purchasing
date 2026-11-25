@@ -11,6 +11,7 @@ import {
   Plus,
   ShoppingBasket,
   UserRound,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -77,7 +78,13 @@ function sectionsFor(user: SidebarUser): Section[] {
     ],
   });
   if (user.isAdmin) {
-    sections.push({ label: "Administration", pages: [{ href: "/admin/departments", label: "Departments", icon: Building2 }] });
+    sections.push({
+      label: "Administration",
+      pages: [
+        { href: "/admin/departments", label: "Departments", icon: Building2 },
+        { href: "/admin/employees", label: "Employees", icon: Users },
+      ],
+    });
   }
   return sections;
 }

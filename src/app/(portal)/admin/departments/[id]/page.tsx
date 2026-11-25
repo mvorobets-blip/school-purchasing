@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { canAccessSettings } from "@/lib/org/access";
 import { getCurrentUser } from "@/lib/org/current-user";
 import { messageFor } from "@/lib/org/messages";
+import { approverCandidates } from "@/lib/org/employees";
 import { initials } from "@/lib/org/permissions";
 import { ROLE_LABEL, type Role } from "@/lib/org/roles";
 import { createClient } from "@/lib/supabase/server";
@@ -93,8 +94,9 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
           addRequester={addRequester.bind(null, id)}
           setApprover={setApprover.bind(null, id, true)}
           setAutoApprove={setAutoApprove.bind(null, id, true)}
-          candidates={people(nonMembers)}
-          everyone={people(profiles)}
+          // AC-ORG-16: деактивованих немає серед варіантів вибору заявника й схвалювача.
+          candidates={people(approverCandidates(nonMembers))}
+          everyone={people(approverCandidates(profiles))}
         />
       </div>
 
