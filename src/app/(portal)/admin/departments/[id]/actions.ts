@@ -11,7 +11,7 @@ import { isUuid } from "@/lib/uuid";
 // Зміни членства — лише через RPC (private.* перевіряє адміністратора ще раз); роль після змін рахує тригер бази.
 // Результат повертаємо в адресі (?ok= / ?error=), щоб сторінка показала повідомлення без клієнтського стану.
 
-const errorCode = (error: RpcError) => rpcErrorCode(error, ["NOT_REQUESTER"]);
+const errorCode = (error: RpcError) => rpcErrorCode(error, ["NOT_REQUESTER", "NOT_ACTIVE"]);
 
 async function run(departmentId: string, call: () => PromiseLike<{ error: RpcError }>, okCode: string) {
   const user = await getCurrentUser();

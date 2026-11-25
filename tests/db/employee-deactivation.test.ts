@@ -111,6 +111,26 @@ describe("деактивація й захист адміністратора (�
     expect(await t.asUser(MEMBER_1, "select id from public.departments")).toEqual([]);
   });
 
+  it("AC-ORG-16: деактивованого працівника не призначити схвалювачем відділу — NOT_ACTIVE, схвалення немає", async () => {
+    await t.asService("insert into public.department_members (department_id, profile_id) values ($1, $2)", [
+      dept[PRIMARY],
+      MEMBER_1,
+    ]);
+    await setActive(ADMIN, MEMBER_1, false);
+    await expect(
+      t.asUser(ADMIN, "select public.set_approver($1, $2, true)", [dept[PRIMARY], MEMBER_1]),
+    ).rejects.toThrow(/NOT_ACTIVE/);
+    expect(await approvesPrimary(MEMBER_1)).toBe(false);
+    expect((await profileOf(MEMBER_1)).role).toBe("requester");
+  });
+
+  it("зняти схвалення з деактивованого схвалювача можна (вимкнути перемикач у рядку)", async () => {
+    await makeApproverOfPrimary(MEMBER_1);
+    await setActive(ADMIN, MEMBER_1, false);
+    await t.asUser(ADMIN, "select public.set_approver($1, $2, false)", [dept[PRIMARY], MEMBER_1]);
+    expect(await approvesPrimary(MEMBER_1)).toBe(false);
+  });
+
   it("деактивований адміністратор не може змінювати інших — FORBIDDEN", async () => {
     await setActive(PM_ADMIN, ADMIN, false);
     await expect(setActive(ADMIN, MEMBER_1, false)).rejects.toThrow(/FORBIDDEN/);

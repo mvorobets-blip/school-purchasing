@@ -1,6 +1,7 @@
 -- Перший зріз, задача 4.1 (план openspec/changes/impl-department-setup-2): деактивація працівника й захист останнього
 -- активного адміністратора. AC: AC-ORG-10, 12, 18, 21, 30, 31, 32. Таблиці й RLS — міграція 20261021213618
 -- (profiles.is_active, усі політики вимагають private.is_active_user()); роль approver / requester рахує private.sync_role.
+-- Також private.set_approver не призначає деактивованого схвалювачем (AC-ORG-16).
 --
 -- Кожна функція в private: security definer, search_path = '', на початку перевіряє private.is_admin(). Обгортка в
 -- public з тією самою сигнатурою — security invoker; її викликає supabase.rpc(…).
@@ -79,6 +80,31 @@ begin
   end if;
   update public.profiles set role = 'requester' where id = p_profile_id;
   perform private.sync_role(p_profile_id);
+end;
+$$;
+
+-- ── set_approver: деактивованого не призначити схвалювачем (AC-ORG-16) ─────────
+-- Та сама функція, що в міграції 20261021231637, плюс перевірка активності: вибір на сторінці відділу не пропонує
+-- деактивованих, а база не дає обійти це перемикачем у рядку чи прямим викликом. Зняти схвалення можна завжди.
+create or replace function private.set_approver(p_department_id uuid, p_profile_id uuid, p_value boolean)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not private.is_admin() then
+    raise exception 'FORBIDDEN' using errcode = '42501';
+  end if;
+  if p_value and exists (select 1 from public.profiles as p where p.id = p_profile_id and not p.is_active) then
+    raise exception 'NOT_ACTIVE' using errcode = 'P0001';
+  end if;
+  update public.department_members
+  set is_approver = p_value
+  where department_id = p_department_id and profile_id = p_profile_id;
+  if not found and p_value then
+    raise exception 'NOT_REQUESTER' using errcode = 'P0001';
+  end if;
 end;
 $$;
 

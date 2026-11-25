@@ -31,6 +31,7 @@ const OK_TEXT: Record<string, string> = {
 function errorText(code: string): string {
   if (code === "NOT_REQUESTER") return messageFor("NOT_REQUESTER");
   if (code === "FORBIDDEN") return messageFor("FORBIDDEN");
+  if (code === "NOT_ACTIVE") return "A deactivated employee cannot be an approver. Activate the employee first.";
   return "Could not save the change. Try again.";
 }
 
@@ -167,11 +168,13 @@ export default async function DepartmentPage({ params, searchParams }: PageProps
                       {m.profile ? <Badge variant="secondary">{ROLE_LABEL[m.profile.role as Role]}</Badge> : "—"}
                     </TableCell>
                     <TableCell>
+                      {/* AC-ORG-16: деактивованого не призначити схвалювачем; зняти схвалення можна. */}
                       <MemberSwitch
                         profileId={m.profile_id}
                         checked={m.is_approver}
                         action={setApprover.bind(null, id)}
                         label={`Approver: ${name}`}
+                        disabled={!m.is_approver && m.profile?.is_active === false}
                       />
                     </TableCell>
                     <TableCell>

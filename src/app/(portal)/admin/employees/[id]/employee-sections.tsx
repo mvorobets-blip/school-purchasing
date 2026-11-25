@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EMPLOYEE_OK_TEXT, type EmployeeProfile } from "@/lib/org/employees";
 import { messageFor } from "@/lib/org/messages";
 import { ROLE_LABEL, type Role } from "@/lib/org/roles";
+import { ConfirmAction } from "./confirm-action";
 import { removeAdminRole, setEmployeeActive } from "./actions";
 
 // Частини сторінки профілю працівника для адміністратора (задача 4.1 плану impl-department-setup-2).
@@ -54,11 +55,10 @@ export function EmployeeBadges({ employee }: { employee: EmployeeProfile }) {
   );
 }
 
-// Деактивувати / активувати; зняти роль адміністратора — лише в адміністратора (AC-ORG-10, 12, 18, 21, 30, 31, 32).
+// Деактивувати (з підтвердженням) / активувати; зняти роль адміністратора — з підтвердженням (AC-ORG-10, 12, 18, 21,
+// 30, 31, 32).
 export function AccessCard({ employee }: { employee: EmployeeProfile }) {
-  const toggle = employee.is_active
-    ? { action: setEmployeeActive.bind(null, employee.id, false), label: "Deactivate", testId: "deactivate" }
-    : { action: setEmployeeActive.bind(null, employee.id, true), label: "Activate", testId: "activate" };
+  const name = employee.full_name ?? employee.email ?? "this employee";
   return (
     <Card>
       <CardHeader>
@@ -69,17 +69,29 @@ export function AccessCard({ employee }: { employee: EmployeeProfile }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-3">
-        <form action={toggle.action}>
-          <Button type="submit" variant={employee.is_active ? "destructive" : "default"} data-testid={toggle.testId}>
-            {toggle.label}
-          </Button>
-        </form>
-        {employee.role === "admin" ? (
-          <form action={removeAdminRole.bind(null, employee.id)}>
-            <Button type="submit" variant="destructive" data-testid="remove-admin">
-              Remove administrator role
+        {employee.is_active ? (
+          <ConfirmAction
+            action={setEmployeeActive.bind(null, employee.id, false)}
+            label="Deactivate"
+            title={`Deactivate ${name}?`}
+            description="The employee will not be able to sign in. Departments, approvals and permissions are kept."
+            testId="deactivate"
+          />
+        ) : (
+          <form action={setEmployeeActive.bind(null, employee.id, true)}>
+            <Button type="submit" data-testid="activate">
+              Activate
             </Button>
           </form>
+        )}
+        {employee.role === "admin" ? (
+          <ConfirmAction
+            action={removeAdminRole.bind(null, employee.id)}
+            label="Remove administrator role"
+            title={`Remove the administrator role from ${name}?`}
+            description="The role becomes Approver if the employee approves a department, otherwise Requester. The administrator role cannot be given back in the app."
+            testId="remove-admin"
+          />
         ) : null}
       </CardContent>
     </Card>
