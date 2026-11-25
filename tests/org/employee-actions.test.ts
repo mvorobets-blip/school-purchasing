@@ -78,7 +78,7 @@ describe("дії сторінки працівника", () => {
 });
 
 describe("варіанти вибору на сторінці відділу", () => {
-  it("approverCandidates: деактивованого працівника немає серед варіантів (правило AC-ORG-16 доводить тест бази)", () => {
+  it("approverCandidates: деактивованого працівника немає серед варіантів (саме правило доводить тест бази)", () => {
     const people = [
       { id: "1", email: "active@example.test", is_active: true },
       { id: "2", email: "left@example.test", is_active: false },
