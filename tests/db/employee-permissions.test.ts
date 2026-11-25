@@ -1,6 +1,7 @@
 // Тести бази (PGlite) для задачі 5.1: видача й зняття дозволів у employee_permissions під політиками
 // employee_permissions_insert_admin / _delete_admin / _select_own_or_admin (міграція 20261021213618) — так само, як їх
-// виконує дія setPermission (insert … on conflict do nothing / delete від імені користувача).
+// виконує дія setPermission: PostgREST upsert з ignoreDuplicates = insert … on conflict (profile_id, permission) do
+// nothing (лише право INSERT), а зняття — delete; усе від імені користувача.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb, type TestDb } from "./supabase-pglite";
 
@@ -13,7 +14,7 @@ let MEMBER_2: string;
 const grant = (actor: string, profile: string, permission: string) =>
   t.asUser(
     actor,
-    "insert into public.employee_permissions (profile_id, permission) values ($1, $2) on conflict do nothing",
+    "insert into public.employee_permissions (profile_id, permission) values ($1, $2) on conflict (profile_id, permission) do nothing",
     [profile, permission],
   );
 const revoke = (actor: string, profile: string, permission: string) =>

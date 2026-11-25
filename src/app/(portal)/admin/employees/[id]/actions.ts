@@ -52,8 +52,9 @@ export async function removeAdminRole(profileId: string) {
 
 // Задача 5.1 (AC-ORG-17, 26, 27): видати (value = true) чи забрати дозвіл. Пряма вставка / видалення в
 // employee_permissions — під політиками employee_permissions_insert_admin / _delete_admin (лише активний адміністратор).
+// ignoreDuplicates: PostgREST шле ON CONFLICT DO NOTHING — досить права INSERT; DO UPDATE потребував би UPDATE,
+// якого authenticated не має (тест tests/org/employee-actions.test.ts перевіряє саме ці аргументи).
 export async function setPermission(profileId: string, permission: Permission, value: boolean) {
-  if (!PERMISSIONS.includes(permission)) redirect(`/admin/employees/${profileId}?error=UNKNOWN`);
   const supabase = await createClient();
   const table = () => supabase.from("employee_permissions");
   await updateEmployee(
@@ -63,5 +64,6 @@ export async function setPermission(profileId: string, permission: Permission, v
         ? table().upsert({ profile_id: profileId, permission }, { onConflict: "profile_id,permission", ignoreDuplicates: true })
         : table().delete().eq("profile_id", profileId).eq("permission", permission),
     value ? "PERMISSION_GRANTED" : "PERMISSION_REVOKED",
+    PERMISSIONS.includes(permission),
   );
 }
