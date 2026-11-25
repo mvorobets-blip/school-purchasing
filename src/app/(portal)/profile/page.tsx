@@ -1,32 +1,14 @@
-import { Check, Minus } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { AccessList } from "@/components/portal/access-list";
 import { InfoTip } from "@/components/portal/info-tip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getCurrentUser } from "@/lib/org/current-user";
-import { initials, purchaseTypeAccess, requestTypeAccess, type TypeAccess } from "@/lib/org/permissions";
+import { initials, purchaseTypeAccess, requestTypeAccess } from "@/lib/org/permissions";
 import { ROLE_LABEL } from "@/lib/org/roles";
 import { createClient } from "@/lib/supabase/server";
-
-function AccessList({ items }: { items: TypeAccess[] }) {
-  return (
-    <ul className="flex flex-col gap-2 text-sm">
-      {items.map((t) => (
-        <li key={t.label} className="flex items-center gap-2">
-          {t.allowed ? (
-            <Check className="size-4 text-accent-foreground" aria-hidden="true" />
-          ) : (
-            <Minus className="size-4 text-muted-foreground" aria-hidden="true" />
-          )}
-          <span className={t.allowed ? "" : "text-muted-foreground"}>{t.label}</span>
-          <span className="sr-only">{t.allowed ? "— allowed" : "— not allowed"}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 // Власний профіль лише для читання: дані користувача, відділи (AC-ORG-01), схвалення, автосхвалення й дозволи.
 // RLS віддає лише власні рядки department_members і employee_permissions та відділи, де є членство.

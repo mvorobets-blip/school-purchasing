@@ -45,9 +45,17 @@ describe("варіанти у формі закупівлі", () => {
     expect(purchaseTypeOptions("admin", []).map((o) => o.label)).toEqual(["Purchasing department", "Self-purchase"]);
   });
 
-  it("адміністратору — усі відділи для «Закупівлі», навіть без членства чи з одним відділом (ORG-22 / ORG-29)", () => {
-    expect(departmentOptions("admin", [], DEPARTMENTS)).toHaveLength(3);
-    expect(departmentOptions("admin", [DEPARTMENTS[0].id], DEPARTMENTS)).toHaveLength(3);
+  // «Відшкодування» в застосунку немає (поза зрізами PM); вимога 47, «Припущення»: адміністратор бачить усі відділи у
+  // формі закупівлі, «як сказано в першому зрізі (AC-ORG-22, AC-ORG-23, AC-ORG-29)».
+  it("AC-ORG-22: адміністратор без жодного відділу у формі «Закупівлі» може обрати будь-який відділ зі списку всіх", () => {
+    const labels = departmentOptions("admin", [], DEPARTMENTS).map((o) => o.label);
+    expect(labels.toSorted()).toEqual(DEPARTMENTS.map((d) => d.name).toSorted());
+  });
+
+  it("AC-ORG-29: адміністратор-заявник лише «Початкової школи» у формі «Закупівлі» може обрати будь-який відділ, зокрема «Офіс»", () => {
+    const labels = departmentOptions("admin", [DEPARTMENTS[0].id], DEPARTMENTS).map((o) => o.label);
+    expect(labels).toHaveLength(3);
+    expect(labels).toContain("Офіс");
   });
 });
 

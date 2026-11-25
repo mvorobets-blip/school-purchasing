@@ -7,25 +7,27 @@ import { getCurrentUser } from "@/lib/org/current-user";
 import { employeeName } from "@/lib/org/employees";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
-import { AccessCard, DepartmentsCard, EmployeeBadges, EmployeeMessage } from "./employee-sections";
+import { AccessCard, DepartmentsCard, EmployeeBadges, EmployeeMessage, PermissionsCard } from "./employee-sections";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 // Профіль працівника і його відділи; помилка запиту — null (сторінка покаже Alert, а не хибне «не знайдено»).
 async function loadEmployee(supabase: Supabase, id: string) {
-  const [profileRes, membersRes] = await Promise.all([
+  const [profileRes, membersRes, permissionsRes] = await Promise.all([
     supabase.from("profiles").select("id, email, full_name, role, is_active").eq("id", id).maybeSingle(),
     supabase.from("department_members").select("is_approver, departments(name)").eq("profile_id", id),
+    supabase.from("employee_permissions").select("permission").eq("profile_id", id),
   ]);
-  if (profileRes.error || membersRes.error) return null;
+  if (profileRes.error || membersRes.error || permissionsRes.error) return null;
   const departments = membersRes.data
     .map((m) => ({ name: (m.departments as { name: string } | null)?.name ?? "—", isApprover: m.is_approver }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  return { employee: profileRes.data, departments };
+  return { employee: profileRes.data, departments, permissions: permissionsRes.data.map((p) => p.permission) };
 }
 
 // Профіль працівника для адміністратора: стан, роль, відділи; деактивувати / активувати, зняти роль адміністратора.
-// AC-ORG-10, 12, 18, 21, 30, 31, 32 (правила — у базі: private.set_active, private.remove_admin_role).
+// AC-ORG-10, 12, 18, 21, 30, 31, 32 (правила — у базі: private.set_active, private.remove_admin_role); дозволи й
+// дозволені типи — AC-ORG-17, 25, 26, 27.
 export default async function EmployeePage({ params, searchParams }: PageProps<"/admin/employees/[id]">) {
   const [user, { id }, { ok, error }] = await Promise.all([getCurrentUser(), params, searchParams]);
   if (!user) redirect("/login");
@@ -37,7 +39,7 @@ export default async function EmployeePage({ params, searchParams }: PageProps<"
 
   const loaded = await loadEmployee(await createClient(), id);
   if (!loaded) return <Alert variant="destructive">Could not load the employee. Refresh the page.</Alert>;
-  const { employee, departments } = loaded;
+  const { employee, departments, permissions } = loaded;
   if (!employee) notFound();
 
   return (
@@ -55,6 +57,7 @@ export default async function EmployeePage({ params, searchParams }: PageProps<"
       </div>
       <EmployeeMessage ok={ok} error={error} />
       <AccessCard employee={employee} />
+      <PermissionsCard employee={employee} permissions={permissions} />
       <DepartmentsCard departments={departments} />
     </div>
   );

@@ -1,12 +1,14 @@
+import { AccessList } from "@/components/portal/access-list";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EMPLOYEE_OK_TEXT, type EmployeeProfile } from "@/lib/org/employees";
 import { messageFor } from "@/lib/org/messages";
+import { PERMISSION_LABEL, PERMISSIONS, purchaseTypeAccess, requestTypeAccess } from "@/lib/org/permissions";
 import { ROLE_LABEL, type Role } from "@/lib/org/roles";
 import { ConfirmAction } from "./confirm-action";
-import { removeAdminRole, setEmployeeActive } from "./actions";
+import { removeAdminRole, setEmployeeActive, setPermission } from "./actions";
 
 // Частини сторінки профілю працівника для адміністратора (задача 4.1 плану impl-department-setup-2).
 
@@ -118,6 +120,53 @@ export function DepartmentsCard({ departments }: { departments: { name: string; 
             ))}
           </ul>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Дозволи працівника (задача 5.1): видати / забрати; поруч — дозволені йому типи заявок і закупівлі, як їх рахує
+// застосунок (AC-ORG-17, 25, 26 — типи заявок; AC-ORG-27 — типи закупівлі).
+export function PermissionsCard({ employee, permissions }: { employee: EmployeeProfile; permissions: string[] }) {
+  const role = employee.role as Role;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Permissions</CardTitle>
+        <CardDescription>
+          {role === "admin"
+            ? "An administrator can use every request and purchase type without permissions."
+            : "Request and purchase types beyond Purchase and Purchasing department need a permission."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-6 sm:grid-cols-3">
+        <section className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium">Granted permissions</h2>
+          <ul className="flex flex-col gap-2 text-sm" data-testid="employee-permissions">
+            {PERMISSIONS.map((p) => {
+              const granted = permissions.includes(p);
+              return (
+                <li key={p} className="flex items-center justify-between gap-2">
+                  <span className={granted ? "" : "text-muted-foreground"}>{PERMISSION_LABEL[p]}</span>
+                  <form action={setPermission.bind(null, employee.id, p, !granted)}>
+                    <Button type="submit" size="sm" variant={granted ? "destructive" : "outline"}>
+                      {granted ? "Revoke" : "Grant"}
+                      <span className="sr-only"> {PERMISSION_LABEL[p]}</span>
+                    </Button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+        <section className="flex flex-col gap-2" data-testid="allowed-request-types">
+          <h2 className="text-sm font-medium">Allowed request types</h2>
+          <AccessList items={requestTypeAccess(role, permissions)} />
+        </section>
+        <section className="flex flex-col gap-2" data-testid="allowed-purchase-types">
+          <h2 className="text-sm font-medium">Allowed purchase types</h2>
+          <AccessList items={purchaseTypeAccess(role, permissions)} />
+        </section>
       </CardContent>
     </Card>
   );

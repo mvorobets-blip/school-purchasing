@@ -22,4 +22,6 @@ export const EMPLOYEE_OK_TEXT: Record<string, string> = {
   DEACTIVATED: "The employee was deactivated and can no longer sign in.",
   ACTIVATED: "The employee was activated again.",
   ADMIN_REMOVED: "The administrator role was removed.",
+  PERMISSION_GRANTED: "Permission granted.",
+  PERMISSION_REVOKED: "Permission removed.",
 };
