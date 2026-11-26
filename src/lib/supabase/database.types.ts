@@ -195,6 +195,7 @@ isOneToOne: false
             "request_author_names": { Args: { "p_request_ids": string[] }; Returns: { author_name: string | null; request_id: string }[] },
             "resubmit_purchase": { Args: { "p_lines": Json,"p_request_id": string }; Returns: string },
             "request_history": { Args: { "p_request_id": string }; Returns: { actor_name: string | null; created_at: string; kind: string }[] },
+            "record_ai_call": { Args: { "p_app_state": string,"p_error_kind": string | null,"p_fallback_used": boolean,"p_input_tokens": number | null,"p_latency_ms": number,"p_model": string | null,"p_model_called": boolean,"p_output_tokens": number | null,"p_prompt_version": string,"p_request_id": string,"p_state": string }; Returns: undefined },
             "remove_admin_role": { Args: { "p_profile_id": string }; Returns: undefined },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
             "set_active": { Args: { "p_active": boolean,"p_profile_id": string }; Returns: undefined },

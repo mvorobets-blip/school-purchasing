@@ -40,22 +40,25 @@ export function describeCall({ requestId, latencyMs, result, trace }: SuggestCal
   };
 }
 
-/** Пише рядок llm.call і вставляє рядок ai_calls від імені користувача (RLS: лише свій рядок). */
+/**
+ * Пише рядок llm.call і рядок ai_calls функцією бази record_ai_call (прямої вставки в таблицю немає — відгук викладача
+ * WS11, пункт 2): user_id і час ставить база, писати можуть лише активні requester і approver.
+ */
 export async function recordSuggestCall(call: SuggestCall, supabase: SupabaseClient<Database>): Promise<void> {
   const d = describeCall(call);
   logLlmCall({ ...d, route: SUGGEST_ROUTE });
-  const { error } = await supabase.from("ai_calls").insert({
-    request_id: d.requestId,
-    state: d.state,
-    app_state: d.appState,
-    error_kind: d.errorKind ?? null,
-    model: d.model,
-    fallback_used: d.fallbackUsed,
-    model_called: d.modelCalled,
-    latency_ms: d.latencyMs,
-    input_tokens: d.inputTokens ?? null,
-    output_tokens: d.outputTokens ?? null,
-    prompt_version: d.promptVersion,
+  const { error } = await supabase.rpc("record_ai_call", {
+    p_request_id: d.requestId,
+    p_state: d.state,
+    p_app_state: d.appState,
+    p_error_kind: d.errorKind ?? null,
+    p_model: d.model,
+    p_fallback_used: d.fallbackUsed,
+    p_model_called: d.modelCalled,
+    p_latency_ms: d.latencyMs,
+    p_input_tokens: d.inputTokens ?? null,
+    p_output_tokens: d.outputTokens ?? null,
+    p_prompt_version: d.promptVersion,
   });
   if (error) {
     // Лише код Postgres/PostgREST (напр. 42501), не error.message: повідомлення може містити значення рядка.

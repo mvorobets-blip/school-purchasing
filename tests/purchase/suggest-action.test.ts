@@ -10,7 +10,7 @@ import { type TestUser, withUser } from "../support/current-user";
 const state: { user: TestUser | null } = { user: null };
 // Будь-яке звернення дії до бази, крім читання профілю в getCurrentUser: дія лише пропонує рядок і нічого не пише.
 const dbCalls: string[] = [];
-// Що дія вставила (WS11: єдиний дозволений запис — рядок журналу ai_calls без тексту опису).
+// Що дія записала (WS11: єдиний дозволений запис — рядок журналу ai_calls функцією record_ai_call, без тексту опису).
 const inserted: { table: string; row: Record<string, unknown> }[] = [];
 const db = vi.hoisted(() => ({ insertError: null as null | { code: string; message: string } }));
 // after() з next/server: черга, як у Next.js — колбек іде ПІСЛЯ відповіді дії; тест сам «відпускає» його (ADR 0006).
@@ -48,8 +48,13 @@ vi.mock("@/lib/supabase/server", () => ({
         dbCalls.push(`from ${table}`);
         return { insert: write("insert", table), update: write("update", table), delete: write("delete", table), upsert: write("upsert", table) };
       },
-      rpc: (fn: string) => {
+      rpc: (fn: string, args?: Record<string, unknown>) => {
         dbCalls.push(`rpc ${fn}`);
+        // Рядок журналу пише функція бази record_ai_call (прямої вставки в ai_calls немає): аргументи p_* → колонки.
+        if (fn === "record_ai_call" && args) {
+          inserted.push({ table: "ai_calls", row: Object.fromEntries(Object.entries(args).map(([k, v]) => [k.replace(/^p_/, ""), v])) });
+          return Promise.resolve({ data: null, error: db.insertError });
+        }
         return Promise.resolve({ data: null, error: null });
       },
     });
@@ -82,7 +87,7 @@ const forbidden = { status: "forbidden", message: MESSAGES.FORBIDDEN };
 // Жодного запису заявки: у базу йде лише один рядок ai_calls (WS11, SLO-2), і в ньому немає тексту опису.
 const expectOnlyLogRow = async (description: string, appState: string) => {
   await flushAfter();
-  expect(dbCalls).toEqual(["from ai_calls", "insert ai_calls"]);
+  expect(dbCalls).toEqual(["rpc record_ai_call"]);
   expect(inserted).toHaveLength(1);
   expect(inserted[0].row).toMatchObject({ app_state: appState, prompt_version: "line-v4" });
   const json = JSON.stringify(Object.values(inserted[0].row)); // лише значення: назви колонок (request_id) — не текст опису
