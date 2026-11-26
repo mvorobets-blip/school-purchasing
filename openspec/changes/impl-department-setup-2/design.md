@@ -10,11 +10,17 @@
 
 ### 1. Міграція `<timestamp>_employee_deactivation.sql` (задача 4.1)
 
-| Функція (`private.*` + обгортка `public.*`, `security invoker`) | Що робить | AC |
+| Функція (`private.*` — `security definer`; обгортка `public.*` — `security invoker`) | Що робить | AC |
 |---|---|---|
-| `set_active(p_profile_id uuid, p_active boolean) returns void` | лише адміністратор; ставить `is_active`; деактивація останнього активного адміністратора → `LAST_ADMIN` | 12, 18, 30 |
-| `remove_admin_role(p_profile_id uuid) returns void` | лише адміністратор; знімає роль `admin`: роль стає `requester`, потім `private.sync_role` (схвалює відділ → `approver`); останній активний адміністратор → `LAST_ADMIN` | 10, 21, 31, 32 |
+| `set_active(p_profile_id uuid, p_active boolean) returns void` | лише адміністратор; ставить `is_active`; деактивація останнього активного адміністратора → `LAST_ADMIN` | AC-ORG-12, AC-ORG-18, AC-ORG-30 |
+| `remove_admin_role(p_profile_id uuid) returns void` | лише адміністратор; знімає роль `admin`: роль стає `requester`, потім `private.sync_role` (схвалює відділ → `approver`); останній активний адміністратор → `LAST_ADMIN` | AC-ORG-10, AC-ORG-21, AC-ORG-31, AC-ORG-32 |
 
+- **Режим і права (ADR 0002):** `private.set_active` і `private.remove_admin_role` — `security definer`,
+  `set search_path = ''`, на початку перевіряють `private.is_admin()`; `revoke execute … from public, anon`,
+  `grant execute … to authenticated`. Обгортки `public.*` з тією самою сигнатурою — `security invoker`,
+  `revoke execute … from public, anon`, `grant execute … to authenticated`. Хелпер блокування адміністраторів —
+  `revoke execute … from public, anon, authenticated` (викликають лише функції `private.*`). Нових таблиць і
+  політик RLS немає.
 - **Гонка двох адміністраторів:** перед перевіркою функція блокує рядки всіх активних адміністраторів
   (`select … for update`), тож дві одночасні дії не залишать школу без адміністратора — друга побачить уже оновлений
   стан і отримає `LAST_ADMIN`.
@@ -34,8 +40,8 @@ AC: AC-ORG-17, AC-ORG-26 (типи заявок), AC-ORG-27 (типи закуп
 
 | Шлях | Що | AC |
 |---|---|---|
-| `/admin/employees` | список: ім'я, email, роль, активний / деактивований | 09, 12, 30 |
-| `/admin/employees/[id]` | профіль: деактивувати / активувати, зняти роль `admin`, відділи, дозволи (вкл. / вимк.), дозволені типи заявок і закупівлі | 10, 12, 17, 18, 21, 25–27, 30–32 |
+| `/admin/employees` | список: ім'я, email, роль, активний / деактивований | AC-ORG-09, AC-ORG-12, AC-ORG-30 |
+| `/admin/employees/[id]` | профіль: деактивувати / активувати, зняти роль `admin`, відділи, дозволи (вкл. / вимк.), дозволені типи заявок і закупівлі | AC-ORG-10, 12, 17, 18, 21, 25–27, 30–32 (усі — `AC-ORG-…`) |
 | `/admin/departments/[id]` | у виборі заявника й схвалювача — лише активні працівники | 16 |
 
 Пункт «Employees» у бічній панелі — лише адміністратору (як «Departments»).
