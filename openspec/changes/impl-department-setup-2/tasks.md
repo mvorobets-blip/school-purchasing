@@ -5,9 +5,8 @@
 - [ ] 4.1 Міграція `<timestamp>_employee_deactivation.sql`: `private.set_active`, `private.remove_admin_role` з
   блокуванням рядків адміністраторів і кодом `LAST_ADMIN`, обгортки `public.*`; сторінки `/admin/employees` і
   `/admin/employees/[id]` (деактивувати / активувати, зняти роль `admin`); пункт «Employees»; лише активні в
-  `approverCandidates`; тести бази й дій; рядки `docs/conformance.md`.
-  Done when: AC-ORG-10, AC-ORG-12, AC-ORG-16, AC-ORG-18, AC-ORG-21, AC-ORG-30, AC-ORG-31, AC-ORG-32 «реалізовано»;
-  `db-check` застосовує міграцію на чисту базу.
+  `approverCandidates`; тести бази й дій; рядки `docs/conformance.md`; `db-check` застосовує міграцію на чисту базу.
+  Done when: AC-ORG-10, AC-ORG-12, AC-ORG-16, AC-ORG-18, AC-ORG-21, AC-ORG-30, AC-ORG-31, AC-ORG-32 «реалізовано».
 
 ## 5. Дозволи — `task/employee-permissions`
 

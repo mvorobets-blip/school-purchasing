@@ -28,6 +28,8 @@
 Видача й зняття — `insert` / `delete` у `employee_permissions` під наявними політиками `…_insert_admin` /
 `…_delete_admin`. Дозволені типи — наявні `requestTypeAccess` і `purchaseTypeAccess` (`src/lib/org/permissions.ts`).
 
+AC: AC-ORG-17, AC-ORG-26 (типи заявок), AC-ORG-27 (типи закупівлі) у профілі працівника; AC-ORG-25 — адміністратор без дозволу.
+
 ### 3. Сторінки
 
 | Шлях | Що | AC |
