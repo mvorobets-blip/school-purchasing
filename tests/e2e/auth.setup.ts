@@ -10,7 +10,7 @@
 // для 3 AC WS8 (як у прийманні PM 03.11): author — працівник 1, автор заявки «Primary School» (AC-FRM-08);
 // requester — заявник «Primary School», не автор і не схвалювач (працівник 2 в AC-FRM-08; працівник 1 в AC-FRM-15);
 // requester2 — працівник 3 без поданих заявок (AC-FRM-14). Усі з supabase/demo-users.json.
-import { expect, test as setup } from "@playwright/test";
+import { expect, test as setup } from "./support/bypass";
 import { signIn } from "./support/uat";
 
 const ROLES = {

@@ -3,7 +3,7 @@
 // NEXT_PUBLIC_SUPABASE_URL у .env.local — інакше UAT на staging з прод-ключами в .env.local писав би в прод (і навпаки).
 // Захищена Vercel адреса (preview, staging) — заголовок x-vercel-protection-bypass зі змінної
 // VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — деплой цього проєкту Vercel (запит /api/health іде лише на
-// ціль; у браузері Playwright extraHTTPHeaders — до всіх запитів, див. playwright.config.ts).
+// ціль; у браузері — маршрутом лише на origin цілі, bypassRoute і tests/e2e/support/bypass.ts).
 // Значення секрету й ключів не друкуємо ніде: у повідомленнях — лише ref (він і так у публічній адресі бази).
 // Джерело: R03 курсу WS11 і документація Vercel «Protection Bypass for Automation» (приклад Playwright), 17.11.2026.
 
@@ -40,6 +40,20 @@ export function bypassHeaders(base, secret) {
   const value = (secret ?? "").trim();
   if (!value || !isVercelHost(base)) return {};
   return { "x-vercel-protection-bypass": value, "x-vercel-set-bypass-cookie": "true" };
+}
+
+/**
+ * Для браузера UAT (tests/e2e/support/bypass.ts): заголовки обходу лише запитам на origin цілі. Не extraHTTPHeaders —
+ * ті Playwright додає до ВСІХ запитів браузера, зокрема на чужі хости (CodeRabbit, PR #115). null — нічого не додаємо.
+ * @param {string} base
+ * @param {string | undefined} secret
+ * @returns {{ matches: (url: URL) => boolean, headers: Record<string, string> } | null}
+ */
+export function bypassRoute(base, secret) {
+  const headers = bypassHeaders(base, secret);
+  if (Object.keys(headers).length === 0) return null;
+  const origin = new URL(base).origin;
+  return { matches: (url) => url.origin === origin, headers };
 }
 
 /** Текст причини зупинки або null, якщо ref збігаються. */

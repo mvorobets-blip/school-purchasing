@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   assertSameDatabase,
   bypassHeaders,
+  bypassRoute,
   fetchTargetHealth,
   isVercelHost,
   refFromSupabaseUrl,
@@ -36,6 +37,22 @@ describe("bypassHeaders", () => {
     expect(bypassHeaders(BASE, undefined)).toEqual({});
     expect(bypassHeaders("https://school.example.test", SECRET)).toEqual({});
     expect(isVercelHost("not a url")).toBe(false);
+  });
+
+  it("маршрут браузера: заголовки лише на origin цілі, не на інші хости й порти (CodeRabbit, PR #115)", () => {
+    const route = bypassRoute(BASE, SECRET);
+    expect(route?.headers).toEqual({ "x-vercel-protection-bypass": SECRET, "x-vercel-set-bypass-cookie": "true" });
+    expect(route?.matches(new URL(`${BASE}/requests/new?x=1`))).toBe(true);
+    expect(route?.matches(new URL("https://other-app.vercel.app/img.png"))).toBe(false);
+    expect(route?.matches(new URL("https://fonts.example.test/a.woff2"))).toBe(false);
+    expect(route?.matches(new URL(`${BASE}:8443/`))).toBe(false);
+    expect(route?.matches(new URL(BASE.replace("https:", "http:")))).toBe(false);
+  });
+
+  it("маршрут браузера: без секрету чи на чужій цілі — null (нічого не перехоплюємо)", () => {
+    expect(bypassRoute(BASE, "")).toBeNull();
+    expect(bypassRoute("https://other-app.vercel.app", SECRET)).toBeNull();
+    expect(bypassRoute("http://localhost:3000", SECRET)).toBeNull();
   });
 
   it("чужий *.vercel.app, http чи localhost — без заголовків (відгук викладача WS11, пункт 3)", () => {
