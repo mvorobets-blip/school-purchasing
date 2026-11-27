@@ -1,5 +1,6 @@
 // D0: чи відповіла база на запит /api/health. Чиста функція — щоб перевірити всі гілки тестом без мережі.
 // Запит — публічним ключем до таблиці без доступу для anon: «немає прав» (42501) теж означає, що Postgres живий.
+import { logEvent, type LogSchema } from "@/lib/log";
 
 /** Код SQLSTATE Postgres, напр. 42501 «permission denied»: запит дійшов до бази. */
 const SQLSTATE = /^[0-9A-Z]{5}$/;
@@ -48,4 +49,41 @@ export function supabaseRefFrom(url: string | undefined): string | null {
 
 export function appEnvFrom(appEnv: string | undefined): string | null {
   return appEnv?.trim() || null;
+}
+
+// Дія 4 з postmortem docs/incidents/2026-11-23-staging-supabase-url.md: під час дрілу 23.11 /api/health віддавав 503,
+// а журнали Vercel були порожні. Тепер «база недоступна» — один рядок health.db_down: код причини й ref проєкту
+// Supabase (не секрет — він у публічній адресі), середовище й коміт. Значень змінних, ключів і тексту помилки бази
+// тут немає: схема пропускає лише ці поля й лише як token (src/lib/log.ts).
+export const HEALTH_DB_DOWN_SCHEMA = {
+  reason: "token",
+  supabaseRef: "token",
+  env: "token",
+  appEnv: "token",
+  sha: "token",
+} as const satisfies LogSchema;
+
+export type DbDownContext = { reason: string; supabaseRef: string | null; env: string; appEnv: string | null; sha: string };
+
+/** Той самий формат, що правило token у src/lib/log.ts: інакше схема мовчки викинула б reason. */
+const REASON_TOKEN = /^[A-Za-z0-9._:/-]+$/;
+
+/**
+ * Пише рядок health.db_down рівнем error (фільтр level:error у Vercel). Без ref — "none": видно, що адреса не та.
+ * reason з дивним кодом PostgREST (пробіл тощо) — "unknown", щоб рядок не лишився без причини.
+ * /api/health публічний: поки база лежить, рядок пише кожен запит ззовні — прийнятно на Hobby (журнал живе 1 годину).
+ */
+export function logDbDown({ reason, supabaseRef, env, appEnv, sha }: DbDownContext): string {
+  return logEvent(
+    "health.db_down",
+    {
+      reason: REASON_TOKEN.test(reason) ? reason : "unknown",
+      supabaseRef: supabaseRef ?? "none",
+      env,
+      appEnv: appEnv ?? undefined,
+      sha: sha.slice(0, 7),
+    },
+    HEALTH_DB_DOWN_SCHEMA,
+    "error",
+  );
 }

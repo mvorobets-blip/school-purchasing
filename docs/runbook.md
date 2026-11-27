@@ -60,9 +60,11 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
 
 ## 1. Червоний smoke (зокрема о 2-й ночі)
 
-**Як зрозуміти:** у Telegram прийшло «ЧЕРВОНИЙ SMOKE» із середовищем, адресою, комітом і посиланням на прогін.
+**Як зрозуміти:** у Telegram прийшло «ЧЕРВОНИЙ SMOKE» з рядком «Причина:» (перший рядок `::error` smoke; «див. прогін»
+— якщо smoke не дійшов до запуску), середовищем, адресою, комітом і посиланням на прогін (дія 5 з postmortem
+`docs/incidents/2026-11-23-staging-supabase-url.md`).
 
-1. Відкрийте посилання на прогін → крок smoke → рядки `::error title=smoke …::`. Вони підказують причину:
+1. «Причина:» — це перший рядок `::error title=smoke …::`; решта — у прогоні → крок smoke. Знайдіть рядок у таблиці:
 
    | Рядок `::error::` містить | Що це найімовірніше | Куди далі |
    |---|---|---|
@@ -83,6 +85,8 @@ cost-guide; станом на 09.11 і 17.11.2026); чого там немає �
    ```
 
    Очікуємо: `{"ok":true,"sha":"<SHA main>","env":"production","appEnv":null,"supabaseRef":"tqbvafkcniaspvluverp","db":"ok","reason":""}`.
+   Якщо `db` = `down`, кожен такий запит лишає в Vercel → Logs рядок `health.db_down` (рівень error) з тим самим
+   `reason` і `supabaseRef` — за ним видно, з якого деплою й коли почався збій (журнал живе 1 годину, розділ 5).
    Staging за захистом Vercel — той самий smoke локально з секретом обходу з `.env.local` (значення не друкується):
 
    ```bash
@@ -172,7 +176,7 @@ unavailable today», а форма працює вручну, але знятт�
 
 | Що | Де | Скільки живе (безкоштовні тарифи, станом на 09.11.2026) |
 |---|---|---|
-| Журнали запитів Vercel (`llm.call`, помилки) | Vercel → Logs (фільтр Environment, Branch) або `vercel logs <адреса деплою>` | **1 година** (Hobby) |
+| Журнали запитів Vercel (`llm.call`, `health.db_down`, помилки) | Vercel → Logs (фільтр Environment, Branch; `health.db_down` — рівень error: `reason`, `supabaseRef`, `env`, `appEnv`, `sha`, без значень змінних) або `vercel logs <адреса деплою>` | **1 година** (Hobby) |
 | Vercel Observability (частка помилок функцій) | Vercel → Observability | перевірте в інтерфейсі |
 | Журнали збірки | Vercel → Deployments → деплой → Build Logs | поки є деплой |
 | Журнали Supabase (API, Postgres, Auth) | Supabase → Logs — окремо в кожному проєкті | **1 доба** (Free) |
