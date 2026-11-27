@@ -7,6 +7,28 @@ import { withUser } from "../support/current-user";
 // Саму відмову бази (і «дані не змінились») доводить tests/db/employee-deactivation.test.ts; тут — що людина бачить.
 const rpcResult = { error: null as null | { code?: string; message?: string } };
 const rpcCalls: unknown[] = [];
+// Виклики from("employee_permissions"): upsert / delete з аргументами — для дії setPermission.
+const tableCalls: unknown[] = [];
+function permissionsTable(table: string) {
+  const filters: unknown[] = [];
+  const deleting = {
+    eq: (col: string, val: unknown) => {
+      filters.push([col, val]);
+      return deleting;
+    },
+    then: (resolve: (v: unknown) => void) => {
+      tableCalls.push([table, "delete", filters]);
+      resolve(rpcResult);
+    },
+  };
+  return {
+    upsert: async (row: unknown, opts: unknown) => {
+      tableCalls.push([table, "upsert", row, opts]);
+      return rpcResult;
+    },
+    delete: () => deleting,
+  };
+}
 let actor = { id: "a0000000-0000-4000-8000-000000000001", role: "admin", isActive: true };
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -22,10 +44,11 @@ vi.mock("@/lib/supabase/server", () => ({
         rpcCalls.push(args);
         return rpcResult;
       },
+      from: permissionsTable,
     }),
 }));
 
-const { removeAdminRole, setEmployeeActive } = await import("@/app/(portal)/admin/employees/[id]/actions");
+const { removeAdminRole, setEmployeeActive, setPermission } = await import("@/app/(portal)/admin/employees/[id]/actions");
 
 const SELF = "a0000000-0000-4000-8000-000000000001";
 const EMPLOYEE = "44444444-4444-4444-8444-444444444444";
@@ -36,6 +59,7 @@ describe("дії сторінки працівника", () => {
   beforeEach(() => {
     rpcResult.error = null;
     rpcCalls.length = 0;
+    tableCalls.length = 0;
     actor = { id: SELF, role: "admin", isActive: true };
   });
 
@@ -81,6 +105,62 @@ describe("дії сторінки працівника", () => {
   it("невалідний id — назад до списку, RPC не викликано", async () => {
     await expect(removeAdminRole("not-a-uuid")).rejects.toThrow("REDIRECT /admin/employees");
     expect(rpcCalls).toEqual([]);
+  });
+});
+
+describe("дія setPermission", () => {
+  beforeEach(() => {
+    rpcResult.error = null;
+    tableCalls.length = 0;
+    actor = { id: SELF, role: "admin", isActive: true };
+  });
+
+  it("AC-ORG-17: видача дозволу на «Витрату карткою» — upsert з ignoreDuplicates (ON CONFLICT DO NOTHING, досить права INSERT)", async () => {
+    await expect(setPermission(EMPLOYEE, "card_expense", true)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?ok=PERMISSION_GRANTED`,
+    );
+    expect(tableCalls).toEqual([
+      [
+        "employee_permissions",
+        "upsert",
+        { profile_id: EMPLOYEE, permission: "card_expense" },
+        { onConflict: "profile_id,permission", ignoreDuplicates: true },
+      ],
+    ]);
+  });
+
+  it("AC-ORG-26: зняття дозволу — delete саме цього дозволу цього працівника", async () => {
+    await expect(setPermission(EMPLOYEE, "card_expense", false)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?ok=PERMISSION_REVOKED`,
+    );
+    expect(tableCalls).toEqual([
+      ["employee_permissions", "delete", [["profile_id", EMPLOYEE], ["permission", "card_expense"]]],
+    ]);
+  });
+
+  it("value не boolean (напр. рядок \"false\") — помилка без запису, а не видача дозволу", async () => {
+    await expect(setPermission(EMPLOYEE, "card_expense", "false" as never)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?error=UNKNOWN`,
+    );
+    expect(tableCalls).toEqual([]);
+  });
+
+  it("відмова RLS (42501) — «Not enough permissions»", async () => {
+    rpcResult.error = { code: "42501", message: "new row violates row-level security policy" };
+    await expect(setPermission(EMPLOYEE, "self_purchase", true)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?error=FORBIDDEN`,
+    );
+  });
+
+  it("невідомий дозвіл — помилка без запису; не-адміністратор — FORBIDDEN раніше за перевірку дозволу", async () => {
+    await expect(setPermission(EMPLOYEE, "fly_to_moon" as never, true)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?error=UNKNOWN`,
+    );
+    actor = { id: SELF, role: "requester", isActive: true };
+    await expect(setPermission(EMPLOYEE, "fly_to_moon" as never, true)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?error=FORBIDDEN`,
+    );
+    expect(tableCalls).toEqual([]);
   });
 });
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { canAccessSettings } from "@/lib/org/access";
 import { getCurrentUser } from "@/lib/org/current-user";
+import { PERMISSIONS, type Permission } from "@/lib/org/permissions";
 import { rpcErrorCode, type RpcError } from "@/lib/org/rpc-error";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -47,4 +48,22 @@ export async function setEmployeeActive(profileId: string, value: boolean) {
 export async function removeAdminRole(profileId: string) {
   const supabase = await createClient();
   await updateEmployee(profileId, () => supabase.rpc("remove_admin_role", { p_profile_id: profileId }), "ADMIN_REMOVED");
+}
+
+// Задача 5.1 (AC-ORG-17, 26, 27): видати (value = true) чи забрати дозвіл. Пряма вставка / видалення в
+// employee_permissions — під політиками employee_permissions_insert_admin / _delete_admin (лише активний адміністратор).
+// ignoreDuplicates: PostgREST шле ON CONFLICT DO NOTHING — досить права INSERT; DO UPDATE потребував би UPDATE,
+// якого authenticated не має (тест tests/org/employee-actions.test.ts перевіряє саме ці аргументи).
+export async function setPermission(profileId: string, permission: Permission, value: boolean) {
+  const supabase = await createClient();
+  const table = () => supabase.from("employee_permissions");
+  await updateEmployee(
+    profileId,
+    () =>
+      value
+        ? table().upsert({ profile_id: profileId, permission }, { onConflict: "profile_id,permission", ignoreDuplicates: true })
+        : table().delete().eq("profile_id", profileId).eq("permission", permission),
+    value ? "PERMISSION_GRANTED" : "PERMISSION_REVOKED",
+    PERMISSIONS.includes(permission) && typeof value === "boolean",
+  );
 }
