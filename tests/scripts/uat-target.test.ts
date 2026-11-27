@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   assertSameDatabase,
   bypassHeaders,
-  bypassRoute,
+  primeBypassCookie,
   fetchTargetHealth,
   isVercelHost,
   refFromSupabaseUrl,
@@ -39,26 +39,60 @@ describe("bypassHeaders", () => {
     expect(isVercelHost("not a url")).toBe(false);
   });
 
-  it("маршрут браузера: заголовки лише на origin цілі, не на інші хости й порти (CodeRabbit, PR #115)", () => {
-    const route = bypassRoute(BASE, SECRET);
-    expect(route?.headers).toEqual({ "x-vercel-protection-bypass": SECRET, "x-vercel-set-bypass-cookie": "true" });
-    expect(route?.matches(new URL(`${BASE}/requests/new?x=1`))).toBe(true);
-    expect(route?.matches(new URL("https://other-app.vercel.app/img.png"))).toBe(false);
-    expect(route?.matches(new URL("https://fonts.example.test/a.woff2"))).toBe(false);
-    expect(route?.matches(new URL(`${BASE}:8443/`))).toBe(false);
-    expect(route?.matches(new URL(BASE.replace("https:", "http:")))).toBe(false);
-  });
-
-  it("маршрут браузера: без секрету чи на чужій цілі — null (нічого не перехоплюємо)", () => {
-    expect(bypassRoute(BASE, "")).toBeNull();
-    expect(bypassRoute("https://other-app.vercel.app", SECRET)).toBeNull();
-    expect(bypassRoute("http://localhost:3000", SECRET)).toBeNull();
-  });
-
   it("чужий *.vercel.app, http чи localhost — без заголовків (відгук викладача WS11, пункт 3)", () => {
     expect(bypassHeaders("https://other-app.vercel.app", SECRET)).toEqual({});
     expect(bypassHeaders(BASE.replace("https:", "http:"), SECRET)).toEqual({});
     expect(bypassHeaders("http://localhost:3000", SECRET)).toEqual({});
+  });
+});
+
+// Браузер UAT секрету не бачить: контекст отримує cookie обходу одним запитом на ціль (CodeRabbit, PR #115).
+describe("primeBypassCookie", () => {
+  function fakeContext(status: number, setCookie?: string) {
+    const dispose = vi.fn(async () => {});
+    const get = vi.fn(async () => ({
+      status: () => status,
+      headers: (): Record<string, string> => (setCookie ? { "set-cookie": setCookie } : {}),
+      dispose,
+    }));
+    return { context: { request: { get } }, get, dispose };
+  }
+
+  it("один запит лише на ціль, з заголовком обходу, без переходу за редиректом; Vercel видав cookie", async () => {
+    const { context, get, dispose } = fakeContext(307, "_vercel_jwt=x; Path=/; Secure; HttpOnly");
+    await expect(primeBypassCookie(context, BASE, SECRET)).resolves.toBe("cookie");
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(`${BASE}/api/health`, {
+      headers: { "x-vercel-protection-bypass": SECRET, "x-vercel-set-bypass-cookie": "true" },
+      maxRedirects: 0,
+      failOnStatusCode: false,
+    });
+    expect(dispose).toHaveBeenCalled();
+  });
+
+  it("не захищений деплой (прод) cookie не видає — не помилка", async () => {
+    const { context } = fakeContext(200);
+    await expect(primeBypassCookie(context, "https://therapy-scheduling-ten.vercel.app", SECRET)).resolves.toBe("no-cookie");
+  });
+
+  it("Vercel не прийняв секрет — зрозуміла помилка без значення секрету", async () => {
+    const { context, dispose } = fakeContext(401);
+    const error = await primeBypassCookie(context, BASE, SECRET).catch((e: Error) => e);
+    expect(String(error)).toContain("Vercel не прийняв секрет обходу (401)");
+    expect(String(error)).not.toContain(SECRET);
+    expect(dispose).toHaveBeenCalled();
+  });
+
+  it("без секрету, на чужій цілі чи локально — жодного запиту", async () => {
+    for (const [base, secret] of [
+      [BASE, ""],
+      ["https://other-app.vercel.app", SECRET],
+      ["http://localhost:3000", SECRET],
+    ] as const) {
+      const { context, get } = fakeContext(200);
+      await expect(primeBypassCookie(context, base, secret)).resolves.toBe("skipped");
+      expect(get).not.toHaveBeenCalled();
+    }
   });
 });
 

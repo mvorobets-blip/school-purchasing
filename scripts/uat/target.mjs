@@ -3,13 +3,13 @@
 // NEXT_PUBLIC_SUPABASE_URL у .env.local — інакше UAT на staging з прод-ключами в .env.local писав би в прод (і навпаки).
 // Захищена Vercel адреса (preview, staging) — заголовок x-vercel-protection-bypass зі змінної
 // VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — деплой цього проєкту Vercel (запит /api/health іде лише на
-// ціль; у браузері — маршрутом лише на origin цілі, bypassRoute і tests/e2e/support/bypass.ts).
+// ціль; браузер секрету не бачить — лише cookie обходу, primeBypassCookie і tests/e2e/support/bypass.ts).
 // Значення секрету й ключів не друкуємо ніде: у повідомленнях — лише ref (він і так у публічній адресі бази).
 // Джерело: R03 курсу WS11 і документація Vercel «Protection Bypass for Automation» (приклад Playwright), 17.11.2026.
 
 import { isProjectDeployHost } from "../lib/bypass-host.mjs";
 
-const SUPABASE_HOST =/^([a-z0-9]{20})\.supabase\.co$/;
+const SUPABASE_HOST = /^([a-z0-9]{20})\.supabase\.co$/;
 
 /** ref проєкту з https://<ref>.supabase.co або null. */
 export function refFromSupabaseUrl(url) {
@@ -43,17 +43,31 @@ export function bypassHeaders(base, secret) {
 }
 
 /**
- * Для браузера UAT (tests/e2e/support/bypass.ts): заголовки обходу лише запитам на origin цілі. Не extraHTTPHeaders —
- * ті Playwright додає до ВСІХ запитів браузера, зокрема на чужі хости (CodeRabbit, PR #115). null — нічого не додаємо.
+ * Браузер UAT секрету не бачить (CodeRabbit, PR #115): ні extraHTTPHeaders (Playwright шле їх на ВСІ хости), ні маршрут
+ * з route.continue (заголовок переживає редирект на інший origin). Замість цього один запит APIRequestContext контексту
+ * на ціль із заголовком обходу й x-vercel-set-bypass-cookie, без переходу за редиректом (maxRedirects: 0): Vercel
+ * відповідає Set-Cookie, cookie лягає у спільне сховище контексту, і браузер далі ходить з нею — а cookie браузер шле
+ * лише своєму хосту. Не захищений деплой (прод) cookie не видає — це не помилка.
+ * @param {{ request: { get: (url: string, options: object) => Promise<{ status: () => number, headers: () => Record<string, string>, dispose: () => Promise<void> }> } }} context
  * @param {string} base
  * @param {string | undefined} secret
- * @returns {{ matches: (url: URL) => boolean, headers: Record<string, string> } | null}
+ * @returns {Promise<"skipped" | "cookie" | "no-cookie">}
  */
-export function bypassRoute(base, secret) {
+export async function primeBypassCookie(context, base, secret) {
   const headers = bypassHeaders(base, secret);
-  if (Object.keys(headers).length === 0) return null;
-  const origin = new URL(base).origin;
-  return { matches: (url) => url.origin === origin, headers };
+  if (Object.keys(headers).length === 0) return "skipped";
+  const response = await context.request.get(`${base}/api/health`, { headers, maxRedirects: 0, failOnStatusCode: false });
+  try {
+    const status = response.status();
+    if (status === 401 || status === 403) {
+      throw new Error(
+        `Vercel не прийняв секрет обходу (${status}) — оновіть VERCEL_AUTOMATION_BYPASS_SECRET (Vercel → Settings → Deployment Protection → Protection Bypass for Automation)`,
+      );
+    }
+    return response.headers()["set-cookie"] ? "cookie" : "no-cookie";
+  } finally {
+    await response.dispose();
+  }
 }
 
 /** Текст причини зупинки або null, якщо ref збігаються. */

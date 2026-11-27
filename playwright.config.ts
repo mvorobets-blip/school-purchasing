@@ -21,8 +21,9 @@ const withNegativeControls = process.env.UAT_NEGATIVE_CONTROLS === "1";
 const skipped = deployed ? /@negative-control/ : /@negative-control|@live-model/;
 const noRecording = { video: "off", trace: "off", screenshot: "off" } as const;
 // WS11 (R03): preview і staging за захистом Vercel — заголовок обходу лише з VERCEL_AUTOMATION_BYPASS_SECRET, лише коли
-// ціль UAT — деплой цього проєкту Vercel (scripts/lib/bypass-host.mjs), і лише запитам на origin цілі: маршрут контексту
-// в tests/e2e/support/bypass.ts, не extraHTTPHeaders (ті Playwright шле на ВСІ хости; CodeRabbit, PR #115).
+// ціль UAT — деплой цього проєкту Vercel (scripts/lib/bypass-host.mjs). Браузер секрету не бачить: контекст отримує
+// cookie обходу одним запитом на ціль (tests/e2e/support/bypass.ts), не extraHTTPHeaders (ті Playwright шле на ВСІ
+// хости; CodeRabbit, PR #115).
 // Локальна збірка й CI — без заголовків.
 
 export default defineConfig({
