@@ -136,7 +136,7 @@ export function PermissionsCard({ employee, permissions }: { employee: EmployeeP
         <CardDescription>
           {role === "admin"
             ? "An administrator can use every request and purchase type without permissions."
-            : "Request and purchase types beyond Purchase and Purchasing department need a permission."}
+            : "Card expense, Check request, Vendor invoice and Self-purchase need a permission; Purchase, Reimbursement and Purchasing department are always allowed."}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 sm:grid-cols-3">
