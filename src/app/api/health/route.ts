@@ -5,7 +5,7 @@
 // Читають: scripts/smoke.mjs, .github/workflows/smoke.yml і перевірка розгортань курсу.
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { appEnvFrom, classifyDbProbe, supabaseRefFrom } from "@/lib/health";
+import { appEnvFrom, classifyDbProbe, logDbDown, supabaseRefFrom } from "@/lib/health";
 import type { Database } from "@/lib/supabase/database.types";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +30,8 @@ export async function GET() {
   } catch {
     health = { db: "down", reason: "exception" };
   }
+  // Дія 4 з postmortem 2026-11-23: збій бази видно в журналах Vercel, а не лише у відповіді 503.
+  if (health.db === "down") logDbDown({ reason: health.reason, supabaseRef, env, appEnv, sha });
   return NextResponse.json(
     { ok: health.db === "ok", sha, env, appEnv, supabaseRef, ...health },
     { status: health.db === "ok" ? 200 : 503, headers: { "cache-control": "no-store" } },

@@ -105,7 +105,10 @@ jobs:
           echo "::error title=smoke::Запустіть smoke з гілки $DEFAULT_BRANCH: прод порівнюємо з її комітом, а не з $RUN_BRANCH"
           exit 1
       - name: Прод = main, сторінка входу відкривається, база відповідає
-        run: node scripts/smoke.mjs "$PROD_URL" "$EXPECT_SHA"
+        # Журнал — у файл для алерту (дія 5 з postmortem 2026-11-23); pipefail: без нього tee сховав би код виходу smoke.
+        run: |
+          set -o pipefail
+          node scripts/smoke.mjs "$PROD_URL" "$EXPECT_SHA" 2>&1 | tee "$RUNNER_TEMP/smoke.log"
       - name: Алерт людині в Telegram (лише якщо щось червоне)
         if: failure()
         env:
@@ -124,8 +127,10 @@ jobs:
             exit 0
           fi
           host=$(printf '%s' "$ALERT_URL" | sed -E 's#^[A-Za-z]+://##; s#/.*$##')
-          text=$(printf 'ЧЕРВОНИЙ SMOKE\nРепо: %s\nWorkflow: %s, job: %s\nСередовище: %s\nАдреса: %s\nКоміт: %s\nПрогін: %s' \
-            "$GITHUB_REPOSITORY" "$ALERT_WORKFLOW" "$ALERT_JOB" "$ALERT_ENV" "${host:-не задано}" "${ALERT_SHA:0:7}" "$RUN_URL")
+          # Дія 5 з postmortem 2026-11-23: перший рядок ::error smoke — причина просто в повідомленні.
+          reason=$(node scripts/smoke-first-error.mjs "$RUNNER_TEMP/smoke.log" 2>/dev/null || true)
+          text=$(printf 'ЧЕРВОНИЙ SMOKE\nПричина: %s\nРепо: %s\nWorkflow: %s, job: %s\nСередовище: %s\nАдреса: %s\nКоміт: %s\nПрогін: %s' \
+            "${reason:-див. прогін}" "$GITHUB_REPOSITORY" "$ALERT_WORKFLOW" "$ALERT_JOB" "$ALERT_ENV" "${host:-не задано}" "${ALERT_SHA:0:7}" "$RUN_URL")
           if curl -sS --fail --max-time 15 -o /dev/null "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${text}" 2>/dev/null; then
             echo "Алерт надіслано в Telegram."
@@ -179,7 +184,10 @@ jobs:
             exit 1
           fi
       - name: Деплой відкривається з обходом захисту, база відповідає, коміт той самий
-        run: node scripts/smoke.mjs "$DEPLOY_URL" "$EXPECT_SHA"
+        # Журнал — у файл для алерту (дія 5 з postmortem 2026-11-23); pipefail: без нього tee сховав би код виходу smoke.
+        run: |
+          set -o pipefail
+          node scripts/smoke.mjs "$DEPLOY_URL" "$EXPECT_SHA" 2>&1 | tee "$RUNNER_TEMP/smoke.log"
       - name: Алерт людині в Telegram (лише якщо щось червоне)
         if: failure()
         env:
@@ -199,8 +207,10 @@ jobs:
             exit 0
           fi
           host=$(printf '%s' "$ALERT_URL" | sed -E 's#^[A-Za-z]+://##; s#/.*$##')
-          text=$(printf 'ЧЕРВОНИЙ SMOKE\nРепо: %s\nWorkflow: %s, job: %s\nСередовище: %s%s\nАдреса: %s\nКоміт: %s\nПрогін: %s' \
-            "$GITHUB_REPOSITORY" "$ALERT_WORKFLOW" "$ALERT_JOB" "$ALERT_ENV" "${ALERT_BRANCH:+ (гілка $ALERT_BRANCH)}" \
+          # Дія 5 з postmortem 2026-11-23: перший рядок ::error smoke — причина просто в повідомленні.
+          reason=$(node scripts/smoke-first-error.mjs "$RUNNER_TEMP/smoke.log" 2>/dev/null || true)
+          text=$(printf 'ЧЕРВОНИЙ SMOKE\nПричина: %s\nРепо: %s\nWorkflow: %s, job: %s\nСередовище: %s%s\nАдреса: %s\nКоміт: %s\nПрогін: %s' \
+            "${reason:-див. прогін}" "$GITHUB_REPOSITORY" "$ALERT_WORKFLOW" "$ALERT_JOB" "$ALERT_ENV" "${ALERT_BRANCH:+ (гілка $ALERT_BRANCH)}" \
             "${host:-не задано}" "${ALERT_SHA:0:7}" "$RUN_URL")
           if curl -sS --fail --max-time 15 -o /dev/null "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${text}" 2>/dev/null; then
