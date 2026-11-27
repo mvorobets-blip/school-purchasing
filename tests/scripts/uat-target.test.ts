@@ -83,6 +83,16 @@ describe("primeBypassCookie", () => {
     expect(dispose).toHaveBeenCalled();
   });
 
+  it("мережева помилка запиту — власний текст без секрету й без тексту помилки Playwright (там заголовки запиту)", async () => {
+    const get = vi.fn(async () => {
+      throw new Error(`apiRequestContext.get: connect ECONNREFUSED\nCall log:\n  - x-vercel-protection-bypass: ${SECRET}`);
+    });
+    const error = await primeBypassCookie({ request: { get } }, BASE, SECRET).catch((e: Error) => e);
+    expect(String(error)).toContain("Не вдалося отримати cookie обходу Vercel");
+    expect(String(error)).not.toContain(SECRET);
+    expect(String(error)).not.toContain("Call log");
+  });
+
   it("без секрету, на чужій цілі чи локально — жодного запиту", async () => {
     for (const [base, secret] of [
       [BASE, ""],

@@ -56,7 +56,16 @@ export function bypassHeaders(base, secret) {
 export async function primeBypassCookie(context, base, secret) {
   const headers = bypassHeaders(base, secret);
   if (Object.keys(headers).length === 0) return "skipped";
-  const response = await context.request.get(`${base}/api/health`, { headers, maxRedirects: 0, failOnStatusCode: false });
+  let response;
+  try {
+    response = await context.request.get(`${base}/api/health`, { headers, maxRedirects: 0, failOnStatusCode: false });
+  } catch {
+    // Текст помилки Playwright (Call log) містить заголовки запиту, зокрема секрет, — вихідну помилку далі не передаємо
+    // (CodeRabbit, PR #115; перевірено: мережева помилка APIRequestContext має значення заголовка в тексті).
+    throw new Error(
+      `Не вдалося отримати cookie обходу Vercel: запит до ${base}/api/health завершився мережевою помилкою (деталі приховано, щоб не розкрити секрет)`,
+    );
+  }
   try {
     const status = response.status();
     if (status === 401 || status === 403) {
