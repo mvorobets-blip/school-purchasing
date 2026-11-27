@@ -8,7 +8,8 @@
 //          звіряє кадр із НОВИМ текстом і не погоджується → NEEDS-HUMAN (R3);
 //   NC-3 — зріз 3 (WS9): AC-DEC-06 з навмисно іншим текстом відмови → перевірка падає → FAIL (R1). Пише синтетичну
 //          заявку uat-…-nc3 (прибирає cleanup.teardown.ts), тож потрібен SUPABASE_SECRET_KEY, як для @writes.
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./support/bypass";
 import { createAuthor, requestStatus, submitAs } from "./support/admin";
 import { approverOnlyOf } from "./support/roles";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";

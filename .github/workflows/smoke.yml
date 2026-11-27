@@ -1,5 +1,5 @@
 # Взято з koldovsky/2026-quitcode-11-devops-operations-hw materials/ops-kit/.github/workflows/smoke.yml; змінено:
-# повернуто крок «Ручний запуск — лише з main» з нашого D0, секрет обходу скрипт шле лише на *.vercel.app.
+# повернуто крок «Ручний запуск — лише з main» з нашого D0, секрет обходу скрипт шле лише на деплої цього проєкту (scripts/lib/bypass-host.mjs).
 #
 # Smoke v2 (WS11): прод після кожного деплою main і щодня (як у D0) + НОВЕ: кожен НЕпродовий деплой Vercel (preview
 # і гілка staging) за адресою саме цього деплою, з обходом захисту Vercel. Обидва jobs при збої надсилають алерт

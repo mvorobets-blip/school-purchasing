@@ -2,10 +2,12 @@
 // заявки). Перед першим записом звіряємо ref проєкту Supabase з /api/health цільової адреси з ref з
 // NEXT_PUBLIC_SUPABASE_URL у .env.local — інакше UAT на staging з прод-ключами в .env.local писав би в прод (і навпаки).
 // Захищена Vercel адреса (preview, staging) — заголовок x-vercel-protection-bypass зі змінної
-// VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — *.vercel.app (запит /api/health іде лише на
-// ціль; у браузері Playwright extraHTTPHeaders — до всіх запитів, див. playwright.config.ts).
+// VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — деплой цього проєкту Vercel (запит /api/health іде лише на
+// ціль; браузер секрету не бачить — лише cookie обходу, primeBypassCookie і tests/e2e/support/bypass.ts).
 // Значення секрету й ключів не друкуємо ніде: у повідомленнях — лише ref (він і так у публічній адресі бази).
 // Джерело: R03 курсу WS11 і документація Vercel «Protection Bypass for Automation» (приклад Playwright), 17.11.2026.
+
+import { isProjectDeployHost } from "../lib/bypass-host.mjs";
 
 const SUPABASE_HOST = /^([a-z0-9]{20})\.supabase\.co$/;
 
@@ -19,13 +21,12 @@ export function refFromSupabaseUrl(url) {
   }
 }
 
-/** Чи можна цьому хосту віддати секрет обходу: лише деплої Vercel. */
+/**
+ * Чи можна цьому хосту віддати секрет обходу: лише https-деплої цього проєкту Vercel, не будь-який *.vercel.app
+ * (відгук викладача WS11, пункт 3; перелік — scripts/lib/bypass-host.mjs).
+ */
 export function isVercelHost(base) {
-  try {
-    return new URL(base).hostname.endsWith(".vercel.app");
-  } catch {
-    return false;
-  }
+  return isProjectDeployHost(base);
 }
 
 /**
@@ -41,6 +42,43 @@ export function bypassHeaders(base, secret) {
   return { "x-vercel-protection-bypass": value, "x-vercel-set-bypass-cookie": "true" };
 }
 
+/**
+ * Браузер UAT секрету не бачить (CodeRabbit, PR #115): ні extraHTTPHeaders (Playwright шле їх на ВСІ хости), ні маршрут
+ * з route.continue (заголовок переживає редирект на інший origin). Замість цього один запит APIRequestContext контексту
+ * на ціль із заголовком обходу й x-vercel-set-bypass-cookie, без переходу за редиректом (maxRedirects: 0): Vercel
+ * відповідає Set-Cookie, cookie лягає у спільне сховище контексту, і браузер далі ходить з нею — а cookie браузер шле
+ * лише своєму хосту. Не захищений деплой (прод) cookie не видає — це не помилка.
+ * @param {{ request: { get: (url: string, options: object) => Promise<{ status: () => number, headers: () => Record<string, string>, dispose: () => Promise<void> }> } }} context
+ * @param {string} base
+ * @param {string | undefined} secret
+ * @returns {Promise<"skipped" | "cookie" | "no-cookie">}
+ */
+export async function primeBypassCookie(context, base, secret) {
+  const headers = bypassHeaders(base, secret);
+  if (Object.keys(headers).length === 0) return "skipped";
+  let response;
+  try {
+    response = await context.request.get(`${base}/api/health`, { headers, maxRedirects: 0, failOnStatusCode: false });
+  } catch {
+    // Текст помилки Playwright (Call log) містить заголовки запиту, зокрема секрет, — вихідну помилку далі не передаємо
+    // (CodeRabbit, PR #115; перевірено: мережева помилка APIRequestContext має значення заголовка в тексті).
+    throw new Error(
+      `Не вдалося отримати cookie обходу Vercel: запит до ${base}/api/health завершився мережевою помилкою (деталі приховано, щоб не розкрити секрет)`,
+    );
+  }
+  try {
+    const status = response.status();
+    if (status === 401 || status === 403) {
+      throw new Error(
+        `Vercel не прийняв секрет обходу (${status}) — оновіть VERCEL_AUTOMATION_BYPASS_SECRET (Vercel → Settings → Deployment Protection → Protection Bypass for Automation)`,
+      );
+    }
+    return response.headers()["set-cookie"] ? "cookie" : "no-cookie";
+  } finally {
+    await response.dispose();
+  }
+}
+
 /** Текст причини зупинки або null, якщо ref збігаються. */
 export function targetProblem({ base, healthStatus, healthRef, localRef }) {
   if (!localRef) {
@@ -49,7 +87,7 @@ export function targetProblem({ base, healthStatus, healthRef, localRef }) {
   if (healthStatus !== 200) {
     const wall = healthStatus === 401 || healthStatus === 403 || (healthStatus >= 300 && healthStatus < 400);
     return wall
-      ? `${base}/api/health відповів ${healthStatus} — адреса за захистом Vercel? Задайте VERCEL_AUTOMATION_BYPASS_SECRET (лише для *.vercel.app)`
+      ? `${base}/api/health відповів ${healthStatus} — адреса за захистом Vercel? Задайте VERCEL_AUTOMATION_BYPASS_SECRET (лише для деплоїв цього проєкту Vercel)`
       : `${base}/api/health відповів ${healthStatus || "помилкою мережі"} — не можу перевірити базу цілі`;
   }
   if (!healthRef) return `${base}/api/health не віддає supabaseRef — цей деплой ще без WS11 (/api/health з supabaseRef)`;

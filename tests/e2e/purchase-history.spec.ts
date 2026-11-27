@@ -9,7 +9,8 @@
 // заявник «Primary School»; після прогону cleanup.teardown.ts видаляє його разом із заявками (OWNED_ROWS). Рішення
 // ухвалює Марія (approver-primary@example.test) лише щодо цих заявок; Петро (approver-office@example.test) лише читає.
 // «Дано» про ролі Марії й Петра тест перевіряє сам (крок given): акаунти спільні з PM, відділи призначає адміністратор.
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+import { expect, newContext, test } from "./support/bypass";
 import { createAuthor, requestStatus, submitAs, type UatAuthor } from "./support/admin";
 import { approverOnlyOf } from "./support/roles";
 import { attachRuntimeErrors, given, signIn, thenStep, when } from "./support/uat";
@@ -32,7 +33,7 @@ test.afterEach(async ({ page }) => attachRuntimeErrors(page));
  * частина автора без відео); closeAuthor додає це відео до тесту як «author-video». */
 async function asAuthor(browser: Browser, author: UatAuthor): Promise<Page> {
   const size = { width: 1280, height: 800 };
-  const context = await browser.newContext({ recordVideo: { dir: test.info().outputPath("author-video"), size } });
+  const context = await newContext(browser, { recordVideo: { dir: test.info().outputPath("author-video"), size } });
   const page = await context.newPage();
   await signIn(page, author.email, author.password);
   return page;
@@ -279,7 +280,7 @@ test.describe("синтетичний автор (працівник 1)", () => 
         author = await createAuthor(PRIMARY, "dec07");
         id = await submitAs(author, PRIMARY, THREE_LINES.slice(0, 1));
         // Повертає Марія (схвалювач «Primary School») — окремий контекст.
-        const maria = await (await browser.newContext({ storageState: MARIA })).newPage();
+        const maria = await (await newContext(browser, { storageState: MARIA })).newPage();
         try {
           await maria.goto(`/requests/${id}`);
           await maria.getByRole("button", { name: /^Return for revision:/ }).click();
@@ -489,7 +490,7 @@ test.describe("схвалювач Петро (approver-office@example.test)", ()
         id = await submitAs(await createAuthor(PRIMARY, "hist10"), PRIMARY, THREE_LINES.slice(0, 1));
         // Зауваження PM 2 (приймання 12.11): заявка має не лише подію «Submitted», а й рішення — Марія (схвалювач
         // «Primary School») повертає її з причиною. Окремої події рішення в історії WS9 немає (відповідь PM на #75).
-        const maria = await (await browser.newContext({ storageState: MARIA })).newPage();
+        const maria = await (await newContext(browser, { storageState: MARIA })).newPage();
         try {
           await maria.goto(`/requests/${id}`);
           await maria.getByRole("button", { name: /^Return for revision:/ }).click();

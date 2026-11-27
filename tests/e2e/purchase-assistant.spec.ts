@@ -5,7 +5,8 @@
 // 2026-11-16). Назву й мету AC-AI-01 перевіряємо правилом PM «містить» «paper» / «print» (#71, «Припущення»),
 // кількість і ціну — точно.
 // Акаунт — pm-requester@example.test (роль requester, заявник «Primary School»; працівник 1 в AC).
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./support/bypass";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
 const REQUESTER = "playwright/.auth/requester.json";

@@ -9,7 +9,8 @@
 // AC-FRM-08, працівник 1 в AC-FRM-15); requester2 — member2@example.test, без поданих заявок (працівник 3 в AC-FRM-14).
 // Акаунти спільні з PM, тож умови «Дано» тест перевіряє сам (крок given) і, якщо їх порушено, падає в «Дано», а не в
 // «Тоді». (До 04.11 працівником 2 був member2 — заявник іншого відділу; перевірка «Дано» це показала.)
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+import { expect, newContext, test } from "./support/bypass";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
 const AUTHOR = "playwright/.auth/author.json";
@@ -27,7 +28,7 @@ test.afterEach(async ({ page }) => attachRuntimeErrors(page));
 
 /** Сторінка під іншою роллю в окремому контексті (працівник 1 поруч із працівником 2). */
 async function asRole(browser: Browser, storageState: string): Promise<Page> {
-  const context = await browser.newContext({ storageState });
+  const context = await newContext(browser, { storageState });
   return context.newPage();
 }
 

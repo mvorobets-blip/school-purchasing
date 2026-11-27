@@ -10,27 +10,23 @@
 //   - VERCEL_AUTOMATION_BYPASS_SECRET задано → кожен запит несе заголовок x-vercel-protection-bypass (preview і staging
 //     за Vercel Authentication). Значення не друкуємо: у журналі лише bypass=true/false.
 //   - x-vercel-set-bypass-cookie НЕ надсилаємо: відповідь — редирект із Set-Cookie, а redirect:"manual" побачив би 3xx.
-//   - Секрет іде лише на *.vercel.app (і localhost для тестів): на чужу адресу з ручного запуску — без заголовка.
+//   - Секрет іде лише на деплої цього проєкту (і localhost для тестів): на чужу адресу з ручного запуску, зокрема
+//     чужий *.vercel.app, — без заголовка (scripts/lib/bypass-host.mjs).
 //   - SMOKE_TARGET=deploy (preview і staging у smoke.yml) змінює лише підказки й підсумковий рядок.
 //   - SMOKE_EXPECT_SUPABASE_REF задано → supabaseRef з /api/health має збігатися з ним (дія з postmortem
 //     docs/incidents/2026-11-23-staging-supabase-url.md): хибна адреса Supabase у Vercel дає рядок з назвою змінної,
 //     а staging, що дивиться в чужу базу, червоніє навіть з db=ok. Ref — не секрет (він у публічній адресі).
+import { isBypassHost } from "./lib/bypass-host.mjs";
+
 const [rawBase = process.env.PROD_URL ?? "", expectSha = ""] = process.argv.slice(2);
 // client_payload.url від Vercel може прийти хостом без схеми — додаємо https://.
 const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : "").replace(/\/+$/, "");
 
 const bypass = (process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
 const target = process.env.SMOKE_TARGET === "deploy" ? "deploy" : "prod";
-// Секрет обходу — лише деплоям Vercel (і локальним тестам): ручний запуск приймає будь-яку адресу, чужому хосту
-// секрет не віддаємо.
-const bypassHost = (() => {
-  try {
-    const { hostname } = new URL(base);
-    return hostname.endsWith(".vercel.app") || hostname === "localhost" || hostname === "127.0.0.1";
-  } catch {
-    return false;
-  }
-})();
+// Секрет обходу — лише деплоям цього проєкту (і локальним тестам): ручний запуск приймає будь-яку адресу, чужому
+// хосту, зокрема чужому *.vercel.app, секрет не віддаємо. Перелік — scripts/lib/bypass-host.mjs.
+const bypassHost = isBypassHost(base);
 const headers = { "user-agent": "smoke/2.0 (WS11)" };
 const sendBypass = Boolean(bypass) && bypassHost;
 if (sendBypass) headers["x-vercel-protection-bypass"] = bypass;
@@ -74,7 +70,7 @@ const vercelWall = (r) =>
 // Підказка про стіну входу Vercel залежить від цілі й від того, чи є секрет обходу.
 function wallHint() {
   if (bypass && !bypassHost) {
-    return `адреса не на *.vercel.app — секрет обходу на неї не надсилаємо; перевірте адресу деплою`;
+    return `адреса — не деплой цього проєкту Vercel (scripts/lib/bypass-host.mjs) — секрет обходу на неї не надсилаємо; перевірте адресу деплою`;
   }
   if (sendBypass) {
     return "Vercel не прийняв секрет обходу — його перегенерували чи видалили? Скопіюйте актуальний з Vercel (Settings → Deployment Protection → Protection Bypass for Automation) у GitHub Secrets VERCEL_AUTOMATION_BYPASS_SECRET і зробіть Redeploy";
