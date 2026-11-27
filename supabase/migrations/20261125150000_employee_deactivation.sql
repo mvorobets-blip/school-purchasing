@@ -42,6 +42,11 @@ begin
   if not private.is_admin() then
     raise exception 'FORBIDDEN' using errcode = '42501';
   end if;
+  -- Спершу блокуємо всі рядки адміністраторів (активних і ні) у порядку id — до читання стану цілі. Інакше
+  -- паралельний виклик міг би між читанням і оновленням змінити is_active цілі (рев'ю CodeRabbit до PR #112),
+  -- і перевірка LAST_ADMIN спиралась би на застарілий стан. Однаковий порядок в обох функціях — без взаємного
+  -- очікування.
+  perform 1 from public.profiles as p where p.role = 'admin' order by p.id for update;
   select p.role, p.is_active into v_role, v_active from public.profiles as p where p.id = p_profile_id;
   if not found then
     raise exception 'NOT_FOUND' using errcode = 'P0001';
@@ -68,6 +73,11 @@ begin
   if not private.is_admin() then
     raise exception 'FORBIDDEN' using errcode = '42501';
   end if;
+  -- Спершу блокуємо всі рядки адміністраторів (активних і ні) у порядку id — до читання стану цілі. Інакше
+  -- паралельний виклик міг би між читанням і оновленням змінити is_active цілі (рев'ю CodeRabbit до PR #112),
+  -- і перевірка LAST_ADMIN спиралась би на застарілий стан. Однаковий порядок в обох функціях — без взаємного
+  -- очікування.
+  perform 1 from public.profiles as p where p.role = 'admin' order by p.id for update;
   select p.role, p.is_active into v_role, v_active from public.profiles as p where p.id = p_profile_id;
   if not found then
     raise exception 'NOT_FOUND' using errcode = 'P0001';

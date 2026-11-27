@@ -71,6 +71,13 @@ describe("дії сторінки працівника", () => {
     expect(rpcCalls).toEqual([]);
   });
 
+  it("value не boolean (виклик дії напряму) — помилка без RPC", async () => {
+    await expect(setEmployeeActive(EMPLOYEE, "false" as never)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?error=UNKNOWN`,
+    );
+    expect(rpcCalls).toEqual([]);
+  });
+
   it("невалідний id — назад до списку, RPC не викликано", async () => {
     await expect(removeAdminRole("not-a-uuid")).rejects.toThrow("REDIRECT /admin/employees");
     expect(rpcCalls).toEqual([]);

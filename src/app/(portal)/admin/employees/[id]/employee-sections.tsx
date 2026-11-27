@@ -18,7 +18,8 @@ const ERROR_TEXT: Record<string, () => string> = {
 
 export function EmployeeMessage({ ok, error }: { ok: unknown; error: unknown }) {
   if (typeof error === "string") {
-    const text = ERROR_TEXT[error]?.() ?? "Could not save the change. Try again.";
+    // Лише власні ключі: ?error=__proto__ інакше повернув би успадкований об'єкт і зламав сторінку.
+    const text = Object.hasOwn(ERROR_TEXT, error) ? ERROR_TEXT[error]() : "Could not save the change. Try again.";
     // «Not enough permissions» — нейтрально (PM: людина нічого не зламала); помилки дій — червоні.
     return (
       <Alert variant={error === "FORBIDDEN" ? "default" : "destructive"} data-testid="employee-message">
