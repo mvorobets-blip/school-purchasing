@@ -1,7 +1,7 @@
 // Тести бази (PGlite) для правила ролей зрізу 1: функції public.add_requester, public.remove_requester,
 // public.set_approver, public.set_auto_approve (обгортки над private.*, міграція 20261021231637) і тригер
-// department_members_sync_role → private.sync_role (міграція 20261021213618). Ті самі AC, що tests/org/roles.test.ts і
-// tests/org/membership.test.ts доводять на TS-моделі, тут — на справжній базі: адміністратор викликає функції, як дія
+// department_members_sync_role → private.sync_role (міграція 20261021213618). Правило ролей доводимо лише тут — на справжній базі
+// (TS-модель цих правил прибрано, бо застосунок її не викликав): адміністратор викликає функції, як дія
 // застосунку (supabase.rpc), а результат (рядки department_members і profiles.role) перевіряє asService.
 // Кожен відмовний тест перевіряє і відмову, і те, що ні рядки, ні роль не змінились.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";

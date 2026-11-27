@@ -33,7 +33,7 @@ describe("Дія createDepartment", () => {
     expect(state).toEqual({ status: "error", message: "A department with this name already exists" });
   });
 
-  it("AC-ORG-34: відділ з новою назвою створено (контроль до випадку дубля)", async () => {
+  it("відділ з новою назвою створено (контроль: дія не відмовляє без помилки бази)", async () => {
     const state = await createDepartment(idle, form("Бібліотека"));
     expect(state.status).toBe("ok");
   });
