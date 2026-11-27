@@ -9,7 +9,7 @@ import {
 } from "../../scripts/uat/target.mjs";
 
 // Запобіжник UAT на розгорнутій адресі (R03 WS11): до першого запису ref Supabase цілі = ref з .env.local; заголовок
-// обходу Vercel — лише з секретом і лише на *.vercel.app. Технічні тести — без AC ID. Мережі немає: fetch підмінено.
+// обходу Vercel — лише з секретом і лише на деплої цього проєкту Vercel. Технічні тести — без AC ID. Мережі немає: fetch підмінено.
 const STAGING = "rnawhejsgqhgbtjajjmb";
 const PROD = "tqbvafkcniaspvluverp";
 const BASE = "https://school-purchasing-git-staging-mvorobets-blip.vercel.app";
@@ -27,7 +27,7 @@ describe("refFromSupabaseUrl", () => {
 });
 
 describe("bypassHeaders", () => {
-  it("секрет і *.vercel.app — заголовок обходу й cookie обходу (приклад Playwright Vercel)", () => {
+  it("секрет і деплой цього проєкту — заголовок обходу й cookie обходу (приклад Playwright Vercel)", () => {
     expect(bypassHeaders(BASE, ` ${SECRET} `)).toEqual({ "x-vercel-protection-bypass": SECRET, "x-vercel-set-bypass-cookie": "true" });
   });
 
@@ -36,6 +36,12 @@ describe("bypassHeaders", () => {
     expect(bypassHeaders(BASE, undefined)).toEqual({});
     expect(bypassHeaders("https://school.example.test", SECRET)).toEqual({});
     expect(isVercelHost("not a url")).toBe(false);
+  });
+
+  it("чужий *.vercel.app, http чи localhost — без заголовків (відгук викладача WS11, пункт 3)", () => {
+    expect(bypassHeaders("https://other-app.vercel.app", SECRET)).toEqual({});
+    expect(bypassHeaders(BASE.replace("https:", "http:"), SECRET)).toEqual({});
+    expect(bypassHeaders("http://localhost:3000", SECRET)).toEqual({});
   });
 });
 

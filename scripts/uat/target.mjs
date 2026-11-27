@@ -2,12 +2,14 @@
 // заявки). Перед першим записом звіряємо ref проєкту Supabase з /api/health цільової адреси з ref з
 // NEXT_PUBLIC_SUPABASE_URL у .env.local — інакше UAT на staging з прод-ключами в .env.local писав би в прод (і навпаки).
 // Захищена Vercel адреса (preview, staging) — заголовок x-vercel-protection-bypass зі змінної
-// VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — *.vercel.app (запит /api/health іде лише на
+// VERCEL_AUTOMATION_BYPASS_SECRET, лише коли вона задана, і лише коли ціль — деплой цього проєкту Vercel (запит /api/health іде лише на
 // ціль; у браузері Playwright extraHTTPHeaders — до всіх запитів, див. playwright.config.ts).
 // Значення секрету й ключів не друкуємо ніде: у повідомленнях — лише ref (він і так у публічній адресі бази).
 // Джерело: R03 курсу WS11 і документація Vercel «Protection Bypass for Automation» (приклад Playwright), 17.11.2026.
 
-const SUPABASE_HOST = /^([a-z0-9]{20})\.supabase\.co$/;
+import { isProjectDeployHost } from "../lib/bypass-host.mjs";
+
+const SUPABASE_HOST =/^([a-z0-9]{20})\.supabase\.co$/;
 
 /** ref проєкту з https://<ref>.supabase.co або null. */
 export function refFromSupabaseUrl(url) {
@@ -19,13 +21,12 @@ export function refFromSupabaseUrl(url) {
   }
 }
 
-/** Чи можна цьому хосту віддати секрет обходу: лише деплої Vercel. */
+/**
+ * Чи можна цьому хосту віддати секрет обходу: лише https-деплої цього проєкту Vercel, не будь-який *.vercel.app
+ * (відгук викладача WS11, пункт 3; перелік — scripts/lib/bypass-host.mjs).
+ */
 export function isVercelHost(base) {
-  try {
-    return new URL(base).hostname.endsWith(".vercel.app");
-  } catch {
-    return false;
-  }
+  return isProjectDeployHost(base);
 }
 
 /**
@@ -49,7 +50,7 @@ export function targetProblem({ base, healthStatus, healthRef, localRef }) {
   if (healthStatus !== 200) {
     const wall = healthStatus === 401 || healthStatus === 403 || (healthStatus >= 300 && healthStatus < 400);
     return wall
-      ? `${base}/api/health відповів ${healthStatus} — адреса за захистом Vercel? Задайте VERCEL_AUTOMATION_BYPASS_SECRET (лише для *.vercel.app)`
+      ? `${base}/api/health відповів ${healthStatus} — адреса за захистом Vercel? Задайте VERCEL_AUTOMATION_BYPASS_SECRET (лише для деплоїв цього проєкту Vercel)`
       : `${base}/api/health відповів ${healthStatus || "помилкою мережі"} — не можу перевірити базу цілі`;
   }
   if (!healthRef) return `${base}/api/health не віддає supabaseRef — цей деплой ще без WS11 (/api/health з supabaseRef)`;

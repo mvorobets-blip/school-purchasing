@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import type { AddressInfo } from "node:net";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { isBypassHost } from "../../scripts/lib/bypass-host.mjs";
 import { repoRoot } from "./run-script";
 
 // scripts/smoke.mjs проти локального HTTP-сервера: без мережі й без проду.
@@ -223,12 +224,43 @@ describe("smoke.mjs", () => {
     expect((await smokeWith({ SMOKE_EXPECT_SUPABASE_REF: STAGING }, noField)).code).toBe(0);
   });
 
-  it("на адресу не з *.vercel.app секрет обходу не надсилає", async () => {
+  it("на адресу не з переліку деплоїв секрет обходу не надсилає", async () => {
     const base = (await serve(OK_ROUTES)).replace("127.0.0.1", "localhost.");
     const { out } = await smokeWith({ VERCEL_AUTOMATION_BYPASS_SECRET: SECRET, SMOKE_TARGET: "deploy" }, base);
     expect(seen.length).toBeGreaterThanOrEqual(3);
     expect(seen.some((h) => "x-vercel-protection-bypass" in h)).toBe(false);
     expect(out).toContain('"bypass":false');
     expect(out).not.toContain(SECRET);
+  });
+});
+
+// Перелік хостів без мережі: smoke з https://other-app.vercel.app пішов би в інтернет, тож перевіряємо саму функцію.
+// Відгук викладача WS11 (koldovsky/2026-quitcode-11-devops-operations-hw#4, пункт 3): чужий *.vercel.app → bypass:false.
+describe("isBypassHost", () => {
+  it.each([
+    "https://therapy-scheduling-ten.vercel.app",
+    "https://school-purchasing-dwyx643nb-mvorobets-blip.vercel.app",
+    "https://school-purchasing-git-staging-mvorobets-blip.vercel.app",
+    "https://Therapy-Scheduling-Ten.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:4321",
+  ])("наш деплой або локальний тест: %s → true", (url) => {
+    expect(isBypassHost(url)).toBe(true);
+  });
+
+  it.each([
+    "https://other-app.vercel.app",
+    "https://school-purchasing-dwyx643nb-someone-else.vercel.app",
+    "https://school-purchasing-git-staging-mvorobets-blip.vercel.app.evil.test",
+    "https://therapy-scheduling-ten.vercel.app.evil.test",
+    "https://evil-therapy-scheduling-ten.vercel.app",
+    "https://therapy-scheduling-ten.vercel.app@evil.test",
+    "http://therapy-scheduling-ten.vercel.app",
+    "http://school-purchasing-git-staging-mvorobets-blip.vercel.app",
+    "https://example.invalid",
+    "не адреса",
+    "",
+  ])("чужа чи нерозбірна адреса: %s → false", (url) => {
+    expect(isBypassHost(url)).toBe(false);
   });
 });
