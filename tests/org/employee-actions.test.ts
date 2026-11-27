@@ -138,6 +138,13 @@ describe("дія setPermission", () => {
     ]);
   });
 
+  it("value не boolean (напр. рядок \"false\") — помилка без запису, а не видача дозволу", async () => {
+    await expect(setPermission(EMPLOYEE, "card_expense", "false" as never)).rejects.toThrow(
+      `REDIRECT /admin/employees/${EMPLOYEE}?error=UNKNOWN`,
+    );
+    expect(tableCalls).toEqual([]);
+  });
+
   it("відмова RLS (42501) — «Not enough permissions»", async () => {
     rpcResult.error = { code: "42501", message: "new row violates row-level security policy" };
     await expect(setPermission(EMPLOYEE, "self_purchase", true)).rejects.toThrow(

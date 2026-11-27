@@ -64,6 +64,6 @@ export async function setPermission(profileId: string, permission: Permission, v
         ? table().upsert({ profile_id: profileId, permission }, { onConflict: "profile_id,permission", ignoreDuplicates: true })
         : table().delete().eq("profile_id", profileId).eq("permission", permission),
     value ? "PERMISSION_GRANTED" : "PERMISSION_REVOKED",
-    PERMISSIONS.includes(permission),
+    PERMISSIONS.includes(permission) && typeof value === "boolean",
   );
 }
