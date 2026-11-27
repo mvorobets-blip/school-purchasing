@@ -184,17 +184,19 @@ export function MemberSwitch({
   checked,
   action,
   label,
+  disabled = false,
 }: {
   profileId: string;
   checked: boolean;
   action: ToggleAction;
   label: string;
+  disabled?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   return (
     <Switch
       checked={checked}
-      disabled={pending}
+      disabled={disabled || pending}
       aria-label={label}
       onCheckedChange={(value) => startTransition(() => action(value, formWith(profileId)))}
     />

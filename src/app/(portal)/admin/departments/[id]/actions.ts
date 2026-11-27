@@ -4,20 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { canAccessSettings } from "@/lib/org/access";
 import { getCurrentUser } from "@/lib/org/current-user";
+import { rpcErrorCode, type RpcError } from "@/lib/org/rpc-error";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
 
 // Зміни членства — лише через RPC (private.* перевіряє адміністратора ще раз); роль після змін рахує тригер бази.
 // Результат повертаємо в адресі (?ok= / ?error=), щоб сторінка показала повідомлення без клієнтського стану.
 
-type RpcError = { code?: string; message?: string } | null;
-
-function errorCode(error: RpcError): string {
-  if (!error) return "";
-  if (error.code === "42501" || error.message?.includes("FORBIDDEN")) return "FORBIDDEN";
-  if (error.message?.includes("NOT_REQUESTER")) return "NOT_REQUESTER";
-  return "UNKNOWN";
-}
+const errorCode = (error: RpcError) => rpcErrorCode(error, ["NOT_REQUESTER", "NOT_ACTIVE"]);
 
 async function run(departmentId: string, call: () => PromiseLike<{ error: RpcError }>, okCode: string) {
   const user = await getCurrentUser();

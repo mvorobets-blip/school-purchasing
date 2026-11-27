@@ -2,7 +2,7 @@
 
 ## 4. Деактивація й захист адміністратора — `task/employee-deactivation`
 
-- [ ] 4.1 Міграція `<timestamp>_employee_deactivation.sql`: `private.set_active`, `private.remove_admin_role` з
+- [x] 4.1 Міграція `<timestamp>_employee_deactivation.sql`: `private.set_active`, `private.remove_admin_role` з
   блокуванням рядків адміністраторів і кодом `LAST_ADMIN`, обгортки `public.*`; сторінки `/admin/employees` і
   `/admin/employees/[id]` (деактивувати / активувати, зняти роль `admin`); пункт «Employees»; лише активні в
   `approverCandidates`; тести бази й дій; рядки `docs/conformance.md`; `db-check` застосовує міграцію на чисту базу.

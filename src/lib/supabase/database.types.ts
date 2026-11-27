@@ -195,7 +195,9 @@ isOneToOne: false
             "request_author_names": { Args: { "p_request_ids": string[] }; Returns: { author_name: string | null; request_id: string }[] },
             "resubmit_purchase": { Args: { "p_lines": Json,"p_request_id": string }; Returns: string },
             "request_history": { Args: { "p_request_id": string }; Returns: { actor_name: string | null; created_at: string; kind: string }[] },
+            "remove_admin_role": { Args: { "p_profile_id": string }; Returns: undefined },
             "remove_requester": { Args: { "p_department_id": string,"p_profile_id": string }; Returns: undefined },
+            "set_active": { Args: { "p_active": boolean,"p_profile_id": string }; Returns: undefined },
             "set_approver": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
             "set_auto_approve": { Args: { "p_department_id": string,"p_profile_id": string,"p_value": boolean }; Returns: undefined },
             "submit_purchase": { Args: { "p_department_id": string,"p_lines": Json,"p_purchase_type": string }; Returns: string }
